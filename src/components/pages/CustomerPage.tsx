@@ -2,6 +2,7 @@ import { User, MapPin, Building2, Tag, Phone, ShieldCheck, Plus, Bell, FilePlus,
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
 import { customerInteraksi } from "@/lib/dummy-data";
+import dedeFoto from "@/assets/dede.jpg";
 
 const minat = ["KPR Rumah Pertama", "Asuransi terkait KPR", "Tabungan BTN Batara", "Simulasi cicilan"];
 const tindakLanjut = [
@@ -17,12 +18,14 @@ export function CustomerPage() {
       {/* Profile header */}
       <div className="panel p-5 sm:p-6">
         <div className="flex flex-col md:flex-row md:items-center gap-5">
-          <div className="h-16 w-16 rounded-full bg-primary-light flex items-center justify-center text-primary font-bold text-xl shrink-0">
-            AP
-          </div>
+          <img
+            src={dedeFoto}
+            alt="Foto profil Dede Darmawan"
+            className="h-16 w-16 rounded-full object-cover shrink-0 ring-2 ring-primary-light"
+          />
           <div className="flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-xl font-bold text-navy">Andi Pratama</h2>
+              <h2 className="text-xl font-bold text-navy">Dede Darmawan</h2>
               <StatusBadge tone="green" dot>Aktif Follow-up</StatusBadge>
               <StatusBadge tone="blue">Retail / KPR Prospektif</StatusBadge>
             </div>
@@ -50,7 +53,7 @@ export function CustomerPage() {
         <div className="panel p-5">
           <div className="flex items-center gap-2"><User className="h-4 w-4 text-primary" /><h3 className="font-semibold text-navy">Profil Ringkas</h3></div>
           <dl className="mt-4 space-y-2.5 text-sm">
-            <Row icon={User} label="Nama" value="Andi Pratama" />
+            <Row icon={User} label="Nama" value="Dede Darmawan" />
             <Row icon={MapPin} label="Kota" value="Bekasi" />
             <Row icon={Tag} label="Channel asal" value="balé Properti" />
             <Row icon={ShieldCheck} label="Segmentasi" value="Retail / KPR Prospektif" />
