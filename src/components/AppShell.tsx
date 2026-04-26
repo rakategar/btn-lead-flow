@@ -1,27 +1,25 @@
 import { useState } from "react";
-import { LayoutDashboard, Home, Users, AlertCircle, Building2, Megaphone, BarChart3, ShieldCheck, Search, Download, Plus, Menu, X } from "lucide-react";
+import { LayoutDashboard, Activity, GitBranch, CheckSquare, Bell, BarChart3, Search, Plus, Menu, ListChecks, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
-import btnLogo from "@/assets/btn-logo.png";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
+import { ActLogo } from "@/components/ActLogo";
 
-export type PageKey = "overview" | "lead" | "customer" | "case" | "cabang" | "campaign" | "laporan" | "integrasi";
+export type PageKey = "overview" | "command" | "pipeline" | "activity" | "followup" | "kpi";
 
 const menu: { key: PageKey; label: string; icon: React.ComponentType<{ className?: string }>; group: string }[] = [
-  { key: "overview", label: "Overview", icon: LayoutDashboard, group: "Utama" },
-  { key: "lead", label: "Lead KPR", icon: Home, group: "Utama" },
-  { key: "customer", label: "Customer 360", icon: Users, group: "Utama" },
-  { key: "case", label: "Case & SLA", icon: AlertCircle, group: "Utama" },
-  { key: "cabang", label: "Cabang", icon: Building2, group: "Operasional" },
-  { key: "campaign", label: "Campaign", icon: Megaphone, group: "Operasional" },
-  { key: "laporan", label: "Laporan", icon: BarChart3, group: "Operasional" },
-  { key: "integrasi", label: "Kesiapan Integrasi", icon: ShieldCheck, group: "Sistem" },
+  { key: "overview", label: "Overview", icon: LayoutDashboard, group: "Ringkasan" },
+  { key: "command", label: "A.C.T Command Center", icon: Activity, group: "Ringkasan" },
+  { key: "pipeline", label: "Pipeline & Leads", icon: GitBranch, group: "Operasional" },
+  { key: "activity", label: "Activity Daily", icon: CheckSquare, group: "Operasional" },
+  { key: "followup", label: "Follow-Up & Status", icon: Bell, group: "Operasional" },
+  { key: "kpi", label: "KPI & Review", icon: BarChart3, group: "Manajemen" },
 ];
 
 interface Props {
   current: PageKey;
   onChange: (k: PageKey) => void;
-  onAddLead: () => void;
+  onAddActivity: () => void;
   search: string;
   onSearch: (s: string) => void;
   children: React.ReactNode;
@@ -29,7 +27,7 @@ interface Props {
   pageSubtitle: string;
 }
 
-export function AppShell({ current, onChange, onAddLead, search, onSearch, children, pageTitle, pageSubtitle }: Props) {
+export function AppShell({ current, onChange, onAddActivity, search, onSearch, children, pageTitle, pageSubtitle }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const groups = Array.from(new Set(menu.map((m) => m.group)));
 
@@ -42,11 +40,11 @@ export function AppShell({ current, onChange, onAddLead, search, onSearch, child
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-5">
-          <img src={btnLogo} alt="BTN" className="h-7 w-auto" />
+        <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-4">
+          <ActLogo size="md" />
           <div className="flex flex-col leading-tight">
-            <span className="text-[11px] font-semibold tracking-wide text-muted-foreground">CRM MODERNIZATION</span>
-            <span className="text-sm font-bold text-navy">Demo Dashboard</span>
+            <span className="text-sm font-bold text-navy">A.C.T Sales CRM</span>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Primera Karya Sinergia</span>
           </div>
         </div>
         <nav className="flex flex-col gap-5 px-3 py-5">
@@ -70,7 +68,7 @@ export function AppShell({ current, onChange, onAddLead, search, onSearch, child
                     >
                       <Icon className={cn("h-4 w-4", active ? "text-primary" : "text-muted-foreground")} />
                       <span className="flex-1">{m.label}</span>
-                      {active && <span className="h-1.5 w-1.5 rounded-full bg-primary" />}
+                      {active && <span className="h-1.5 w-1.5 rounded-full bg-gold" />}
                     </button>
                   );
                 })}
@@ -79,12 +77,12 @@ export function AppShell({ current, onChange, onAddLead, search, onSearch, child
           ))}
         </nav>
 
-        <div className="absolute bottom-4 left-3 right-3 rounded-lg border border-border bg-primary-light/60 p-3">
-          <div className="flex items-center gap-2 text-xs font-semibold text-primary">
-            <ShieldCheck className="h-3.5 w-3.5" /> Mode Demo
+        <div className="absolute bottom-4 left-3 right-3 rounded-lg border border-gold/30 bg-gold-light/60 p-3">
+          <div className="flex items-center gap-2 text-xs font-semibold text-navy">
+            <ShieldCheck className="h-3.5 w-3.5 text-[hsl(var(--gold))]" /> Mode Demo Konsep
           </div>
           <p className="mt-1 text-[11px] leading-snug text-muted-foreground">
-            Seluruh data adalah dummy. Tidak terhubung ke sistem produksi.
+            Visualisasi konsep berbasis kerangka A.C.T. Seluruh data dummy.
           </p>
         </div>
       </aside>
@@ -110,21 +108,21 @@ export function AppShell({ current, onChange, onAddLead, search, onSearch, child
                 <input
                   value={search}
                   onChange={(e) => onSearch(e.target.value)}
-                  placeholder="Cari nasabah, nomor lead, cabang, atau status"
+                  placeholder="Cari lead, aktivitas, atau PIC"
                   className="h-9 w-full rounded-lg border border-input bg-background pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/40"
                 />
               </div>
-              <Button variant="outline" size="sm" className="hidden sm:inline-flex">
-                <Download className="h-4 w-4 mr-1.5" /> Export Demo
+              <Button variant="outline" size="sm" className="hidden md:inline-flex" onClick={() => onChange("pipeline")}>
+                <ListChecks className="h-4 w-4 mr-1.5" /> Lihat Pipeline
               </Button>
               <Button
                 size="sm"
-                onClick={onAddLead}
-                className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-sm"
+                onClick={onAddActivity}
+                className="bg-[hsl(var(--gold))] text-navy hover:bg-[hsl(var(--gold))]/90 shadow-sm font-semibold"
               >
-                <Plus className="h-4 w-4 mr-1.5" /> Tambah Lead Dummy
+                <Plus className="h-4 w-4 mr-1.5" /> Tambah Aktivitas Dummy
               </Button>
-              <StatusBadge tone="orange" className="hidden md:inline-flex">Data Dummy</StatusBadge>
+              <StatusBadge tone="gold" className="hidden md:inline-flex">Data Dummy</StatusBadge>
             </div>
           </div>
           {/* Mobile title */}
@@ -139,10 +137,11 @@ export function AppShell({ current, onChange, onAddLead, search, onSearch, child
         <footer className="border-t border-border bg-card mt-8">
           <div className="px-4 sm:px-6 py-5 text-xs text-muted-foreground flex flex-col md:flex-row gap-2 md:items-center md:justify-between">
             <div>
-              <span className="font-semibold text-navy">BTN CRM Modernization Demo</span> · Prepared as visual concept by VIBOXS
+              <span className="font-semibold text-navy">A.C.T Sales CRM Demo</span> · Sales Performance Dashboard & CRM Concept
+              <div className="mt-0.5">Prepared for conceptual demonstration by <span className="font-semibold text-navy">Primera Karya Sinergia</span></div>
             </div>
             <div className="md:text-right">
-              Demo visual internal — menggunakan data dummy. Tidak terhubung ke sistem produksi.
+              Demo visual konsep — data dummy — bukan sistem produksi.
             </div>
           </div>
         </footer>

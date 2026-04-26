@@ -1,88 +1,146 @@
-// Dummy data untuk BTN CRM Modernization Demo
-export type LeadStatus = "Baru" | "Terhubungi" | "Follow-up" | "Konsultasi" | "Pengajuan" | "Lost" | "Eskalasi";
-export type Channel = "balé Properti" | "Cabang" | "Call Center" | "Developer" | "Campaign" | "Digital";
-export type SLAState = "Aman" | "Risiko" | "Lewat";
+// Dummy data — A.C.T Sales CRM Demo
+// All data is fictional, prepared for conceptual demonstration only.
+
+export type Temperature = "Hot" | "Warm" | "Cold";
+export type PipelineStage = "Contact" | "Meet" | "Prospect" | "Close";
+export type ResolutionStatus = "Close" | "In Progress" | "Follow Up" | "Not Eligible";
+export type FollowUpStage = "FU1" | "FU2" | "FU3";
 
 export interface Lead {
   id: string;
   nama: string;
-  channel: Channel;
-  produk: string;
-  cabang: string;
+  stage: PipelineStage;
+  temperature: Temperature;
   pic: string;
-  status: LeadStatus;
-  sla: SLAState;
-  followUp: string;
-  kota: string;
+  source: string;
+  produk: string;
+  lastActivity: string;
+  nextFollowUp: string;
+  fuStage: FollowUpStage;
+  status: ResolutionStatus;
+  ringkasan: string;
 }
 
 export const initialLeads: Lead[] = [
-  { id: "LD-2026-001", nama: "Andi Pratama", channel: "balé Properti", produk: "KPR Rumah Pertama", cabang: "KC Bekasi", pic: "Rina A.", status: "Follow-up", sla: "Aman", followUp: "Hari ini", kota: "Bekasi" },
-  { id: "LD-2026-002", nama: "Siti Rahma", channel: "Developer", produk: "KPR Subsidi", cabang: "KC Bandung", pic: "Dimas R.", status: "Terhubungi", sla: "Aman", followUp: "Kemarin", kota: "Bandung" },
-  { id: "LD-2026-003", nama: "Budi Santoso", channel: "Campaign", produk: "Take Over KPR", cabang: "KC Tangerang", pic: "Maya P.", status: "Baru", sla: "Risiko", followUp: "2 hari lalu", kota: "Tangerang" },
-  { id: "LD-2026-004", nama: "Nur Aisyah", channel: "Call Center", produk: "KPR Platinum", cabang: "KC Jakarta", pic: "Fajar H.", status: "Konsultasi", sla: "Aman", followUp: "Hari ini", kota: "Jakarta" },
-  { id: "LD-2026-005", nama: "Rizky Akbar", channel: "Cabang", produk: "Kredit Agunan Rumah", cabang: "KC Surabaya", pic: "Lala N.", status: "Pengajuan", sla: "Aman", followUp: "3 jam lalu", kota: "Surabaya" },
-  { id: "LD-2026-006", nama: "Dewi Lestari", channel: "balé Properti", produk: "KPR Rumah Pertama", cabang: "KC Jakarta", pic: "Fajar H.", status: "Follow-up", sla: "Aman", followUp: "Hari ini", kota: "Jakarta" },
-  { id: "LD-2026-007", nama: "Hendra Wijaya", channel: "Developer", produk: "KPR Subsidi", cabang: "KC Bandung", pic: "Dimas R.", status: "Baru", sla: "Risiko", followUp: "1 hari lalu", kota: "Bandung" },
+  { id: "LD-001", nama: "Andi Pratama", stage: "Contact", temperature: "Warm", pic: "Rina A.", source: "Referral cabang", produk: "KPR Rumah Pertama", lastActivity: "WA awal", nextFollowUp: "Besok", fuStage: "FU1", status: "In Progress", ringkasan: "Tertarik simulasi cicilan KPR, perlu klarifikasi DP." },
+  { id: "LD-002", nama: "Siti Rahma", stage: "Meet", temperature: "Hot", pic: "Dimas R.", source: "Walk-in cabang", produk: "KPR Subsidi", lastActivity: "Meeting selesai", nextFollowUp: "Hari ini", fuStage: "FU1", status: "Follow Up", ringkasan: "Sudah meeting, siap submit dokumen — butuh checklist final." },
+  { id: "LD-003", nama: "Budi Santoso", stage: "Prospect", temperature: "Hot", pic: "Maya P.", source: "Campaign digital", produk: "Take Over KPR", lastActivity: "Presentasi produk", nextFollowUp: "Besok", fuStage: "FU2", status: "In Progress", ringkasan: "Bandingkan rate take over; minta perhitungan tertulis." },
+  { id: "LD-004", nama: "Nur Aisyah", stage: "Prospect", temperature: "Warm", pic: "Fajar H.", source: "Call center", produk: "KPR Platinum", lastActivity: "Objection handling", nextFollowUp: "2 hari lagi", fuStage: "FU2", status: "Follow Up", ringkasan: "Ragu pada biaya provisi; perlu simulasi lengkap." },
+  { id: "LD-005", nama: "Rizky Akbar", stage: "Close", temperature: "Hot", pic: "Lala N.", source: "Referral RM", produk: "Kredit Agunan Rumah", lastActivity: "Closing selesai", nextFollowUp: "-", fuStage: "FU3", status: "Close", ringkasan: "Closing tuntas, masuk pencatatan transaksi." },
+  { id: "LD-006", nama: "Dini Wulandari", stage: "Contact", temperature: "Cold", pic: "Bagas S.", source: "Event partner", produk: "Tabungan + KPR", lastActivity: "Belum respon", nextFollowUp: "Minggu depan", fuStage: "FU3", status: "Not Eligible", ringkasan: "Belum ada urgensi; pertahankan nurture jangka panjang." },
+  { id: "LD-007", nama: "Hendra Wijaya", stage: "Meet", temperature: "Warm", pic: "Dimas R.", source: "Walk-in cabang", produk: "KPR Subsidi", lastActivity: "Diskusi awal", nextFollowUp: "Besok", fuStage: "FU1", status: "In Progress", ringkasan: "Pertimbangan lokasi properti & angsuran." },
+  { id: "LD-008", nama: "Dewi Lestari", stage: "Prospect", temperature: "Hot", pic: "Rina A.", source: "Referral nasabah", produk: "KPR Platinum", lastActivity: "Kirim simulasi", nextFollowUp: "Hari ini", fuStage: "FU2", status: "Follow Up", ringkasan: "Sudah bandingkan 2 produk; tinggal keputusan akhir." },
 ];
 
-export const pipelineStages = [
-  { name: "Lead Masuk", count: 1248, tone: "blue" as const },
-  { name: "Terhubungi", count: 820, tone: "blue" as const },
-  { name: "Konsultasi KPR", count: 510, tone: "orange" as const },
-  { name: "Pengumpulan Dokumen", count: 280, tone: "orange" as const },
-  { name: "Pengajuan Diproses", count: 174, tone: "green" as const },
-  { name: "Akad / Closing", count: 86, tone: "green" as const },
+// Pipeline counts (visual demo)
+export const pipelineSummary: { stage: PipelineStage; count: number; caption: string }[] = [
+  { stage: "Contact", count: 52, caption: "Interaksi awal" },
+  { stage: "Meet", count: 31, caption: "Sudah bertemu" },
+  { stage: "Prospect", count: 24, caption: "Penawaran aktif" },
+  { stage: "Close", count: 9, caption: "Transaksi selesai" },
 ];
 
-export const aktivitas = [
-  { judul: "RM Cabang Bekasi menghubungi lead KPR dari balé Properti", waktu: "10 menit lalu", channel: "Cabang" as Channel, status: "Selesai" },
-  { judul: "Nasabah prioritas meminta simulasi take over KPR", waktu: "35 menit lalu", channel: "Call Center" as Channel, status: "Menunggu" },
-  { judul: "Case komplain dokumen belum lengkap dieskalasi ke supervisor", waktu: "1 jam lalu", channel: "Cabang" as Channel, status: "Eskalasi" },
-  { judul: "Lead developer partner dialihkan ke Cabang Bandung", waktu: "2 jam lalu", channel: "Developer" as Channel, status: "Selesai" },
-  { judul: "Reminder follow-up dikirim ke officer Cabang Tangerang", waktu: "3 jam lalu", channel: "Digital" as Channel, status: "Menunggu" },
+// Activity Effectiveness (donut values 0-100)
+export const activityEffectiveness = [
+  { name: "Prospecting", value: 78, target: 80 },
+  { name: "Follow-Up", value: 72, target: 75 },
+  { name: "Appointment", value: 65, target: 70 },
 ];
 
-export const alerts = [
-  { judul: "12 lead belum dihubungi lebih dari 24 jam", level: "warning" as const },
-  { judul: "7 case mendekati batas SLA", level: "warning" as const },
-  { judul: "3 cabang memiliki backlog follow-up tinggi", level: "danger" as const },
-  { judul: "2 campaign menghasilkan lead tinggi namun konversi rendah", level: "info" as const },
+// MTD KPI
+export const mtdKpi = {
+  target: 50,
+  actual: 36,
+  gap: -14,
+  topPerformer: "Rina A.",
+  needRemedial: "KC Tangerang",
+  coachingFocus: "Follow-up consistency",
+};
+
+// Early warning
+export const earlyWarnings = [
+  "Low activity terdeteksi pada 2 PIC dalam 3 hari terakhir",
+  "Follow-up backlog meningkat di area Tangerang",
+  "Warm leads stagnan selama 5 hari di tahap Prospect",
+  "Need coaching pada closing stage untuk PIC junior",
 ];
 
-export const cases = [
-  { id: "CS-001", nasabah: "Andi Pratama", jenis: "Dokumen KPR belum lengkap", channel: "Cabang", pic: "Rina A.", prioritas: "Medium" as const, status: "Diproses", sla: "12 jam" },
-  { id: "CS-002", nasabah: "Siti Rahma", jenis: "Permintaan simulasi ulang", channel: "Call Center", pic: "Dimas R.", prioritas: "Low" as const, status: "Menunggu Nasabah", sla: "1 hari" },
-  { id: "CS-003", nasabah: "Budi Santoso", jenis: "Follow-up belum dilakukan", channel: "Digital", pic: "Maya P.", prioritas: "High" as const, status: "Eskalasi", sla: "3 jam" },
-  { id: "CS-004", nasabah: "Nur Aisyah", jenis: "Update status pengajuan", channel: "Cabang", pic: "Fajar H.", prioritas: "Medium" as const, status: "Diproses", sla: "8 jam" },
+// Overview alerts
+export const priorityAlerts = [
+  "8 lead belum ditindaklanjuti hari ini",
+  "5 prospect berada di tahap FU2",
+  "3 hot lead memerlukan aksi cepat",
+  "2 PIC memiliki gap aktivitas terhadap target harian",
 ];
 
-export const cabang = [
-  { nama: "KC Bekasi", lead: 82, followUp: 14, caseOpen: 6, sla: 94, backlog: 5, status: "Sehat" as const },
-  { nama: "KC Bandung", lead: 64, followUp: 11, caseOpen: 4, sla: 91, backlog: 7, status: "Perlu Pantau" as const },
-  { nama: "KC Tangerang", lead: 71, followUp: 9, caseOpen: 8, sla: 84, backlog: 14, status: "Risiko" as const },
-  { nama: "KC Jakarta", lead: 93, followUp: 18, caseOpen: 5, sla: 96, backlog: 3, status: "Sehat" as const },
-  { nama: "KC Surabaya", lead: 58, followUp: 10, caseOpen: 3, sla: 90, backlog: 6, status: "Sehat" as const },
+// Activity Daily — per PIC
+export interface PicActivity {
+  pic: string;
+  prospecting: number;
+  followUp: number;
+  meeting: number;
+  closing: number;
+  disiplin: "Sangat Baik" | "Baik" | "Perlu Dorongan";
+}
+
+export const picActivities: PicActivity[] = [
+  { pic: "Rina A.", prospecting: 4, followUp: 5, meeting: 2, closing: 1, disiplin: "Baik" },
+  { pic: "Dimas R.", prospecting: 3, followUp: 4, meeting: 1, closing: 0, disiplin: "Baik" },
+  { pic: "Maya P.", prospecting: 2, followUp: 6, meeting: 2, closing: 1, disiplin: "Sangat Baik" },
+  { pic: "Fajar H.", prospecting: 1, followUp: 2, meeting: 1, closing: 0, disiplin: "Perlu Dorongan" },
+  { pic: "Lala N.", prospecting: 3, followUp: 3, meeting: 2, closing: 1, disiplin: "Baik" },
 ];
 
-export const campaigns = [
-  { nama: "KPR Rumah Pertama 2026", channel: "Digital", lead: 420, qualified: 210, konversi: 23, status: "Aktif", insight: "Lead tinggi, perlu follow-up cabang" },
-  { nama: "Take Over KPR", channel: "Email/WA", lead: 180, qualified: 92, konversi: 18, status: "Aktif", insight: "Segmentasi perlu diperbaiki" },
-  { nama: "Developer Partner Expo", channel: "Event", lead: 260, qualified: 160, konversi: 31, status: "Sukses", insight: "Channel paling sehat minggu ini" },
-];
+// Daily rhythm checklist
+export const dailyRhythm = {
+  sales: [
+    "Hadir morning briefing (07.30 – 08.30)",
+    "Minimal 2 kunjungan / kontak baru",
+    "Follow-up rutin sesuai jadwal",
+    "Update pipeline maksimal jam 17.00",
+  ],
+  head: [
+    "Memimpin morning briefing",
+    "Coaching harian via WA / telepon",
+    "Monitoring aktivitas tim",
+    "Review input & gap performa (max 18.00)",
+  ],
+};
 
-export const auditTrail = [
-  { waktu: "09:10", aksi: "Lead dibuat dari channel balé Properti" },
-  { waktu: "09:25", aksi: "Assigned ke KC Bekasi" },
-  { waktu: "10:15", aksi: "Officer menambahkan catatan follow-up" },
-  { waktu: "13:30", aksi: "Reminder dibuat otomatis" },
-  { waktu: "15:00", aksi: "Supervisor melihat status SLA" },
-];
-
+// Customer 360 — Andi Pratama (kept profile photo from previous demo)
 export const customerInteraksi = [
-  { tanggal: "20 Apr 2026", aksi: "Mengisi form minat KPR di balé Properti" },
-  { tanggal: "21 Apr 2026", aksi: "Dihubungi call center untuk verifikasi awal" },
-  { tanggal: "22 Apr 2026", aksi: "Konsultasi simulasi KPR dengan officer cabang" },
+  { tanggal: "20 Apr 2026", aksi: "Mengisi form minat KPR via referral cabang" },
+  { tanggal: "21 Apr 2026", aksi: "Dihubungi PIC Rina A. untuk verifikasi awal" },
+  { tanggal: "22 Apr 2026", aksi: "Konsultasi simulasi KPR di kantor cabang" },
   { tanggal: "23 Apr 2026", aksi: "Dokumen awal diminta oleh PIC cabang" },
-  { tanggal: "24 Apr 2026", aksi: "Reminder follow-up otomatis dikirim" },
+  { tanggal: "24 Apr 2026", aksi: "Reminder follow-up otomatis (FU1) dikirim" },
+];
+
+// Weekly & Monthly rhythm
+export const weeklyRhythm = [
+  "Weekly meeting tim sales",
+  "Pipeline calibration mingguan",
+  "1-on-1 coaching per PIC",
+  "Laporan mingguan (Kamis 16.00)",
+];
+
+export const monthlyRhythm = [
+  "Action plan bulan depan",
+  "Sales performance review",
+  "Evaluasi gap target",
+  "Rencana remedial & coaching",
+];
+
+export const resultArea = [
+  { name: "Revenue", value: "Rp 14,0 M", caption: "MTD vs target Rp 50,0 M" },
+  { name: "Engagement", value: "82%", caption: "Aktivitas vs ekspektasi" },
+  { name: "Sales Growth", value: "+9%", caption: "vs periode sebelumnya" },
+  { name: "Leadership", value: "Stabil", caption: "Coaching cadence terpenuhi" },
+];
+
+export const followUpDue = [
+  { nama: "Andi Pratama", stage: "Contact" as PipelineStage, pic: "Rina A.", fu: "FU1" as FollowUpStage, jadwal: "Besok", catatan: "Perlu follow-up" },
+  { nama: "Siti Rahma", stage: "Meet" as PipelineStage, pic: "Dimas R.", fu: "FU1" as FollowUpStage, jadwal: "Hari ini", catatan: "Prioritas tinggi" },
+  { nama: "Budi Santoso", stage: "Prospect" as PipelineStage, pic: "Maya P.", fu: "FU2" as FollowUpStage, jadwal: "Besok", catatan: "Objection handling" },
+  { nama: "Dini Wulandari", stage: "Contact" as PipelineStage, pic: "Bagas S.", fu: "FU3" as FollowUpStage, jadwal: "Minggu depan", catatan: "Evaluasi ulang" },
 ];

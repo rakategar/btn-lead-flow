@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-type Tone = "blue" | "orange" | "green" | "red" | "gray" | "purple" | "navy";
+type Tone = "blue" | "orange" | "green" | "red" | "gray" | "purple" | "navy" | "gold";
 
 const tones: Record<Tone, string> = {
   blue: "bg-primary-light text-primary",
@@ -10,6 +10,7 @@ const tones: Record<Tone, string> = {
   gray: "bg-muted text-muted-foreground",
   purple: "bg-[hsl(var(--purple-soft))] text-[hsl(var(--purple-soft-foreground))]",
   navy: "bg-navy/10 text-navy",
+  gold: "bg-gold-light text-[hsl(var(--gold))]",
 };
 
 interface Props {
@@ -30,25 +31,32 @@ export function StatusBadge({ tone = "blue", children, className, dot }: Props) 
 
 export function statusToTone(status: string): Tone {
   switch (status) {
-    case "Baru": return "blue";
-    case "Terhubungi": return "purple";
-    case "Follow-up": return "orange";
-    case "Konsultasi": return "purple";
-    case "Pengajuan": return "green";
-    case "Lost": return "gray";
-    case "Eskalasi": return "red";
-    case "Aman":
-    case "Sehat":
-    case "Selesai":
-    case "Sukses":
-    case "Aktif": return "green";
+    case "Hot":
+    case "High":
     case "Risiko":
-    case "Lewat":
-    case "High": return "red";
+    case "Eskalasi":
+      return "red";
+    case "Warm":
+    case "Medium":
+    case "Follow Up":
     case "Perlu Pantau":
-    case "Menunggu":
-    case "Medium": return "orange";
-    case "Low": return "blue";
-    default: return "gray";
+    case "Perlu Dorongan":
+      return "orange";
+    case "Cold":
+    case "Low":
+      return "blue";
+    case "Close":
+    case "Aman":
+    case "Sukses":
+    case "Sangat Baik":
+    case "Sehat":
+      return "green";
+    case "In Progress":
+    case "Baik":
+      return "blue";
+    case "Not Eligible":
+      return "gray";
+    default:
+      return "gray";
   }
 }
