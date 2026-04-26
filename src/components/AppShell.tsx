@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LayoutDashboard, Activity, GitBranch, CheckSquare, Bell, BarChart3, Search, Plus, Menu, ListChecks, ShieldCheck } from "lucide-react";
+import { LayoutGrid, Gauge, Workflow, ClipboardCheck, BellRing, LineChart, Search, Plus, Menu, ListChecks, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -7,13 +7,13 @@ import { ActLogo } from "@/components/ActLogo";
 
 export type PageKey = "overview" | "command" | "pipeline" | "activity" | "followup" | "kpi";
 
-const menu: { key: PageKey; label: string; icon: React.ComponentType<{ className?: string }>; group: string }[] = [
-  { key: "overview", label: "Overview", icon: LayoutDashboard, group: "Ringkasan" },
-  { key: "command", label: "A.C.T Command Center", icon: Activity, group: "Ringkasan" },
-  { key: "pipeline", label: "Pipeline & Leads", icon: GitBranch, group: "Operasional" },
-  { key: "activity", label: "Activity Daily", icon: CheckSquare, group: "Operasional" },
-  { key: "followup", label: "Follow-Up & Status", icon: Bell, group: "Operasional" },
-  { key: "kpi", label: "KPI & Review", icon: BarChart3, group: "Manajemen" },
+const menu: { key: PageKey; label: string; icon: React.ComponentType<any>; group: string }[] = [
+  { key: "overview", label: "Overview", icon: LayoutGrid, group: "Ringkasan" },
+  { key: "command", label: "A.C.T Command Center", icon: Gauge, group: "Ringkasan" },
+  { key: "pipeline", label: "Pipeline & Leads", icon: Workflow, group: "Operasional" },
+  { key: "activity", label: "Activity Daily", icon: ClipboardCheck, group: "Operasional" },
+  { key: "followup", label: "Follow-Up & Status", icon: BellRing, group: "Operasional" },
+  { key: "kpi", label: "KPI & Review", icon: LineChart, group: "Manajemen" },
 ];
 
 interface Props {
@@ -43,8 +43,8 @@ export function AppShell({ current, onChange, onAddActivity, search, onSearch, c
         <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-4">
           <ActLogo size="md" />
           <div className="flex flex-col leading-tight">
-            <span className="text-sm font-bold text-navy">A.C.T Sales CRM</span>
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Primera Karya Sinergia</span>
+            <span className="font-display text-sm font-bold text-navy tracking-tight">A.C.T Sales CRM</span>
+            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Primera Karya Sinergia</span>
           </div>
         </div>
         <nav className="flex flex-col gap-5 px-3 py-5">
@@ -66,7 +66,7 @@ export function AppShell({ current, onChange, onAddActivity, search, onSearch, c
                           : "text-sidebar-foreground hover:bg-muted"
                       )}
                     >
-                      <Icon className={cn("h-4 w-4", active ? "text-primary" : "text-muted-foreground")} />
+                      <Icon className={cn("h-[18px] w-[18px]", active ? "text-primary" : "text-muted-foreground")} strokeWidth={1.75} />
                       <span className="flex-1">{m.label}</span>
                       {active && <span className="h-1.5 w-1.5 rounded-full bg-gold" />}
                     </button>
@@ -99,7 +99,7 @@ export function AppShell({ current, onChange, onAddActivity, search, onSearch, c
               <Menu className="h-5 w-5" />
             </button>
             <div className="hidden md:flex flex-col">
-              <h1 className="text-base font-bold text-navy leading-tight">{pageTitle}</h1>
+              <h1 className="font-display text-base font-bold text-navy leading-tight tracking-tight">{pageTitle}</h1>
               <p className="text-xs text-muted-foreground leading-tight">{pageSubtitle}</p>
             </div>
             <div className="ml-auto flex items-center gap-2 sm:gap-3 w-full md:w-auto justify-end">
@@ -127,7 +127,7 @@ export function AppShell({ current, onChange, onAddActivity, search, onSearch, c
           </div>
           {/* Mobile title */}
           <div className="md:hidden px-4 pb-3">
-            <h1 className="text-base font-bold text-navy leading-tight">{pageTitle}</h1>
+            <h1 className="font-display text-base font-bold text-navy leading-tight tracking-tight">{pageTitle}</h1>
             <p className="text-xs text-muted-foreground leading-tight">{pageSubtitle}</p>
           </div>
         </header>
