@@ -43,8 +43,8 @@ export function AppShell({ current, onChange, onAddActivity, search, onSearch, c
         <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-4">
           <ActLogo size="md" />
           <div className="flex flex-col leading-tight">
-            <span className="text-sm font-bold text-navy">A.C.T Sales CRM</span>
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Primera Karya Sinergia</span>
+            <span className="font-display text-sm font-bold text-navy tracking-tight">A.C.T Sales CRM</span>
+            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Primera Karya Sinergia</span>
           </div>
         </div>
         <nav className="flex flex-col gap-5 px-3 py-5">
