@@ -7,7 +7,7 @@ import { ActLogo } from "@/components/ActLogo";
 
 export type PageKey = "overview" | "command" | "pipeline" | "activity" | "followup" | "kpi";
 
-const menu: { key: PageKey; label: string; icon: React.ComponentType<{ className?: string }>; group: string }[] = [
+const menu: { key: PageKey; label: string; icon: React.ComponentType<any>; group: string }[] = [
   { key: "overview", label: "Overview", icon: LayoutGrid, group: "Ringkasan" },
   { key: "command", label: "A.C.T Command Center", icon: Gauge, group: "Ringkasan" },
   { key: "pipeline", label: "Pipeline & Leads", icon: Workflow, group: "Operasional" },
