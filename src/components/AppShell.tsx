@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LayoutDashboard, Activity, GitBranch, CheckSquare, Bell, BarChart3, Search, Plus, Menu, ListChecks, ShieldCheck } from "lucide-react";
+import { LayoutGrid, Gauge, Workflow, ClipboardCheck, BellRing, LineChart, Search, Plus, Menu, ListChecks, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -7,13 +7,13 @@ import { ActLogo } from "@/components/ActLogo";
 
 export type PageKey = "overview" | "command" | "pipeline" | "activity" | "followup" | "kpi";
 
-const menu: { key: PageKey; label: string; icon: React.ComponentType<{ className?: string }>; group: string }[] = [
-  { key: "overview", label: "Overview", icon: LayoutDashboard, group: "Ringkasan" },
-  { key: "command", label: "A.C.T Command Center", icon: Activity, group: "Ringkasan" },
-  { key: "pipeline", label: "Pipeline & Leads", icon: GitBranch, group: "Operasional" },
-  { key: "activity", label: "Activity Daily", icon: CheckSquare, group: "Operasional" },
-  { key: "followup", label: "Follow-Up & Status", icon: Bell, group: "Operasional" },
-  { key: "kpi", label: "KPI & Review", icon: BarChart3, group: "Manajemen" },
+const menu: { key: PageKey; label: string; icon: React.ComponentType<{ className?: string; strokeWidth?: number }>; group: string }[] = [
+  { key: "overview", label: "Overview", icon: LayoutGrid, group: "Ringkasan" },
+  { key: "command", label: "A.C.T Command Center", icon: Gauge, group: "Ringkasan" },
+  { key: "pipeline", label: "Pipeline & Leads", icon: Workflow, group: "Operasional" },
+  { key: "activity", label: "Activity Daily", icon: ClipboardCheck, group: "Operasional" },
+  { key: "followup", label: "Follow-Up & Status", icon: BellRing, group: "Operasional" },
+  { key: "kpi", label: "KPI & Review", icon: LineChart, group: "Manajemen" },
 ];
 
 interface Props {
