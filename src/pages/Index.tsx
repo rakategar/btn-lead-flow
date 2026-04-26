@@ -1,69 +1,66 @@
 import { useMemo, useState } from "react";
 import { AppShell, type PageKey } from "@/components/AppShell";
 import { OverviewPage } from "@/components/pages/OverviewPage";
-import { LeadPage } from "@/components/pages/LeadPage";
-import { CustomerPage } from "@/components/pages/CustomerPage";
-import { CasePage } from "@/components/pages/CasePage";
-import { CabangPage } from "@/components/pages/CabangPage";
-import { CampaignPage } from "@/components/pages/CampaignPage";
-import { LaporanPage } from "@/components/pages/LaporanPage";
-import { IntegrasiPage } from "@/components/pages/IntegrasiPage";
-import { initialLeads, type Lead, type Channel } from "@/lib/dummy-data";
+import { CommandCenterPage } from "@/components/pages/CommandCenterPage";
+import { PipelinePage } from "@/components/pages/PipelinePage";
+import { ActivityDailyPage } from "@/components/pages/ActivityDailyPage";
+import { FollowUpPage } from "@/components/pages/FollowUpPage";
+import { KpiReviewPage } from "@/components/pages/KpiReviewPage";
+import { initialLeads, type Lead } from "@/lib/dummy-data";
 import { toast } from "sonner";
 
 const pageMeta: Record<PageKey, { title: string; subtitle: string }> = {
-  overview: { title: "BTN CRM Modernization Demo", subtitle: "Ringkasan hubungan nasabah, lead KPR, tindak lanjut cabang, dan SLA layanan." },
-  lead: { title: "Lead KPR", subtitle: "Pemantauan dan tindak lanjut prospek KPR lintas channel." },
-  customer: { title: "Customer 360", subtitle: "Ringkasan hubungan nasabah dalam satu tampilan." },
-  case: { title: "Case & SLA", subtitle: "Pengendalian SLA layanan, eskalasi, dan audit trail." },
-  cabang: { title: "Performa Cabang", subtitle: "Pemantauan operasional cabang dan backlog tindak lanjut." },
-  campaign: { title: "Campaign", subtitle: "Evaluasi efektivitas channel akuisisi." },
-  laporan: { title: "Laporan", subtitle: "Insight ringkas pipeline, channel, dan SLA." },
-  integrasi: { title: "Kesiapan Integrasi", subtitle: "Gambaran area integrasi secara non-teknis." },
+  overview: { title: "A.C.T Sales CRM Demo", subtitle: "Sales Performance Dashboard & CRM Concept — Primera Karya Sinergia." },
+  command: { title: "A.C.T Command Center", subtitle: "Visibilitas penuh: pipeline, efektivitas aktivitas, dan KPI MTD." },
+  pipeline: { title: "Pipeline & Leads", subtitle: "Manajemen lead berbasis temperatur dan tahap pipeline." },
+  activity: { title: "Activity Daily", subtitle: "Action Daily — ritme harian sales team dan head of sales." },
+  followup: { title: "Follow-Up & Status", subtitle: "Skema eskalasi FU1 → FU3 dan status resolusi pipeline." },
+  kpi: { title: "KPI & Review", subtitle: "Weekly & monthly rhythm, alignment, dan result area." },
 };
 
 const dummyNames = ["Putri Maharani", "Eko Saputra", "Lina Marlina", "Hadi Kurniawan", "Citra Dewi", "Bagas Pradana"];
-const channels: Channel[] = ["balé Properti", "Cabang", "Call Center", "Developer", "Campaign"];
-const branches = ["KC Jakarta", "KC Bekasi", "KC Bandung", "KC Tangerang", "KC Surabaya"];
 const products = ["KPR Rumah Pertama", "KPR Subsidi", "Take Over KPR", "KPR Platinum"];
+const pics = ["Rina A.", "Dimas R.", "Maya P.", "Fajar H.", "Lala N."];
 
 const Index = () => {
   const [page, setPage] = useState<PageKey>("overview");
   const [leads, setLeads] = useState<Lead[]>(initialLeads);
   const [search, setSearch] = useState("");
 
-  const handleAddLead = () => {
+  const handleAddActivity = () => {
     const seq = leads.length + 1;
-    const id = `LD-2026-${seq.toString().padStart(3, "0")}`;
+    const id = `LD-${seq.toString().padStart(3, "0")}`;
     const newLead: Lead = {
       id,
       nama: dummyNames[seq % dummyNames.length],
-      channel: channels[seq % channels.length],
+      stage: "Contact",
+      temperature: "Warm",
+      pic: pics[seq % pics.length],
+      source: "Aktivitas dummy",
       produk: products[seq % products.length],
-      cabang: branches[seq % branches.length],
-      pic: "Officer Demo",
-      status: "Baru",
-      sla: "Aman",
-      followUp: "Baru saja",
-      kota: branches[seq % branches.length].replace("KC ", ""),
+      lastActivity: "Aktivitas baru ditambahkan",
+      nextFollowUp: "Besok",
+      fuStage: "FU1",
+      status: "In Progress",
+      ringkasan: "Aktivitas dummy dibuat dari header. Lead masuk tahap Contact.",
     };
     setLeads((prev) => [newLead, ...prev]);
-    toast.success("Lead dummy ditambahkan", { description: `${newLead.nama} · ${newLead.channel}` });
-    if (page !== "lead") setPage("lead");
+    toast.success("Aktivitas dummy ditambahkan", {
+      description: `${newLead.nama} · ${newLead.produk} · PIC ${newLead.pic}`,
+    });
+    if (page === "overview") setPage("pipeline");
   };
 
   const meta = pageMeta[page];
 
   const content = useMemo(() => {
     switch (page) {
-      case "overview": return <OverviewPage />;
-      case "lead": return <LeadPage leads={leads} setLeads={setLeads} onAddLead={handleAddLead} globalSearch={search} />;
-      case "customer": return <CustomerPage />;
-      case "case": return <CasePage />;
-      case "cabang": return <CabangPage />;
-      case "campaign": return <CampaignPage />;
-      case "laporan": return <LaporanPage />;
-      case "integrasi": return <IntegrasiPage />;
+      case "overview": return <OverviewPage onNavigate={setPage} />;
+      case "command": return <CommandCenterPage leads={leads} />;
+      case "pipeline": return <PipelinePage leads={leads} setLeads={setLeads} globalSearch={search} />;
+      case "activity": return <ActivityDailyPage />;
+      case "followup": return <FollowUpPage />;
+      case "kpi": return <KpiReviewPage />;
     }
   }, [page, leads, search]);
 
@@ -71,7 +68,7 @@ const Index = () => {
     <AppShell
       current={page}
       onChange={setPage}
-      onAddLead={handleAddLead}
+      onAddActivity={handleAddActivity}
       search={search}
       onSearch={setSearch}
       pageTitle={meta.title}
