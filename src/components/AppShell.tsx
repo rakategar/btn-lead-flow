@@ -66,7 +66,7 @@ export function AppShell({ current, onChange, onAddActivity, search, onSearch, c
                           : "text-sidebar-foreground hover:bg-muted"
                       )}
                     >
-                      <Icon className={cn("h-4 w-4", active ? "text-primary" : "text-muted-foreground")} />
+                      <Icon className={cn("h-[18px] w-[18px]", active ? "text-primary" : "text-muted-foreground")} strokeWidth={1.75} />
                       <span className="flex-1">{m.label}</span>
                       {active && <span className="h-1.5 w-1.5 rounded-full bg-gold" />}
                     </button>
