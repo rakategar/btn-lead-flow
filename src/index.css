@@ -33,6 +33,12 @@
     --accent-foreground: 0 0% 100%;
     --accent-light: 27 95% 95%;
 
+    /* Accent Gold #D4A017 — A.C.T brand */
+    --gold: 42 86% 46%;
+    --gold-foreground: 0 0% 100%;
+    --gold-light: 45 90% 94%;
+    --gold-soft: 45 85% 88%;
+
     --secondary: 210 25% 95%;
     --secondary-foreground: 220 18% 16%;
 
