@@ -2,42 +2,42 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
-/* BTN CRM Modernization Demo — Design System
-   Corporate banking palette. All colors HSL.
+/* A.C.T Sales CRM — BTN Brand Design System
+   Bank BTN palette: vivid blue + red accent. All colors HSL.
 */
 
 @layer base {
   :root {
-    --background: 210 25% 97%;          /* #F5F7FA */
-    --foreground: 220 18% 16%;          /* #1F2937 */
+    --background: 210 33% 98%;          /* #F6F8FB */
+    --foreground: 222 47% 11%;          /* near #0B1220 */
 
     --card: 0 0% 100%;
-    --card-foreground: 220 18% 16%;
+    --card-foreground: 222 47% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 18% 16%;
+    --popover-foreground: 222 47% 11%;
 
-    /* BTN Primary Blue #005BAA */
-    --primary: 207 100% 33%;
+    /* BTN Primary Blue #1B40D6 (vivid blue from logo) */
+    --primary: 229 78% 47%;
     --primary-foreground: 0 0% 100%;
-    --primary-light: 207 90% 95%;
+    --primary-light: 229 90% 96%;
 
-    /* Deep navy #0B2545 */
-    --navy: 213 73% 16%;
+    /* BTN Deep Navy #0A1F6B */
+    --navy: 230 82% 23%;
     --navy-foreground: 0 0% 100%;
 
-    /* Accent Orange #F58220 */
-    --accent: 27 91% 54%;
+    /* BTN Red Accent #EE1C25 (red stripe from logo) */
+    --accent: 357 86% 52%;
     --accent-foreground: 0 0% 100%;
-    --accent-light: 27 95% 95%;
+    --accent-light: 357 90% 96%;
 
-    /* Accent Gold #D4A017 — A.C.T brand */
-    --gold: 42 86% 46%;
+    /* Brand accent alias — remapped to BTN red so existing classes still match brand */
+    --gold: 357 86% 52%;
     --gold-foreground: 0 0% 100%;
-    --gold-light: 45 90% 94%;
-    --gold-soft: 45 85% 88%;
+    --gold-light: 357 90% 96%;
+    --gold-soft: 357 85% 92%;
 
     --secondary: 210 25% 95%;
     --secondary-foreground: 220 18% 16%;
