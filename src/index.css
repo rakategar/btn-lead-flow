@@ -67,23 +67,23 @@
     --destructive: 0 73% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 91%;              /* #E5E7EB */
-    --input: 220 13% 91%;
-    --ring: 207 100% 33%;
+    --border: 220 16% 90%;
+    --input: 220 16% 90%;
+    --ring: 229 78% 47%;
 
     --radius: 0.625rem;
 
-    --shadow-soft: 0 1px 3px 0 hsl(220 18% 16% / 0.04), 0 1px 2px 0 hsl(220 18% 16% / 0.03);
-    --shadow-card: 0 1px 2px 0 hsl(220 18% 16% / 0.04), 0 4px 12px -4px hsl(220 18% 16% / 0.06);
+    --shadow-soft: 0 1px 2px 0 hsl(230 40% 12% / 0.04), 0 1px 1px 0 hsl(230 40% 12% / 0.03);
+    --shadow-card: 0 1px 2px 0 hsl(230 40% 12% / 0.04), 0 6px 18px -8px hsl(230 60% 20% / 0.08);
 
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 220 18% 16%;
-    --sidebar-primary: 207 100% 33%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 229 78% 47%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 207 90% 96%;
-    --sidebar-accent-foreground: 207 100% 33%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 207 100% 33%;
+    --sidebar-accent: 229 90% 96%;
+    --sidebar-accent-foreground: 229 78% 47%;
+    --sidebar-border: 220 16% 90%;
+    --sidebar-ring: 229 78% 47%;
   }
 
   .dark {
