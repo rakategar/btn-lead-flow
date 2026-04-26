@@ -127,7 +127,7 @@ export function AppShell({ current, onChange, onAddActivity, search, onSearch, c
           </div>
           {/* Mobile title */}
           <div className="md:hidden px-4 pb-3">
-            <h1 className="text-base font-bold text-navy leading-tight">{pageTitle}</h1>
+            <h1 className="font-display text-base font-bold text-navy leading-tight tracking-tight">{pageTitle}</h1>
             <p className="text-xs text-muted-foreground leading-tight">{pageSubtitle}</p>
           </div>
         </header>
