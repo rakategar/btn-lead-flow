@@ -99,7 +99,7 @@ export function AppShell({ current, onChange, onAddActivity, search, onSearch, c
               <Menu className="h-5 w-5" />
             </button>
             <div className="hidden md:flex flex-col">
-              <h1 className="text-base font-bold text-navy leading-tight">{pageTitle}</h1>
+              <h1 className="font-display text-base font-bold text-navy leading-tight tracking-tight">{pageTitle}</h1>
               <p className="text-xs text-muted-foreground leading-tight">{pageSubtitle}</p>
             </div>
             <div className="ml-auto flex items-center gap-2 sm:gap-3 w-full md:w-auto justify-end">
