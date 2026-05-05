@@ -52,7 +52,7 @@ const IndexInner = () => {
       id,
       nama: dummyNames[seq % dummyNames.length],
       stage: "Contact",
-      temperature: "Warm",
+      priority: "Medium",
       pic: rm,
       leader,
       source: "Aktivitas dummy",

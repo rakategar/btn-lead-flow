@@ -31,18 +31,15 @@ export function StatusBadge({ tone = "blue", children, className, dot }: Props) 
 
 export function statusToTone(status: string): Tone {
   switch (status) {
-    case "Hot":
     case "High":
     case "Risiko":
     case "Eskalasi":
       return "red";
-    case "Warm":
     case "Medium":
     case "Follow Up":
     case "Perlu Pantau":
     case "Perlu Dorongan":
       return "orange";
-    case "Cold":
     case "Low":
       return "blue";
     case "Close":

@@ -1,14 +1,14 @@
 import { useState } from "react";
-import { Search, Plus, X, Flame, Snowflake, Thermometer, MessageSquare, Calendar, RefreshCw } from "lucide-react";
+import { Search, X, ChevronUp, Minus, ChevronDown, MessageSquare, Calendar, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge, statusToTone } from "@/components/StatusBadge";
 import { cn } from "@/lib/utils";
-import { type Lead, type Temperature, type ResolutionStatus } from "@/lib/dummy-data";
+import { type Lead, type Priority, type ResolutionStatus } from "@/lib/dummy-data";
 
 // Catatan terminologi:
-// - "Status" lead = tingkat ketertarikan/temperatur (Hot/Warm/Cold)
+// - "Status" lead = level prioritas profesional (High / Medium / Low)
 // - "Progress" lead = posisi penyelesaian (In Progress / Follow Up / Close / Not Eligible)
-const statusFilters: ("Semua" | Temperature)[] = ["Semua", "Hot", "Warm", "Cold"];
+const statusFilters: ("Semua" | Priority)[] = ["Semua", "High", "Medium", "Low"];
 const progressFilters: ("Semua" | ResolutionStatus)[] = ["Semua", "In Progress", "Follow Up", "Close", "Not Eligible"];
 
 interface Props {
@@ -25,7 +25,7 @@ export function PipelinePage({ leads, setLeads, globalSearch }: Props) {
 
   const search = (q || globalSearch).toLowerCase();
   const filtered = leads.filter((l) =>
-    (status === "Semua" || l.temperature === status) &&
+    (status === "Semua" || l.priority === status) &&
     (progress === "Semua" || l.status === progress) &&
     (search === "" || l.nama.toLowerCase().includes(search) || l.pic.toLowerCase().includes(search) || l.leader.toLowerCase().includes(search) || l.id.toLowerCase().includes(search))
   );
@@ -43,9 +43,9 @@ export function PipelinePage({ leads, setLeads, globalSearch }: Props) {
           <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mr-1">Status</span>
           {statusFilters.map((t) => (
             <Chip key={t} active={status === t} onClick={() => setStatus(t)}>
-              {t === "Hot" && <Flame className="h-3 w-3" />}
-              {t === "Warm" && <Thermometer className="h-3 w-3" />}
-              {t === "Cold" && <Snowflake className="h-3 w-3" />}
+              {t === "High" && <ChevronUp className="h-3 w-3" />}
+              {t === "Medium" && <Minus className="h-3 w-3" />}
+              {t === "Low" && <ChevronDown className="h-3 w-3" />}
               {t}
             </Chip>
           ))}
@@ -64,9 +64,9 @@ export function PipelinePage({ leads, setLeads, globalSearch }: Props) {
 
       {/* Status legend */}
       <div className="grid gap-3 md:grid-cols-3">
-        <LegendCard tone="red" title="Hot · 70%–90%" desc="Siap ditransaksikan — prioritas eksekusi cepat." />
-        <LegendCard tone="orange" title="Warm · 30%–60%" desc="Butuh nurturing dan follow-up berkala." />
-        <LegendCard tone="blue" title="Cold · 0%–20%" desc="Simpan dalam radar untuk nurture jangka panjang." />
+        <LegendCard tone="red" title="High · 70%–90%" desc="Prioritas eksekusi cepat — siap ditransaksikan." />
+        <LegendCard tone="orange" title="Medium · 30%–60%" desc="Butuh nurturing dan follow-up berkala." />
+        <LegendCard tone="blue" title="Low · 0%–20%" desc="Simpan dalam radar untuk nurture jangka panjang." />
       </div>
 
       {/* Table */}
@@ -103,7 +103,7 @@ export function PipelinePage({ leads, setLeads, globalSearch }: Props) {
                     <div className="text-[11px] font-mono text-muted-foreground">{l.id}</div>
                   </Td>
                   <Td><StatusBadge tone="navy">{l.stage}</StatusBadge></Td>
-                  <Td><StatusBadge tone={statusToTone(l.temperature)} dot>{l.temperature}</StatusBadge></Td>
+                  <Td><StatusBadge tone={statusToTone(l.priority)} dot>{l.priority}</StatusBadge></Td>
                   <Td className="text-navy">{l.pic}</Td>
                   <Td className="text-navy">{l.leader}</Td>
                   <Td className="text-muted-foreground">{l.lastActivity}</Td>
@@ -128,7 +128,7 @@ export function PipelinePage({ leads, setLeads, globalSearch }: Props) {
                 <h3 className="text-lg font-bold text-navy">{open.nama}</h3>
                 <div className="mt-1 flex flex-wrap gap-1.5">
                   <StatusBadge tone="navy">{open.stage}</StatusBadge>
-                  <StatusBadge tone={statusToTone(open.temperature)} dot>{open.temperature}</StatusBadge>
+                  <StatusBadge tone={statusToTone(open.priority)} dot>{open.priority}</StatusBadge>
                   <StatusBadge tone={statusToTone(open.status)}>{open.status}</StatusBadge>
                 </div>
               </div>
@@ -138,7 +138,7 @@ export function PipelinePage({ leads, setLeads, globalSearch }: Props) {
             </div>
             <div className="p-5 space-y-4 text-sm">
               <Row label="Tahap pipeline" value={open.stage} />
-              <Row label="Status" value={open.temperature} />
+              <Row label="Status" value={open.priority} />
               <Row label="RM" value={open.pic} />
               <Row label="Leader" value={open.leader} />
               <Row label="Sumber lead" value={open.source} />
