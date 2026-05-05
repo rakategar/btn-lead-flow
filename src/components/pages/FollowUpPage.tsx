@@ -82,7 +82,7 @@ export function FollowUpPage() {
               <tr>
                 <th className="text-left px-5 py-3">Nama Lead</th>
                 <th className="text-left px-3 py-3">Stage</th>
-                <th className="text-left px-3 py-3">PIC</th>
+                <th className="text-left px-3 py-3">RM</th>
                 <th className="text-left px-3 py-3">Tahap FU</th>
                 <th className="text-left px-3 py-3">Jadwal</th>
                 <th className="text-right pr-5 py-3">Status</th>

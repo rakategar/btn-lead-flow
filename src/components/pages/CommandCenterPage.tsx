@@ -31,7 +31,7 @@ export function CommandCenterPage({ leads }: Props) {
                       </div>
                       <div className="mt-1 text-[11px] text-muted-foreground">{l.produk}</div>
                       <div className="mt-2 flex items-center justify-between text-[11px]">
-                        <span className="text-muted-foreground">PIC <span className="text-navy font-medium">{l.pic}</span></span>
+                        <span className="text-muted-foreground">RM <span className="text-navy font-medium">{l.pic}</span></span>
                         <span className="text-primary font-medium">→ {l.nextFollowUp}</span>
                       </div>
                     </div>
