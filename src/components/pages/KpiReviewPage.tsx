@@ -4,7 +4,7 @@ import { weeklyRhythm, monthlyRhythm, resultArea } from "@/lib/dummy-data";
 
 const alignment = [
   { label: "Sales Team Status", value: "On Track", tone: "green" as const },
-  { label: "Head of Sales Review", value: "Mingguan terjadwal", tone: "blue" as const },
+  { label: "Sales Leader Review", value: "Mingguan terjadwal", tone: "blue" as const },
   { label: "Gap Alignment", value: "2 area perlu sinkronisasi", tone: "orange" as const },
   { label: "Next Coaching Focus", value: "Closing & objection handling", tone: "gold" as const },
 ];
@@ -26,7 +26,7 @@ export function KpiReviewPage() {
 
       {/* Alignment */}
       <section>
-        <Head title="Alignment Management" caption="Sinkronisasi antara Sales Team dan Head of Sales." />
+        <Head title="Alignment Management" caption="Sinkronisasi antara Sales Team dan Sales Leader." />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {alignment.map((a) => (
             <div key={a.label} className="panel p-4">

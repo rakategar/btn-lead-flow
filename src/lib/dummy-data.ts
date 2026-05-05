@@ -6,12 +6,33 @@ export type PipelineStage = "Contact" | "Meet" | "Prospect" | "Close";
 export type ResolutionStatus = "Close" | "In Progress" | "Follow Up" | "Not Eligible";
 export type FollowUpStage = "FU1" | "FU2" | "FU3";
 
+// Struktur organisasi: 1 Leader → banyak RM, 1 RM → 1 Leader
+export interface Leader {
+  name: string;
+  rms: string[];
+}
+
+export const leaders: Leader[] = [
+  { name: "Andre Wibowo", rms: ["Rina A.", "Dimas R.", "Lala N."] },
+  { name: "Sari Trihandayani", rms: ["Maya P.", "Fajar H.", "Bagas S."] },
+];
+
+// Daftar semua RM (Relationship Manager) — sebelumnya disebut PIC
+export const rms: string[] = leaders.flatMap((l) => l.rms);
+
+/** Cari nama leader untuk RM tertentu. */
+export function leaderOfRM(rm: string): string {
+  const l = leaders.find((ld) => ld.rms.includes(rm));
+  return l ? l.name : "—";
+}
+
 export interface Lead {
   id: string;
   nama: string;
   stage: PipelineStage;
   temperature: Temperature;
-  pic: string;
+  pic: string; // RM (Relationship Manager) — dipertahankan agar backward compatible
+  leader: string;
   source: string;
   produk: string;
   lastActivity: string;
@@ -22,14 +43,14 @@ export interface Lead {
 }
 
 export const initialLeads: Lead[] = [
-  { id: "LD-001", nama: "Andi Pratama", stage: "Contact", temperature: "Warm", pic: "Rina A.", source: "Referral cabang", produk: "KPR Rumah Pertama", lastActivity: "WA awal", nextFollowUp: "Besok", fuStage: "FU1", status: "In Progress", ringkasan: "Tertarik simulasi cicilan KPR, perlu klarifikasi DP." },
-  { id: "LD-002", nama: "Siti Rahma", stage: "Meet", temperature: "Hot", pic: "Dimas R.", source: "Walk-in cabang", produk: "KPR Subsidi", lastActivity: "Meeting selesai", nextFollowUp: "Hari ini", fuStage: "FU1", status: "Follow Up", ringkasan: "Sudah meeting, siap submit dokumen — butuh checklist final." },
-  { id: "LD-003", nama: "Budi Santoso", stage: "Prospect", temperature: "Hot", pic: "Maya P.", source: "Campaign digital", produk: "Take Over KPR", lastActivity: "Presentasi produk", nextFollowUp: "Besok", fuStage: "FU2", status: "In Progress", ringkasan: "Bandingkan rate take over; minta perhitungan tertulis." },
-  { id: "LD-004", nama: "Nur Aisyah", stage: "Prospect", temperature: "Warm", pic: "Fajar H.", source: "Call center", produk: "KPR Platinum", lastActivity: "Objection handling", nextFollowUp: "2 hari lagi", fuStage: "FU2", status: "Follow Up", ringkasan: "Ragu pada biaya provisi; perlu simulasi lengkap." },
-  { id: "LD-005", nama: "Rizky Akbar", stage: "Close", temperature: "Hot", pic: "Lala N.", source: "Referral RM", produk: "Kredit Agunan Rumah", lastActivity: "Closing selesai", nextFollowUp: "-", fuStage: "FU3", status: "Close", ringkasan: "Closing tuntas, masuk pencatatan transaksi." },
-  { id: "LD-006", nama: "Dini Wulandari", stage: "Contact", temperature: "Cold", pic: "Bagas S.", source: "Event partner", produk: "Tabungan + KPR", lastActivity: "Belum respon", nextFollowUp: "Minggu depan", fuStage: "FU3", status: "Not Eligible", ringkasan: "Belum ada urgensi; pertahankan nurture jangka panjang." },
-  { id: "LD-007", nama: "Hendra Wijaya", stage: "Meet", temperature: "Warm", pic: "Dimas R.", source: "Walk-in cabang", produk: "KPR Subsidi", lastActivity: "Diskusi awal", nextFollowUp: "Besok", fuStage: "FU1", status: "In Progress", ringkasan: "Pertimbangan lokasi properti & angsuran." },
-  { id: "LD-008", nama: "Dewi Lestari", stage: "Prospect", temperature: "Hot", pic: "Rina A.", source: "Referral nasabah", produk: "KPR Platinum", lastActivity: "Kirim simulasi", nextFollowUp: "Hari ini", fuStage: "FU2", status: "Follow Up", ringkasan: "Sudah bandingkan 2 produk; tinggal keputusan akhir." },
+  { id: "LD-001", nama: "Andi Pratama", stage: "Contact", temperature: "Warm", pic: "Rina A.", leader: "Andre Wibowo", source: "Referral cabang", produk: "KPR Rumah Pertama", lastActivity: "WA awal", nextFollowUp: "Besok", fuStage: "FU1", status: "In Progress", ringkasan: "Tertarik simulasi cicilan KPR, perlu klarifikasi DP." },
+  { id: "LD-002", nama: "Siti Rahma", stage: "Meet", temperature: "Hot", pic: "Dimas R.", leader: "Andre Wibowo", source: "Walk-in cabang", produk: "KPR Subsidi", lastActivity: "Meeting selesai", nextFollowUp: "Hari ini", fuStage: "FU1", status: "Follow Up", ringkasan: "Sudah meeting, siap submit dokumen — butuh checklist final." },
+  { id: "LD-003", nama: "Budi Santoso", stage: "Prospect", temperature: "Hot", pic: "Maya P.", leader: "Sari Trihandayani", source: "Campaign digital", produk: "Take Over KPR", lastActivity: "Presentasi produk", nextFollowUp: "Besok", fuStage: "FU2", status: "In Progress", ringkasan: "Bandingkan rate take over; minta perhitungan tertulis." },
+  { id: "LD-004", nama: "Nur Aisyah", stage: "Prospect", temperature: "Warm", pic: "Fajar H.", leader: "Sari Trihandayani", source: "Call center", produk: "KPR Platinum", lastActivity: "Objection handling", nextFollowUp: "2 hari lagi", fuStage: "FU2", status: "Follow Up", ringkasan: "Ragu pada biaya provisi; perlu simulasi lengkap." },
+  { id: "LD-005", nama: "Rizky Akbar", stage: "Close", temperature: "Hot", pic: "Lala N.", leader: "Andre Wibowo", source: "Referral RM", produk: "Kredit Agunan Rumah", lastActivity: "Closing selesai", nextFollowUp: "-", fuStage: "FU3", status: "Close", ringkasan: "Closing tuntas, masuk pencatatan transaksi." },
+  { id: "LD-006", nama: "Dini Wulandari", stage: "Contact", temperature: "Cold", pic: "Bagas S.", leader: "Sari Trihandayani", source: "Event partner", produk: "Tabungan + KPR", lastActivity: "Belum respon", nextFollowUp: "Minggu depan", fuStage: "FU3", status: "Not Eligible", ringkasan: "Belum ada urgensi; pertahankan nurture jangka panjang." },
+  { id: "LD-007", nama: "Hendra Wijaya", stage: "Meet", temperature: "Warm", pic: "Dimas R.", leader: "Andre Wibowo", source: "Walk-in cabang", produk: "KPR Subsidi", lastActivity: "Diskusi awal", nextFollowUp: "Besok", fuStage: "FU1", status: "In Progress", ringkasan: "Pertimbangan lokasi properti & angsuran." },
+  { id: "LD-008", nama: "Dewi Lestari", stage: "Prospect", temperature: "Hot", pic: "Rina A.", leader: "Andre Wibowo", source: "Referral nasabah", produk: "KPR Platinum", lastActivity: "Kirim simulasi", nextFollowUp: "Hari ini", fuStage: "FU2", status: "Follow Up", ringkasan: "Sudah bandingkan 2 produk; tinggal keputusan akhir." },
 ];
 
 // Pipeline counts (visual demo)
@@ -76,6 +97,7 @@ export const priorityAlerts = [
 // Activity Daily — per PIC
 export interface PicActivity {
   pic: string;
+  leader: string;
   prospecting: number;
   followUp: number;
   meeting: number;
@@ -84,11 +106,12 @@ export interface PicActivity {
 }
 
 export const picActivities: PicActivity[] = [
-  { pic: "Rina A.", prospecting: 4, followUp: 5, meeting: 2, closing: 1, disiplin: "Baik" },
-  { pic: "Dimas R.", prospecting: 3, followUp: 4, meeting: 1, closing: 0, disiplin: "Baik" },
-  { pic: "Maya P.", prospecting: 2, followUp: 6, meeting: 2, closing: 1, disiplin: "Sangat Baik" },
-  { pic: "Fajar H.", prospecting: 1, followUp: 2, meeting: 1, closing: 0, disiplin: "Perlu Dorongan" },
-  { pic: "Lala N.", prospecting: 3, followUp: 3, meeting: 2, closing: 1, disiplin: "Baik" },
+  { pic: "Rina A.", leader: "Andre Wibowo", prospecting: 4, followUp: 5, meeting: 2, closing: 1, disiplin: "Baik" },
+  { pic: "Dimas R.", leader: "Andre Wibowo", prospecting: 3, followUp: 4, meeting: 1, closing: 0, disiplin: "Baik" },
+  { pic: "Maya P.", leader: "Sari Trihandayani", prospecting: 2, followUp: 6, meeting: 2, closing: 1, disiplin: "Sangat Baik" },
+  { pic: "Fajar H.", leader: "Sari Trihandayani", prospecting: 1, followUp: 2, meeting: 1, closing: 0, disiplin: "Perlu Dorongan" },
+  { pic: "Lala N.", leader: "Andre Wibowo", prospecting: 3, followUp: 3, meeting: 2, closing: 1, disiplin: "Baik" },
+  { pic: "Bagas S.", leader: "Sari Trihandayani", prospecting: 2, followUp: 3, meeting: 1, closing: 0, disiplin: "Perlu Dorongan" },
 ];
 
 // Daily rhythm checklist

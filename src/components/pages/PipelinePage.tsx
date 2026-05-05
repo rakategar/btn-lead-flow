@@ -5,8 +5,11 @@ import { StatusBadge, statusToTone } from "@/components/StatusBadge";
 import { cn } from "@/lib/utils";
 import { type Lead, type Temperature, type ResolutionStatus } from "@/lib/dummy-data";
 
-const tempFilters: ("Semua" | Temperature)[] = ["Semua", "Hot", "Warm", "Cold"];
-const statusFilters: ("Semua" | ResolutionStatus)[] = ["Semua", "In Progress", "Follow Up", "Close", "Not Eligible"];
+// Catatan terminologi:
+// - "Status" lead = tingkat ketertarikan/temperatur (Hot/Warm/Cold)
+// - "Progress" lead = posisi penyelesaian (In Progress / Follow Up / Close / Not Eligible)
+const statusFilters: ("Semua" | Temperature)[] = ["Semua", "Hot", "Warm", "Cold"];
+const progressFilters: ("Semua" | ResolutionStatus)[] = ["Semua", "In Progress", "Follow Up", "Close", "Not Eligible"];
 
 interface Props {
   leads: Lead[];
@@ -15,16 +18,16 @@ interface Props {
 }
 
 export function PipelinePage({ leads, setLeads, globalSearch }: Props) {
-  const [temp, setTemp] = useState<typeof tempFilters[number]>("Semua");
   const [status, setStatus] = useState<typeof statusFilters[number]>("Semua");
+  const [progress, setProgress] = useState<typeof progressFilters[number]>("Semua");
   const [q, setQ] = useState("");
   const [open, setOpen] = useState<Lead | null>(null);
 
   const search = (q || globalSearch).toLowerCase();
   const filtered = leads.filter((l) =>
-    (temp === "Semua" || l.temperature === temp) &&
-    (status === "Semua" || l.status === status) &&
-    (search === "" || l.nama.toLowerCase().includes(search) || l.pic.toLowerCase().includes(search) || l.id.toLowerCase().includes(search))
+    (status === "Semua" || l.temperature === status) &&
+    (progress === "Semua" || l.status === progress) &&
+    (search === "" || l.nama.toLowerCase().includes(search) || l.pic.toLowerCase().includes(search) || l.leader.toLowerCase().includes(search) || l.id.toLowerCase().includes(search))
   );
 
   const updateStatus = (id: string, newStatus: ResolutionStatus) => {
@@ -37,9 +40,9 @@ export function PipelinePage({ leads, setLeads, globalSearch }: Props) {
       {/* Filters */}
       <div className="panel p-4 space-y-3">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mr-1">Temperatur</span>
-          {tempFilters.map((t) => (
-            <Chip key={t} active={temp === t} onClick={() => setTemp(t)}>
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mr-1">Status</span>
+          {statusFilters.map((t) => (
+            <Chip key={t} active={status === t} onClick={() => setStatus(t)}>
               {t === "Hot" && <Flame className="h-3 w-3" />}
               {t === "Warm" && <Thermometer className="h-3 w-3" />}
               {t === "Cold" && <Snowflake className="h-3 w-3" />}
@@ -48,18 +51,18 @@ export function PipelinePage({ leads, setLeads, globalSearch }: Props) {
           ))}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mr-1">Status</span>
-          {statusFilters.map((s) => (
-            <Chip key={s} active={status === s} onClick={() => setStatus(s)}>{s}</Chip>
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mr-1">Progress</span>
+          {progressFilters.map((s) => (
+            <Chip key={s} active={progress === s} onClick={() => setProgress(s)}>{s}</Chip>
           ))}
           <div className="ml-auto relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari lead, PIC, ID" className="h-9 pl-9 pr-3 text-sm rounded-lg border border-input bg-background w-56 focus:outline-none focus:ring-2 focus:ring-ring/40" />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari lead, RM, Leader, ID" className="h-9 pl-9 pr-3 text-sm rounded-lg border border-input bg-background w-56 focus:outline-none focus:ring-2 focus:ring-ring/40" />
           </div>
         </div>
       </div>
 
-      {/* Temperature legend */}
+      {/* Status legend */}
       <div className="grid gap-3 md:grid-cols-3">
         <LegendCard tone="red" title="Hot · 70%–90%" desc="Siap ditransaksikan — prioritas eksekusi cepat." />
         <LegendCard tone="orange" title="Warm · 30%–60%" desc="Butuh nurturing dan follow-up berkala." />
@@ -80,17 +83,18 @@ export function PipelinePage({ leads, setLeads, globalSearch }: Props) {
               <tr>
                 <Th>Nama Lead</Th>
                 <Th>Stage</Th>
-                <Th>Temperatur</Th>
-                <Th>PIC</Th>
+                <Th>Status</Th>
+                <Th>RM</Th>
+                <Th>Leader</Th>
                 <Th>Last Activity</Th>
                 <Th>Next FU</Th>
-                <Th>Status</Th>
+                <Th>Progress</Th>
                 <Th className="text-right pr-5">Aksi</Th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {filtered.length === 0 && (
-                <tr><td colSpan={8} className="text-center py-12 text-muted-foreground text-sm">Tidak ada lead sesuai filter.</td></tr>
+                <tr><td colSpan={9} className="text-center py-12 text-muted-foreground text-sm">Tidak ada lead sesuai filter.</td></tr>
               )}
               {filtered.map((l) => (
                 <tr key={l.id} className="hover:bg-muted/40 cursor-pointer" onClick={() => setOpen(l)}>
@@ -101,6 +105,7 @@ export function PipelinePage({ leads, setLeads, globalSearch }: Props) {
                   <Td><StatusBadge tone="navy">{l.stage}</StatusBadge></Td>
                   <Td><StatusBadge tone={statusToTone(l.temperature)} dot>{l.temperature}</StatusBadge></Td>
                   <Td className="text-navy">{l.pic}</Td>
+                  <Td className="text-navy">{l.leader}</Td>
                   <Td className="text-muted-foreground">{l.lastActivity}</Td>
                   <Td className="text-navy">{l.nextFollowUp}</Td>
                   <Td><StatusBadge tone={statusToTone(l.status)}>{l.status}</StatusBadge></Td>
@@ -133,8 +138,9 @@ export function PipelinePage({ leads, setLeads, globalSearch }: Props) {
             </div>
             <div className="p-5 space-y-4 text-sm">
               <Row label="Tahap pipeline" value={open.stage} />
-              <Row label="Temperatur" value={open.temperature} />
-              <Row label="PIC" value={open.pic} />
+              <Row label="Status" value={open.temperature} />
+              <Row label="RM" value={open.pic} />
+              <Row label="Leader" value={open.leader} />
               <Row label="Sumber lead" value={open.source} />
               <Row label="Minat produk" value={open.produk} />
               <Row label="Aktivitas terakhir" value={open.lastActivity} />
