@@ -14,7 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      daily_tasks: {
+        Row: {
+          assignee: string | null
+          created_at: string
+          created_by: string
+          detail: string | null
+          done: boolean
+          id: string
+          priority: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assignee?: string | null
+          created_at?: string
+          created_by: string
+          detail?: string | null
+          done?: boolean
+          id?: string
+          priority?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assignee?: string | null
+          created_at?: string
+          created_by?: string
+          detail?: string | null
+          done?: boolean
+          id?: string
+          priority?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      rhythms: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          position: number
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          position?: number
+          type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          position?: number
+          type?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
