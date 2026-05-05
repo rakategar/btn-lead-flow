@@ -30,17 +30,16 @@ const IndexInner = () => {
   const [leads, setLeads] = useState<Lead[]>(initialLeads);
   const [search, setSearch] = useState("");
 
-  if (!user) return <LoginScreen />;
-
-  // Scope leads by role:
-  // - leader: hanya lead milik RM dalam tim-nya
-  // - rm: hanya lead miliknya sendiri
-  const scopedLeads = leads.filter((l) => {
-    if (user.role === "leader") return l.leader === user.name;
-    return l.pic === user.name;
-  });
+  // Scope leads by role (dihitung selalu agar urutan hooks stabil)
+  const scopedLeads = useMemo(() => {
+    if (!user) return [] as Lead[];
+    return leads.filter((l) =>
+      user.role === "leader" ? l.leader === user.name : l.pic === user.name
+    );
+  }, [leads, user]);
 
   const handleAddActivity = () => {
+    if (!user) return;
     const seq = leads.length + 1;
     const id = `LD-${seq.toString().padStart(3, "0")}`;
     // RM untuk aktivitas dummy:
@@ -82,7 +81,9 @@ const IndexInner = () => {
       case "followup": return <FollowUpPage />;
       case "kpi": return <KpiReviewPage />;
     }
-  }, [page, scopedLeads, leads, search]);
+  }, [page, scopedLeads, search]);
+
+  if (!user) return <LoginScreen />;
 
   return (
     <AppShell
