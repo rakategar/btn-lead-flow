@@ -74,7 +74,7 @@ const IndexInner = () => {
 
   const content = useMemo(() => {
     switch (page) {
-      case "overview": return <OverviewPage onNavigate={setPage} />;
+      case "overview": return <OverviewPage onNavigate={setPage} user={user!} leads={scopedLeads} />;
       case "command": return <CommandCenterPage leads={scopedLeads} />;
       case "pipeline": return <PipelinePage leads={scopedLeads} setLeads={setLeads} globalSearch={search} />;
       case "activity": return <ActivityDailyPage />;

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, X, ChevronUp, Minus, ChevronDown, MessageSquare, Calendar, RefreshCw } from "lucide-react";
+import { Search, X, Flame, Droplet, Snowflake, MessageSquare, Calendar, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge, statusToTone } from "@/components/StatusBadge";
 import { cn } from "@/lib/utils";
@@ -44,9 +44,9 @@ export function PipelinePage({ leads, setLeads, globalSearch }: Props) {
           <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mr-1">Status</span>
           {statusFilters.map((t) => (
             <Chip key={t} active={status === t} onClick={() => setStatus(t)}>
-              {t === "High" && <ChevronUp className="h-3 w-3" />}
-              {t === "Medium" && <Minus className="h-3 w-3" />}
-              {t === "Low" && <ChevronDown className="h-3 w-3" />}
+              {t === "High" && <Flame className="h-3.5 w-3.5 text-danger" />}
+              {t === "Medium" && <Droplet className="h-3.5 w-3.5 text-accent" />}
+              {t === "Low" && <Snowflake className="h-3.5 w-3.5 text-primary" />}
               {t === "Semua" ? t : statusLabel[t]}
             </Chip>
           ))}
