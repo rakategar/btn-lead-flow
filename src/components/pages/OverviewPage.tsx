@@ -26,8 +26,16 @@ export function OverviewPage({ onNavigate, user, leads }: Props) {
     ? (leaders.find((l) => l.name === user.name)?.rms ?? [])
     : [user.name];
   const acts = picActivities.filter((p) => teamRMs.includes(p.pic));
-  const totalActs = acts.reduce((s, a) => s + a.prospecting + a.followUp + a.meeting + a.closing, 0);
-  const totalClose = acts.reduce((s, a) => s + a.closing, 0);
+
+  // Hitung progres aktivitas langsung dari data Pipeline & Leads,
+  // sehingga angka di Overview konsisten dengan halaman Pipeline & Leads.
+  const progress = {
+    prospecting: leads.filter((l) => l.stage === "Contact").length,
+    followUp: leads.filter((l) => l.status === "Follow Up").length,
+    meeting: leads.filter((l) => l.stage === "Meet").length,
+    closing: leads.filter((l) => l.stage === "Close" || l.status === "Close").length,
+  };
+  const totalActs = progress.prospecting + progress.followUp + progress.meeting + progress.closing;
   const totalLeads = leads.length;
   const closedLeads = leads.filter((l) => l.status === "Close").length;
   const followUpDue = leads.filter((l) => l.nextFollowUp === "Hari ini" || l.nextFollowUp === "Besok").length;
@@ -143,21 +151,15 @@ export function OverviewPage({ onNavigate, user, leads }: Props) {
         </section>
       )}
 
-      {/* Progress pribadi — RM only */}
+      {/* Progress pribadi — RM only (sumber: Pipeline & Leads) */}
       {!isLeader && (
         <section>
-          <SectionHead title="Progres Saya Hari Ini" caption="Ringkasan aktivitas pribadi Anda." />
+          <SectionHead title="Progres Saya Hari Ini" caption="Ringkasan langsung dari data Pipeline & Leads Anda." />
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {acts[0] ? (
-              <>
-                <MiniStat label="Prospecting" value={acts[0].prospecting} />
-                <MiniStat label="Follow-Up" value={acts[0].followUp} />
-                <MiniStat label="Meeting" value={acts[0].meeting} />
-                <MiniStat label="Closing" value={acts[0].closing} />
-              </>
-            ) : (
-              <div className="panel p-4 text-sm text-muted-foreground sm:col-span-2 lg:col-span-4">Belum ada aktivitas tercatat.</div>
-            )}
+            <MiniStat label="Prospecting" value={progress.prospecting} />
+            <MiniStat label="Follow-Up" value={progress.followUp} />
+            <MiniStat label="Meeting" value={progress.meeting} />
+            <MiniStat label="Closing" value={progress.closing} />
           </div>
         </section>
       )}
