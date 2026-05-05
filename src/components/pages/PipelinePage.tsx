@@ -6,9 +6,10 @@ import { cn } from "@/lib/utils";
 import { type Lead, type Priority, type ResolutionStatus } from "@/lib/dummy-data";
 
 // Catatan terminologi:
-// - "Status" lead = level prioritas profesional (High / Medium / Low)
+// - "Status" lead = temperatur lead (Hot / Warm / Cold)
 // - "Progress" lead = posisi penyelesaian (In Progress / Follow Up / Close / Not Eligible)
 const statusFilters: ("Semua" | Priority)[] = ["Semua", "High", "Medium", "Low"];
+const statusLabel: Record<Priority, string> = { High: "Hot", Medium: "Warm", Low: "Cold" };
 const progressFilters: ("Semua" | ResolutionStatus)[] = ["Semua", "In Progress", "Follow Up", "Close", "Not Eligible"];
 
 interface Props {
@@ -46,7 +47,7 @@ export function PipelinePage({ leads, setLeads, globalSearch }: Props) {
               {t === "High" && <ChevronUp className="h-3 w-3" />}
               {t === "Medium" && <Minus className="h-3 w-3" />}
               {t === "Low" && <ChevronDown className="h-3 w-3" />}
-              {t}
+              {t === "Semua" ? t : statusLabel[t]}
             </Chip>
           ))}
         </div>
@@ -64,9 +65,9 @@ export function PipelinePage({ leads, setLeads, globalSearch }: Props) {
 
       {/* Status legend */}
       <div className="grid gap-3 md:grid-cols-3">
-        <LegendCard tone="red" title="High · 70%–90%" desc="Prioritas eksekusi cepat — siap ditransaksikan." />
-        <LegendCard tone="orange" title="Medium · 30%–60%" desc="Butuh nurturing dan follow-up berkala." />
-        <LegendCard tone="blue" title="Low · 0%–20%" desc="Simpan dalam radar untuk nurture jangka panjang." />
+        <LegendCard tone="red" title="Hot · 70%–90%" desc="Prioritas eksekusi cepat — siap ditransaksikan." />
+        <LegendCard tone="orange" title="Warm · 30%–60%" desc="Butuh nurturing dan follow-up berkala." />
+        <LegendCard tone="blue" title="Cold · 0%–20%" desc="Simpan dalam radar untuk nurture jangka panjang." />
       </div>
 
       {/* Table */}
@@ -103,7 +104,7 @@ export function PipelinePage({ leads, setLeads, globalSearch }: Props) {
                     <div className="text-[11px] font-mono text-muted-foreground">{l.id}</div>
                   </Td>
                   <Td><StatusBadge tone="navy">{l.stage}</StatusBadge></Td>
-                  <Td><StatusBadge tone={statusToTone(l.priority)} dot>{l.priority}</StatusBadge></Td>
+                  <Td><StatusBadge tone={statusToTone(l.priority)} dot>{statusLabel[l.priority]}</StatusBadge></Td>
                   <Td className="text-navy">{l.pic}</Td>
                   <Td className="text-navy">{l.leader}</Td>
                   <Td className="text-muted-foreground">{l.lastActivity}</Td>
@@ -128,7 +129,7 @@ export function PipelinePage({ leads, setLeads, globalSearch }: Props) {
                 <h3 className="text-lg font-bold text-navy">{open.nama}</h3>
                 <div className="mt-1 flex flex-wrap gap-1.5">
                   <StatusBadge tone="navy">{open.stage}</StatusBadge>
-                  <StatusBadge tone={statusToTone(open.priority)} dot>{open.priority}</StatusBadge>
+                  <StatusBadge tone={statusToTone(open.priority)} dot>{statusLabel[open.priority]}</StatusBadge>
                   <StatusBadge tone={statusToTone(open.status)}>{open.status}</StatusBadge>
                 </div>
               </div>
@@ -138,7 +139,7 @@ export function PipelinePage({ leads, setLeads, globalSearch }: Props) {
             </div>
             <div className="p-5 space-y-4 text-sm">
               <Row label="Tahap pipeline" value={open.stage} />
-              <Row label="Status" value={open.priority} />
+              <Row label="Status" value={statusLabel[open.priority]} />
               <Row label="RM" value={open.pic} />
               <Row label="Leader" value={open.leader} />
               <Row label="Sumber lead" value={open.source} />
