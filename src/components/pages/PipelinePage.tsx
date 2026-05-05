@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Search, X, Flame, Droplet, Snowflake, MessageSquare, Calendar, RefreshCw } from "lucide-react";
+import { Search, X, Flame, Droplet, Snowflake, MessageSquare, Calendar, RefreshCw, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge, statusToTone } from "@/components/StatusBadge";
 import { cn } from "@/lib/utils";
-import { type Lead, type Priority, type ResolutionStatus } from "@/lib/dummy-data";
+import { type Lead, type Priority, type ResolutionStatus, type PipelineStage } from "@/lib/dummy-data";
 
 // Catatan terminologi:
 // - "Status" lead = temperatur lead (Hot / Warm / Cold)
@@ -34,6 +34,11 @@ export function PipelinePage({ leads, setLeads, globalSearch }: Props) {
   const updateStatus = (id: string, newStatus: ResolutionStatus) => {
     setLeads((prev) => prev.map((l) => l.id === id ? { ...l, status: newStatus } : l));
     setOpen((o) => o && o.id === id ? { ...o, status: newStatus } : o);
+  };
+
+  const updateStage = (id: string, newStage: PipelineStage) => {
+    setLeads((prev) => prev.map((l) => l.id === id ? { ...l, stage: newStage, lastActivity: newStage === "Meet" ? "Meeting dijadwalkan" : l.lastActivity } : l));
+    setOpen((o) => o && o.id === id ? { ...o, stage: newStage } : o);
   };
 
   return (
@@ -152,6 +157,7 @@ export function PipelinePage({ leads, setLeads, globalSearch }: Props) {
               </div>
               <div className="flex flex-col gap-2 pt-2">
                 <Button onClick={() => updateStatus(open.id, "In Progress")} className="bg-primary"><RefreshCw className="h-4 w-4 mr-1.5" />Update Status: In Progress</Button>
+                <Button onClick={() => updateStage(open.id, "Meet")} className="bg-navy hover:bg-navy/90 text-navy-foreground"><Users className="h-4 w-4 mr-1.5" />Tandai Meeting</Button>
                 <Button onClick={() => updateStatus(open.id, "Close")} className="bg-success hover:bg-success/90 text-success-foreground">Tandai Close</Button>
                 <Button variant="outline" onClick={() => updateStatus(open.id, "Follow Up")}><Calendar className="h-4 w-4 mr-1.5" />Jadwalkan Follow-Up</Button>
                 <Button variant="outline"><MessageSquare className="h-4 w-4 mr-1.5" />Tambah Catatan</Button>
