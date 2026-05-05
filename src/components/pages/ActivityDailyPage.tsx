@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { Phone, MessageSquare, Calendar, CheckCircle2, BookOpen, Crown, UserRound, Plus, Trash2, GripVertical, Inbox, ListChecks } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Phone, MessageSquare, Calendar, CheckCircle2, Crown, UserRound, Plus, Trash2, GripVertical, Inbox, ListChecks } from "lucide-react";
 import { KpiCard } from "@/components/KpiCard";
 import { StatusBadge, statusToTone } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -7,27 +7,38 @@ import { picActivities, leaders, type Priority } from "@/lib/dummy-data";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 // ---- Task model -------------------------------------------------------------
 interface Task {
   id: string;
   title: string;
-  detail?: string;
+  detail?: string | null;
   priority: Priority;
-  assignee: string | null; // null = backlog (belum di-assign)
+  assignee: string | null;
   done: boolean;
   createdBy: string;
 }
 
-const seedTasks: Task[] = [
-  { id: "T-001", title: "Follow-up Andi Pratama (FU1)", detail: "Kirim simulasi cicilan KPR.", priority: "High", assignee: "Rina A.", done: true, createdBy: "Andre Wibowo" },
-  { id: "T-002", title: "Submit dokumen Siti Rahma", detail: "Verifikasi checklist final closing.", priority: "High", assignee: "Dimas R.", done: false, createdBy: "Andre Wibowo" },
-  { id: "T-003", title: "Prospecting kawasan Permata Hijau", detail: "Minimal 3 kontak baru.", priority: "Medium", assignee: "Lala N.", done: false, createdBy: "Andre Wibowo" },
-  { id: "T-004", title: "Coaching objection handling", detail: "Sesi 30 menit untuk produk Take Over.", priority: "Medium", assignee: "Maya P.", done: false, createdBy: "Sari Trihandayani" },
-  { id: "T-005", title: "Update pipeline Q2", detail: "Pastikan stage & next FU semua lead terisi.", priority: "Low", assignee: "Fajar H.", done: false, createdBy: "Sari Trihandayani" },
-  { id: "T-006", title: "Survey kebutuhan KPR di event partner", priority: "Medium", assignee: null, done: false, createdBy: "Andre Wibowo" },
-  { id: "T-007", title: "Recap meeting nasabah Dewi Lestari", priority: "High", assignee: null, done: false, createdBy: "Andre Wibowo" },
-];
+type TaskRow = {
+  id: string;
+  title: string;
+  detail: string | null;
+  priority: string;
+  assignee: string | null;
+  done: boolean;
+  created_by: string;
+};
+
+const fromRow = (r: TaskRow): Task => ({
+  id: r.id,
+  title: r.title,
+  detail: r.detail,
+  priority: (r.priority as Priority) ?? "Medium",
+  assignee: r.assignee,
+  done: r.done,
+  createdBy: r.created_by,
+});
 
 const priorityOrder: Record<Priority, number> = { High: 0, Medium: 1, Low: 2 };
 
@@ -51,10 +62,53 @@ export function ActivityDailyPage() {
       : "Semua RM";
 
   // ---- Task board state ----------------------------------------------------
-  const [tasks, setTasks] = useState<Task[]>(seedTasks);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
   const [draftTitle, setDraftTitle] = useState("");
   const [draftPriority, setDraftPriority] = useState<Priority>("Medium");
   const [dragId, setDragId] = useState<string | null>(null);
+
+  // Load + realtime subscribe
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const { data, error } = await supabase
+        .from("daily_tasks")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (!mounted) return;
+      if (error) toast.error("Gagal memuat tasks", { description: error.message });
+      else setTasks((data ?? []).map((r) => fromRow(r as TaskRow)));
+      setLoading(false);
+    })();
+
+    const channel = supabase
+      .channel("daily_tasks_rt")
+      .on("postgres_changes", { event: "*", schema: "public", table: "daily_tasks" }, (payload) => {
+        setTasks((prev) => {
+          if (payload.eventType === "INSERT") {
+            const t = fromRow(payload.new as TaskRow);
+            if (prev.some((x) => x.id === t.id)) return prev;
+            return [t, ...prev];
+          }
+          if (payload.eventType === "UPDATE") {
+            const t = fromRow(payload.new as TaskRow);
+            return prev.map((x) => (x.id === t.id ? t : x));
+          }
+          if (payload.eventType === "DELETE") {
+            const oldId = (payload.old as { id: string }).id;
+            return prev.filter((x) => x.id !== oldId);
+          }
+          return prev;
+        });
+      })
+      .subscribe();
+
+    return () => {
+      mounted = false;
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   // Tasks yang relevan dengan scope user
   const scopedTasks = tasks.filter((t) => {
@@ -73,24 +127,35 @@ export function ActivityDailyPage() {
     .filter((t) => t.assignee === rm)
     .sort((a, b) => Number(a.done) - Number(b.done) || priorityOrder[a.priority] - priorityOrder[b.priority]);
 
-  const addTask = () => {
+  const addTask = async () => {
     if (!user || !isLeader || !draftTitle.trim()) return;
-    const id = `T-${(tasks.length + 1).toString().padStart(3, "0")}`;
-    setTasks((prev) => [{ id, title: draftTitle.trim(), priority: draftPriority, assignee: null, done: false, createdBy: user.name }, ...prev]);
+    const title = draftTitle.trim();
     setDraftTitle("");
-    toast.success("Task baru masuk Backlog", { description: "Drag ke kolom RM untuk meng-assign." });
+    const { error } = await supabase.from("daily_tasks").insert({
+      title, priority: draftPriority, assignee: null, done: false, created_by: user.name,
+    });
+    if (error) toast.error("Gagal membuat task", { description: error.message });
+    else toast.success("Task baru masuk Backlog", { description: "Drag ke kolom RM untuk meng-assign." });
   };
 
-  const assignTo = (taskId: string, rm: string | null) => {
-    setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, assignee: rm } : t));
+  const assignTo = async (taskId: string, rm: string | null) => {
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, assignee: rm } : t)));
+    const { error } = await supabase.from("daily_tasks").update({ assignee: rm }).eq("id", taskId);
+    if (error) toast.error("Gagal assign", { description: error.message });
   };
 
-  const removeTask = (taskId: string) => {
-    setTasks((prev) => prev.filter((t) => t.id !== taskId));
+  const removeTask = async (taskId: string) => {
+    const { error } = await supabase.from("daily_tasks").delete().eq("id", taskId);
+    if (error) toast.error("Gagal hapus", { description: error.message });
   };
 
-  const toggleDone = (taskId: string) => {
-    setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, done: !t.done } : t));
+  const toggleDone = async (taskId: string) => {
+    const cur = tasks.find((t) => t.id === taskId);
+    if (!cur) return;
+    const next = !cur.done;
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, done: next } : t)));
+    const { error } = await supabase.from("daily_tasks").update({ done: next }).eq("id", taskId);
+    if (error) toast.error("Gagal update", { description: error.message });
   };
 
   const onDrop = (rm: string | null) => {
@@ -107,27 +172,6 @@ export function ActivityDailyPage() {
         <KpiCard title="Appointment Hari Ini" value="9" hint="Meeting & kunjungan" icon={Calendar} tone="green" />
       </div>
 
-      {/* Sumber checklist — alur penurunan */}
-      <section className="panel p-5 bg-gradient-to-br from-card to-primary-light/30 border-l-4 border-l-primary">
-        <div className="flex items-start gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground shrink-0">
-            <BookOpen className="h-4 w-4" />
-          </div>
-          <div className="flex-1">
-            <h3 className="font-bold text-navy">Asal Task Harian</h3>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Task diturunkan dari kerangka <span className="font-semibold text-navy">A.C.T — Action Daily</span> + SOP Sales Discipline. Sales Leader merumuskan task, lalu meng-assign ke setiap RM.
-            </p>
-            <ol className="mt-3 grid gap-2 sm:grid-cols-4 text-xs">
-              <FlowStep n={1} title="Kerangka A.C.T" desc="Action · Control · Track menjadi pondasi ritme." />
-              <FlowStep n={2} title="SOP Sales Discipline" desc="Standar perilaku harian sales." />
-              <FlowStep n={3} title="Target Bulanan" desc="Diturunkan menjadi target harian per RM." />
-              <FlowStep n={4} title="Daily Task" desc="Leader buat & assign, RM eksekusi & centang." />
-            </ol>
-          </div>
-        </div>
-      </section>
-
       {/* Task Board */}
       <section className="panel p-5">
         <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -136,7 +180,7 @@ export function ActivityDailyPage() {
             <div>
               <h3 className="font-bold text-navy">Task Board — Daily Activity</h3>
               <p className="text-xs text-muted-foreground">
-                {isLeader
+                {loading ? "Memuat data dari Lovable Cloud…" : isLeader
                   ? "Buat task, lalu drag ke kolom RM untuk meng-assign. Pantau progress secara real-time."
                   : "Task yang ditugaskan Sales Leader untuk Anda. Centang setiap task yang sudah dieksekusi."}
               </p>
@@ -297,18 +341,6 @@ export function ActivityDailyPage() {
         </div>
       </section>
     </div>
-  );
-}
-
-function FlowStep({ n, title, desc }: { n: number; title: string; desc: string }) {
-  return (
-    <li className="rounded-lg bg-card border border-border p-3">
-      <div className="flex items-center gap-2">
-        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-navy text-[10px] font-bold text-gold">{n}</span>
-        <span className="text-xs font-bold text-navy">{title}</span>
-      </div>
-      <p className="mt-1 text-[11px] text-muted-foreground leading-snug">{desc}</p>
-    </li>
   );
 }
 
