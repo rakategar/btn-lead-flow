@@ -1,4 +1,4 @@
-import { Users, Activity, Bell, TrendingUp, Flame, Target, ArrowRight, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Users, Activity, Bell, TrendingUp, Star, Target, ArrowRight, CheckCircle2, AlertTriangle } from "lucide-react";
 import { KpiCard } from "@/components/KpiCard";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -41,7 +41,7 @@ export function OverviewPage({ onNavigate }: Props) {
         <KpiCard title="Aktivitas Hari Ini" value="76" hint="Prospecting, FU, meeting" icon={Activity} tone="navy" delta={{ value: "+12%", up: true }} />
         <KpiCard title="Follow-Up Due Today" value="18" hint="Perlu tindak lanjut hari ini" icon={Bell} tone="orange" />
         <KpiCard title="Conversion Rate" value="24%" hint="Dari prospect ke close" icon={TrendingUp} tone="green" delta={{ value: "+2pt", up: true }} />
-        <KpiCard title="Hot Leads" value="21" hint="Probabilitas 70%–90%" icon={Flame} tone="orange" />
+        <KpiCard title="Lead Prioritas High" value="21" hint="Probabilitas 70%–90%" icon={Star} tone="orange" />
         <KpiCard title="Gap to Target" value="-12%" hint="Perlu remedial action" icon={Target} tone="navy" delta={{ value: "-3pt", up: false }} />
       </div>
 

@@ -96,7 +96,7 @@ export function FollowUpPage() {
                   <td className="px-3 py-3 text-navy">{l.pic}</td>
                   <td className="px-3 py-3"><StatusBadge tone={l.fu === "FU1" ? "blue" : l.fu === "FU2" ? "orange" : "red"}>{l.fu}</StatusBadge></td>
                   <td className="px-3 py-3 text-navy">{l.jadwal}</td>
-                  <td className="pr-5 py-3 text-right"><StatusBadge tone={statusToTone(l.catatan === "Prioritas tinggi" ? "High" : l.catatan === "Evaluasi ulang" ? "Cold" : "Warm")}>{l.catatan}</StatusBadge></td>
+                  <td className="pr-5 py-3 text-right"><StatusBadge tone={statusToTone(l.catatan === "Prioritas tinggi" ? "High" : l.catatan === "Evaluasi ulang" ? "Low" : "Medium")}>{l.catatan}</StatusBadge></td>
                 </tr>
               ))}
             </tbody>

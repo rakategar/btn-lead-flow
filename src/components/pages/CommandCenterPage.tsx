@@ -27,7 +27,7 @@ export function CommandCenterPage({ leads }: Props) {
                     <div key={l.id} className="rounded-lg bg-card border border-border p-3 hover:shadow-soft transition-shadow">
                       <div className="flex items-center justify-between gap-2">
                         <div className="text-sm font-semibold text-navy truncate">{l.nama}</div>
-                        <StatusBadge tone={statusToTone(l.temperature)}>{l.temperature}</StatusBadge>
+                        <StatusBadge tone={statusToTone(l.priority)}>{l.priority}</StatusBadge>
                       </div>
                       <div className="mt-1 text-[11px] text-muted-foreground">{l.produk}</div>
                       <div className="mt-2 flex items-center justify-between text-[11px]">
