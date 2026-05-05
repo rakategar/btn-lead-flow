@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { LayoutGrid, Gauge, Workflow, ClipboardCheck, BellRing, LineChart, Search, Plus, Menu, ListChecks, ShieldCheck } from "lucide-react";
+import { LayoutGrid, Gauge, Workflow, ClipboardCheck, BellRing, LineChart, Search, Plus, Menu, ListChecks, ShieldCheck, LogOut, Crown, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ActLogo } from "@/components/ActLogo";
+import type { SessionUser } from "@/lib/auth";
 
 export type PageKey = "overview" | "command" | "pipeline" | "activity" | "followup" | "kpi";
 
@@ -25,11 +26,15 @@ interface Props {
   children: React.ReactNode;
   pageTitle: string;
   pageSubtitle: string;
+  user: SessionUser;
+  onLogout: () => void;
 }
 
-export function AppShell({ current, onChange, onAddActivity, search, onSearch, children, pageTitle, pageSubtitle }: Props) {
+export function AppShell({ current, onChange, onAddActivity, search, onSearch, children, pageTitle, pageSubtitle, user, onLogout }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const groups = Array.from(new Set(menu.map((m) => m.group)));
+  const RoleIcon = user.role === "leader" ? Crown : UserRound;
+  const roleLabel = user.role === "leader" ? "Sales Leader" : "Sales Team (RM)";
 
   return (
     <div className="min-h-screen bg-background">
@@ -122,7 +127,18 @@ export function AppShell({ current, onChange, onAddActivity, search, onSearch, c
               >
                 <Plus className="h-4 w-4 mr-1.5" /> Tambah Aktivitas Dummy
               </Button>
-              <StatusBadge tone="gold" className="hidden md:inline-flex">Data Dummy</StatusBadge>
+              <div className="hidden md:flex items-center gap-2 pl-2 ml-1 border-l border-border">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-navy text-gold">
+                  <RoleIcon className="h-4 w-4" />
+                </div>
+                <div className="leading-tight text-right">
+                  <div className="text-xs font-semibold text-navy">{user.name}</div>
+                  <div className="text-[10px] text-muted-foreground">{roleLabel}{user.leaderName ? ` · ${user.leaderName}` : ""}</div>
+                </div>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-danger" onClick={onLogout} title="Keluar">
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
           {/* Mobile title */}
