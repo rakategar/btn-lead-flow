@@ -113,7 +113,7 @@ export function AppShell({ current, onChange, onAddActivity, search, onSearch, c
                 <input
                   value={search}
                   onChange={(e) => onSearch(e.target.value)}
-                  placeholder="Cari lead, aktivitas, atau PIC"
+                  placeholder="Cari lead, aktivitas, RM, atau Leader"
                   className="h-9 w-full rounded-lg border border-input bg-background pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/40"
                 />
               </div>
