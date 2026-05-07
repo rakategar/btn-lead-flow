@@ -1,20 +1,21 @@
 import { useState } from "react";
-import { LayoutGrid, Gauge, Workflow, ClipboardCheck, BellRing, LineChart, Search, Plus, Menu, ListChecks, ShieldCheck, LogOut, Crown, UserRound } from "lucide-react";
+import { LayoutGrid, Gauge, Workflow, ClipboardCheck, BellRing, LineChart, Search, Plus, Menu, ListChecks, ShieldCheck, LogOut, Crown, UserRound, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ActLogo } from "@/components/ActLogo";
 import type { SessionUser } from "@/lib/auth";
 
-export type PageKey = "overview" | "command" | "pipeline" | "activity" | "followup" | "kpi";
+export type PageKey = "overview" | "command" | "pipeline" | "activity" | "followup" | "kpi" | "laporan";
 
-const menu: { key: PageKey; label: string; icon: React.ComponentType<any>; group: string }[] = [
+const menu: { key: PageKey; label: string; icon: React.ComponentType<any>; group: string; leaderOnly?: boolean }[] = [
   { key: "overview", label: "Overview", icon: LayoutGrid, group: "Ringkasan" },
   { key: "command", label: "A.C.T Command Center", icon: Gauge, group: "Ringkasan" },
   { key: "pipeline", label: "Pipeline & Leads", icon: Workflow, group: "Operasional" },
   { key: "activity", label: "Activity Daily", icon: ClipboardCheck, group: "Operasional" },
   { key: "followup", label: "Follow-Up & Status", icon: BellRing, group: "Operasional" },
   { key: "kpi", label: "KPI & Review", icon: LineChart, group: "Manajemen" },
+  { key: "laporan", label: "Generate Laporan", icon: FileText, group: "Manajemen", leaderOnly: true },
 ];
 
 interface Props {
@@ -32,7 +33,8 @@ interface Props {
 
 export function AppShell({ current, onChange, onAddActivity, search, onSearch, children, pageTitle, pageSubtitle, user, onLogout }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const groups = Array.from(new Set(menu.map((m) => m.group)));
+  const visibleMenu = menu.filter((m) => !m.leaderOnly || user.role === "leader");
+  const groups = Array.from(new Set(visibleMenu.map((m) => m.group)));
   const RoleIcon = user.role === "leader" ? Crown : UserRound;
   const roleLabel = user.role === "leader" ? "Sales Leader" : "Sales Team (RM)";
 
@@ -57,7 +59,7 @@ export function AppShell({ current, onChange, onAddActivity, search, onSearch, c
             <div key={g}>
               <div className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{g}</div>
               <div className="flex flex-col gap-0.5">
-                {menu.filter((m) => m.group === g).map((m) => {
+                {visibleMenu.filter((m) => m.group === g).map((m) => {
                   const Icon = m.icon;
                   const active = current === m.key;
                   return (
