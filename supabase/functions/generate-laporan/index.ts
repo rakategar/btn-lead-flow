@@ -137,30 +137,42 @@ Kembalikan HANYA JSON valid (tanpa markdown fence) dengan struktur:
   return JSON.parse(text);
 }
 
-async function generateSlides(saJson: any, vars: Record<string, string>) {
-  const token = await getAccessToken(
-    saJson,
-    "https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/presentations",
-  );
+async function generateSlides(vars: Record<string, string>) {
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  const SLIDES_KEY = Deno.env.get("GOOGLE_SLIDES_API_KEY");
+  const DRIVE_KEY = Deno.env.get("GOOGLE_DRIVE_API_KEY");
+  if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+  if (!SLIDES_KEY) throw new Error("GOOGLE_SLIDES_API_KEY is not configured");
 
-  // Create new presentation from scratch (no Drive copy)
+  const slidesHeaders = {
+    Authorization: `Bearer ${LOVABLE_API_KEY}`,
+    "X-Connection-Api-Key": SLIDES_KEY,
+    "Content-Type": "application/json",
+  };
+
   const title = `Laporan ${vars.NAMA_LEADER || ""} - ${vars.PERIODE || new Date().toISOString().slice(0, 10)}`.trim();
-  const createR = await fetch(`https://slides.googleapis.com/v1/presentations`, {
+  const createR = await fetch(`https://connector-gateway.lovable.dev/google_slides/v1/presentations`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    headers: slidesHeaders,
     body: JSON.stringify({ title }),
   });
   const createData = await createR.json();
-  if (!createR.ok) throw new Error("Slides create error: " + JSON.stringify(createData));
+  if (!createR.ok) throw new Error(`Slides create error [${createR.status}]: ${JSON.stringify(createData)}`);
   const newId = createData.presentationId as string;
   const firstSlideId = createData?.slides?.[0]?.objectId as string | undefined;
 
-  // Try to share read-only (best-effort, ignore failure)
-  await fetch(`https://www.googleapis.com/drive/v3/files/${newId}/permissions?supportsAllDrives=true`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ role: "reader", type: "anyone" }),
-  }).catch(() => {});
+  // Best-effort: share read-only via Drive connector (drive.file scope works on files created by the app)
+  if (DRIVE_KEY) {
+    await fetch(`https://connector-gateway.lovable.dev/google_drive/drive/v3/files/${newId}/permissions?supportsAllDrives=true`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "X-Connection-Api-Key": DRIVE_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ role: "reader", type: "anyone" }),
+    }).catch(() => {});
+  }
 
   // Build slide deck content
   const deck: { title: string; body: string }[] = [
