@@ -156,7 +156,20 @@ Deno.serve(async (req) => {
     if (!GEMINI_API_KEY || !SLIDES_TEMPLATE_ID || !SA_JSON) {
       return json({ error: "Missing required environment variables" }, 500);
     }
-    const saJson = JSON.parse(SA_JSON);
+    let saJson: any;
+    try {
+      saJson = JSON.parse(SA_JSON);
+    } catch {
+      return json({
+        error:
+          "GOOGLE_SERVICE_ACCOUNT_JSON bukan JSON valid. Tempelkan SELURUH isi file service-account .json (mulai dari '{' sampai '}'), bukan hanya email atau private key.",
+      }, 500);
+    }
+    if (!saJson.client_email || !saJson.private_key) {
+      return json({
+        error: "GOOGLE_SERVICE_ACCOUNT_JSON tidak lengkap. Wajib berisi 'client_email' dan 'private_key' dari file service account.",
+      }, 500);
+    }
 
     const { dashboard, leaderName, periode, jenisLaporan } = await req.json();
     if (!dashboard) return json({ error: "Missing dashboard data" }, 400);
