@@ -137,7 +137,7 @@ Kembalikan HANYA JSON valid (tanpa markdown fence) dengan struktur:
   return JSON.parse(text);
 }
 
-async function generateSlides(saJson: any, templateId: string, vars: Record<string, string>) {
+async function generateSlides(saJson: any, vars: Record<string, string>) {
   const token = await getAccessToken(
     saJson,
     "https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/presentations",
@@ -278,9 +278,8 @@ Deno.serve(async (req) => {
 
   try {
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-    const SLIDES_TEMPLATE_ID = Deno.env.get("SLIDES_TEMPLATE_ID");
     const SA_JSON = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_JSON");
-    if (!GEMINI_API_KEY || !SLIDES_TEMPLATE_ID || !SA_JSON) {
+    if (!GEMINI_API_KEY || !SA_JSON) {
       return json({ error: "Missing required environment variables" }, 500);
     }
     let saJson: any;
@@ -333,7 +332,7 @@ Deno.serve(async (req) => {
     };
 
     // 3. Slides
-    const slides = await generateSlides(saJson, SLIDES_TEMPLATE_ID, vars);
+    const slides = await generateSlides(saJson, vars);
 
     return json({ ok: true, ai, slides, vars, warning: ai._warning ?? null });
   } catch (e: any) {
