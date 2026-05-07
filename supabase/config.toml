@@ -1,1 +1,4 @@
 project_id = "mstkibmawpkxqfksedwu"
+
+[functions.generate-laporan]
+verify_jwt = false
