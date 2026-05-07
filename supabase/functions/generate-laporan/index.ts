@@ -329,7 +329,7 @@ Deno.serve(async (req) => {
     };
 
     // 3. Slides
-    const slides = await generateSlides(saJson, vars);
+    const slides = await generateSlides(vars);
 
     return json({ ok: true, ai, slides, vars, warning: ai._warning ?? null });
   } catch (e: any) {
