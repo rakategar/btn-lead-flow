@@ -252,7 +252,7 @@ Deno.serve(async (req) => {
     // 3. Slides
     const slides = await generateSlides(saJson, SLIDES_TEMPLATE_ID, vars);
 
-    return json({ ok: true, ai, slides, vars });
+    return json({ ok: true, ai, slides, vars, warning: ai._warning ?? null });
   } catch (e: any) {
     console.error("generate-laporan error:", e);
     return json({ error: e?.message ?? "Unknown error" }, 500);
