@@ -56,6 +56,38 @@ async function getAccessToken(saJson: any, scope: string): Promise<string> {
   return data.access_token as string;
 }
 
+function buildFallbackInsight(dashboard: any) {
+  const team = Array.isArray(dashboard?.tim) ? dashboard.tim : [];
+  const top = [...team].sort((a, b) => Number(b?.target ?? b?.value ?? 0) - Number(a?.target ?? a?.value ?? 0))[0];
+  const attention = [...team].sort((a, b) => Number(a?.target ?? a?.value ?? 0) - Number(b?.target ?? b?.value ?? 0))[0];
+  const totalLeads = dashboard?.kpi?.totalLeads ?? 0;
+  const conversionRate = dashboard?.kpi?.conversionRate ?? "0%";
+  const gap = dashboard?.kpi?.gapToTarget ?? "belum tersedia";
+  const high = dashboard?.kpi?.leadPrioritasHigh ?? 0;
+
+  return {
+    ringkasan_eksekutif: `Dashboard menunjukkan ${totalLeads} leads dengan conversion rate ${conversionRate}. Gap terhadap target saat ini berada di ${gap}, sehingga fokus utama perlu diarahkan pada percepatan follow-up lead prioritas tinggi. Terdapat ${high} lead prioritas tinggi yang perlu dikawal untuk menjaga momentum pipeline.`,
+    insight_utama: [
+      `Total lead aktif: ${totalLeads}, dengan ${high} lead prioritas tinggi.`,
+      `Conversion rate saat ini ${conversionRate}; aktivitas tim perlu diarahkan ke prospek dengan peluang closing tertinggi.`,
+      `Gap target ${gap} perlu ditutup melalui ritme follow-up yang lebih disiplin.`,
+      "Pantau lead aging dan aktivitas RM agar risiko pipeline dapat ditangani lebih awal.",
+    ],
+    top_performer: top?.name ? `${top.name} menunjukkan performa paling menonjol berdasarkan data aktivitas tim.` : "Belum ada top performer yang dapat ditentukan dari data saat ini.",
+    perlu_perhatian: attention?.name ? `${attention.name} perlu perhatian tambahan agar progres pipeline tetap sesuai target.` : "Belum ada RM spesifik yang memerlukan perhatian dari data saat ini.",
+    narasi_kpi: `KPI utama mencatat ${totalLeads} leads, conversion rate ${conversionRate}, dan gap target ${gap}.`,
+    narasi_pipeline: `Pipeline perlu diprioritaskan pada ${high} lead high priority dan prospek dengan stage paling dekat ke closing.`,
+    narasi_aktivitas: "Efektivitas aktivitas perlu dijaga melalui follow-up konsisten, pembaruan status lead, dan eskalasi hambatan closing.",
+    early_warning: "Early warning utama adalah potensi stagnasi pipeline jika lead prioritas tinggi tidak segera ditindaklanjuti.",
+    action_plan: [
+      "Lakukan review harian untuk lead prioritas tinggi.",
+      "Tetapkan next action yang jelas untuk setiap lead di stage kritis.",
+      "Berikan coaching terarah kepada RM yang progresnya tertinggal.",
+    ],
+    rekomendasi_leader: "Sales Leader disarankan memfokuskan ritme manajemen pada lead prioritas tinggi, aktivitas follow-up, dan coaching berbasis gap KPI.",
+  };
+}
+
 async function callGemini(apiKey: string, dashboard: any) {
   const prompt = `Anda adalah analis sales senior. Berdasarkan data dashboard A.C.T Sales CRM berikut, buat laporan mingguan profesional dalam Bahasa Indonesia.
 
@@ -76,8 +108,9 @@ Kembalikan HANYA JSON valid (tanpa markdown fence) dengan struktur:
   "rekomendasi_leader": "rekomendasi untuk Sales Leader"
 }`;
 
+  const model = Deno.env.get("GEMINI_MODEL") || "gemini-2.5-flash-lite";
   const r = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -88,7 +121,18 @@ Kembalikan HANYA JSON valid (tanpa markdown fence) dengan struktur:
     },
   );
   const data = await r.json();
-  if (!r.ok) throw new Error("Gemini error: " + JSON.stringify(data));
+  if (!r.ok) {
+    const status = data?.error?.status;
+    const retryDelay = data?.error?.details?.find((d: any) => d?.["@type"]?.includes("RetryInfo"))?.retryDelay;
+    if (r.status === 429 || status === "RESOURCE_EXHAUSTED") {
+      return {
+        ...buildFallbackInsight(dashboard),
+        _fallback: true,
+        _warning: `Kuota Gemini API untuk model ${model} sedang habis${retryDelay ? `, coba lagi sekitar ${retryDelay}` : ""}. Laporan dibuat memakai analisis berbasis data tanpa AI agar proses tetap selesai.`,
+      };
+    }
+    throw new Error(data?.error?.message ? `Gemini error: ${data.error.message}` : "Gemini error: " + JSON.stringify(data));
+  }
   const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "{}";
   return JSON.parse(text);
 }
@@ -208,7 +252,7 @@ Deno.serve(async (req) => {
     // 3. Slides
     const slides = await generateSlides(saJson, SLIDES_TEMPLATE_ID, vars);
 
-    return json({ ok: true, ai, slides, vars });
+    return json({ ok: true, ai, slides, vars, warning: ai._warning ?? null });
   } catch (e: any) {
     console.error("generate-laporan error:", e);
     return json({ error: e?.message ?? "Unknown error" }, 500);

@@ -115,7 +115,11 @@ export function GenerateLaporanPage({ user, leads }: Props) {
       setStepIdx(4);
       setResult(data);
       setGeneratedAt(new Date().toLocaleString("id-ID"));
-      toast.success("Laporan berhasil dibuat");
+      if ((data as any)?.warning) {
+        toast.warning("Laporan dibuat dengan fallback", { description: (data as any).warning });
+      } else {
+        toast.success("Laporan berhasil dibuat");
+      }
     } catch (e: any) {
       console.error(e);
       setError(e?.message ?? "Gagal generate laporan");
@@ -223,6 +227,13 @@ export function GenerateLaporanPage({ user, leads }: Props) {
               <span className="text-xs text-muted-foreground">Dibuat pada {generatedAt}</span>
             )}
           </div>
+
+          {result.warning && (
+            <div className="rounded-md border border-warning/30 bg-warning/10 p-3 text-sm text-warning flex gap-2">
+              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+              <div>{result.warning}</div>
+            </div>
+          )}
 
           {result.ai?.ringkasan_eksekutif && (
             <p className="text-sm text-navy/80 leading-relaxed bg-muted/40 rounded-md p-3 border border-border">
