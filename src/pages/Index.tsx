@@ -6,6 +6,7 @@ import { PipelinePage } from "@/components/pages/PipelinePage";
 import { ActivityDailyPage } from "@/components/pages/ActivityDailyPage";
 import { FollowUpPage } from "@/components/pages/FollowUpPage";
 import { KpiReviewPage } from "@/components/pages/KpiReviewPage";
+import { GenerateLaporanPage } from "@/components/pages/GenerateLaporanPage";
 import { initialLeads, leaderOfRM, leaders, type Lead } from "@/lib/dummy-data";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { LoginScreen } from "@/components/LoginScreen";
@@ -18,6 +19,7 @@ const pageMeta: Record<PageKey, { title: string; subtitle: string }> = {
   activity: { title: "Activity Daily", subtitle: "Action Daily — ritme harian Sales Team dan Sales Leader." },
   followup: { title: "Follow-Up & Status", subtitle: "Skema eskalasi FU1 → FU3 dan status resolusi pipeline." },
   kpi: { title: "KPI & Review", subtitle: "Weekly & monthly rhythm, alignment, dan result area." },
+  laporan: { title: "Generate Laporan", subtitle: "Buat laporan otomatis berdasarkan data dashboard saat ini." },
 };
 
 const dummyNames = ["Putri Maharani", "Eko Saputra", "Lina Marlina", "Hadi Kurniawan", "Citra Dewi", "Bagas Pradana"];
@@ -80,6 +82,7 @@ const IndexInner = () => {
       case "activity": return <ActivityDailyPage />;
       case "followup": return <FollowUpPage />;
       case "kpi": return <KpiReviewPage />;
+      case "laporan": return <GenerateLaporanPage user={user!} leads={scopedLeads} />;
     }
   }, [page, scopedLeads, search]);
 
