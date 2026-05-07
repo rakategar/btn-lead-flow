@@ -137,7 +137,7 @@ Kembalikan HANYA JSON valid (tanpa markdown fence) dengan struktur:
   return JSON.parse(text);
 }
 
-async function generateSlides(saJson: any, templateId: string, vars: Record<string, string>) {
+async function generateSlides(saJson: any, vars: Record<string, string>) {
   const token = await getAccessToken(
     saJson,
     "https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/presentations",
