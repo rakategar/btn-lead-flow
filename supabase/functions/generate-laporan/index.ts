@@ -278,9 +278,8 @@ Deno.serve(async (req) => {
 
   try {
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-    const SLIDES_TEMPLATE_ID = Deno.env.get("SLIDES_TEMPLATE_ID");
     const SA_JSON = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_JSON");
-    if (!GEMINI_API_KEY || !SLIDES_TEMPLATE_ID || !SA_JSON) {
+    if (!GEMINI_API_KEY || !SA_JSON) {
       return json({ error: "Missing required environment variables" }, 500);
     }
     let saJson: any;
