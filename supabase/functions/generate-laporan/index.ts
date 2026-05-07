@@ -143,33 +143,116 @@ async function generateSlides(saJson: any, templateId: string, vars: Record<stri
     "https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/presentations",
   );
 
-  // Copy template
-  const copyR = await fetch(
-    `https://www.googleapis.com/drive/v3/files/${templateId}/copy?supportsAllDrives=true`,
-    {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ name: `Laporan Mingguan - ${new Date().toISOString().slice(0, 10)}` }),
-    },
-  );
-  const copyData = await copyR.json();
-  if (!copyR.ok) throw new Error("Drive copy error: " + JSON.stringify(copyData));
-  const newId = copyData.id as string;
+  // Create new presentation from scratch (no Drive copy)
+  const title = `Laporan ${vars.NAMA_LEADER || ""} - ${vars.PERIODE || new Date().toISOString().slice(0, 10)}`.trim();
+  const createR = await fetch(`https://slides.googleapis.com/v1/presentations`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ title }),
+  });
+  const createData = await createR.json();
+  if (!createR.ok) throw new Error("Slides create error: " + JSON.stringify(createData));
+  const newId = createData.presentationId as string;
+  const firstSlideId = createData?.slides?.[0]?.objectId as string | undefined;
 
-  // Make readable to anyone with link
+  // Try to share read-only (best-effort, ignore failure)
   await fetch(`https://www.googleapis.com/drive/v3/files/${newId}/permissions?supportsAllDrives=true`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: JSON.stringify({ role: "reader", type: "anyone" }),
+  }).catch(() => {});
+
+  // Build slide deck content
+  const deck: { title: string; body: string }[] = [
+    { title: `${vars.JENIS_LAPORAN || "Laporan Mingguan"}`, body: `${vars.NAMA_LEADER}\n${vars.PERIODE}\n${vars.TANGGAL}` },
+    { title: "Ringkasan Eksekutif", body: vars.RINGKASAN_EKSEKUTIF },
+    {
+      title: "KPI Utama",
+      body: `Total Leads: ${vars.TOTAL_LEADS}\nConversion Rate: ${vars.CONVERSION_RATE}\nGap Target: ${vars.GAP_TARGET}\nLead Prioritas High: ${vars.LEAD_PRIORITAS_HIGH}\n\n${vars.NARASI_KPI}`,
+    },
+    {
+      title: "Insight Utama",
+      body: [vars.INSIGHT_1, vars.INSIGHT_2, vars.INSIGHT_3, vars.INSIGHT_4]
+        .filter(Boolean).map((s, i) => `${i + 1}. ${s}`).join("\n"),
+    },
+    { title: "Pipeline & Distribusi", body: vars.NARASI_PIPELINE },
+    { title: "Efektivitas Aktivitas Tim", body: vars.NARASI_AKTIVITAS },
+    { title: "Top Performer & Perlu Perhatian", body: `Top Performer:\n${vars.TOP_PERFORMER}\n\nPerlu Perhatian:\n${vars.PERLU_PERHATIAN}` },
+    { title: "Early Warning", body: vars.EARLY_WARNING },
+    {
+      title: "Action Plan",
+      body: [vars.ACTION_1, vars.ACTION_2, vars.ACTION_3]
+        .filter(Boolean).map((s, i) => `${i + 1}. ${s}`).join("\n"),
+    },
+    { title: "Rekomendasi untuk Sales Leader", body: vars.REKOMENDASI },
+  ];
+
+  const requests: any[] = [];
+  const slideIds: string[] = [];
+  deck.forEach((_, i) => {
+    const sid = `slide_${i}_${Date.now().toString(36)}`;
+    slideIds.push(sid);
+    if (i === 0 && firstSlideId) {
+      // reuse the first auto-created slide
+      slideIds[0] = firstSlideId;
+      return;
+    }
+    requests.push({
+      createSlide: {
+        objectId: sid,
+        slideLayoutReference: { predefinedLayout: "BLANK" },
+      },
+    });
   });
 
-  // Build replace requests
-  const requests = Object.entries(vars).map(([k, v]) => ({
-    replaceAllText: {
-      containsText: { text: `[${k}]`, matchCase: false },
-      replaceText: String(v ?? ""),
-    },
-  }));
+  // Add title + body text boxes per slide
+  deck.forEach((s, i) => {
+    const sid = slideIds[i];
+    const titleId = `title_${i}_${Date.now().toString(36)}`;
+    const bodyId = `body_${i}_${Date.now().toString(36)}`;
+    requests.push(
+      {
+        createShape: {
+          objectId: titleId,
+          shapeType: "TEXT_BOX",
+          elementProperties: {
+            pageObjectId: sid,
+            size: { width: { magnitude: 9000000, unit: "EMU" }, height: { magnitude: 700000, unit: "EMU" } },
+            transform: { scaleX: 1, scaleY: 1, translateX: 457200, translateY: 457200, unit: "EMU" },
+          },
+        },
+      },
+      { insertText: { objectId: titleId, text: s.title || "" } },
+      {
+        updateTextStyle: {
+          objectId: titleId,
+          textRange: { type: "ALL" },
+          style: { fontSize: { magnitude: 24, unit: "PT" }, bold: true, foregroundColor: { opaqueColor: { rgbColor: { red: 0.05, green: 0.16, blue: 0.36 } } } },
+          fields: "fontSize,bold,foregroundColor",
+        },
+      },
+      {
+        createShape: {
+          objectId: bodyId,
+          shapeType: "TEXT_BOX",
+          elementProperties: {
+            pageObjectId: sid,
+            size: { width: { magnitude: 9000000, unit: "EMU" }, height: { magnitude: 4000000, unit: "EMU" } },
+            transform: { scaleX: 1, scaleY: 1, translateX: 457200, translateY: 1300000, unit: "EMU" },
+          },
+        },
+      },
+      { insertText: { objectId: bodyId, text: (s.body || "").toString() } },
+      {
+        updateTextStyle: {
+          objectId: bodyId,
+          textRange: { type: "ALL" },
+          style: { fontSize: { magnitude: 14, unit: "PT" } },
+          fields: "fontSize",
+        },
+      },
+    );
+  });
 
   const updR = await fetch(
     `https://slides.googleapis.com/v1/presentations/${newId}:batchUpdate`,
