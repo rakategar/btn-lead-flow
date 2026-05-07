@@ -267,15 +267,15 @@ async function generateSlides(vars: Record<string, string>) {
   });
 
   const updR = await fetch(
-    `https://slides.googleapis.com/v1/presentations/${newId}:batchUpdate`,
+    `https://connector-gateway.lovable.dev/google_slides/v1/presentations/${newId}:batchUpdate`,
     {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: slidesHeaders,
       body: JSON.stringify({ requests }),
     },
   );
   const updData = await updR.json();
-  if (!updR.ok) throw new Error("Slides update error: " + JSON.stringify(updData));
+  if (!updR.ok) throw new Error(`Slides update error [${updR.status}]: ${JSON.stringify(updData)}`);
 
   // Export as PPTX
   const exportUrl = `https://docs.google.com/presentation/d/${newId}/export/pptx`;
