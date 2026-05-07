@@ -225,30 +225,103 @@ Deno.serve(async (req) => {
 
     // 2. Slides variables
     const today = new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" });
+    const tim = Array.isArray(dashboard.tim) ? dashboard.tim : [];
+    const rm = (i: number) => tim[i] || {};
+    const eff = dashboard.efektivitas?.detail || [];
+    const findEff = (kw: string) => {
+      const f = eff.find((e: any) => String(e?.label ?? e?.name ?? "").toLowerCase().includes(kw));
+      return f?.value ?? "";
+    };
+    const dist = dashboard.pipeline?.distribusi || {};
+    const totalPipe = (Number(dist.hot) || 0) + (Number(dist.warm) || 0) + (Number(dist.cold) || 0);
+    const pct = (n: any) => totalPipe ? Math.round((Number(n) / totalPipe) * 100) : 0;
+    const area = dashboard.areaHasil || {};
+    const ew = Array.isArray(dashboard.earlyWarning) ? dashboard.earlyWarning : [];
+
     const vars: Record<string, string> = {
       NAMA_LEADER: leaderName ?? "",
+      "NAMA SALES LEADER": leaderName ?? "",
       PERIODE: periode ?? "",
+      "PERIODE LAPORAN": periode ?? "",
       TANGGAL: today,
       JENIS_LAPORAN: jenisLaporan ?? "Laporan Mingguan Tim",
       RINGKASAN_EKSEKUTIF: ai.ringkasan_eksekutif ?? "",
+      RINGKASAN_1: ai.insight_utama?.[0] ?? ai.ringkasan_eksekutif ?? "",
+      RINGKASAN_2: ai.insight_utama?.[1] ?? "",
+      RINGKASAN_3: ai.insight_utama?.[2] ?? "",
       INSIGHT_1: ai.insight_utama?.[0] ?? "",
       INSIGHT_2: ai.insight_utama?.[1] ?? "",
       INSIGHT_3: ai.insight_utama?.[2] ?? "",
       INSIGHT_4: ai.insight_utama?.[3] ?? "",
       TOP_PERFORMER: ai.top_performer ?? "",
+      TOP_PERFORMER_NAMA: (ai.top_performer ?? "").split(/[:\-]/)[0]?.trim() ?? "",
+      TOP_PERFORMER_DESC: ai.top_performer ?? "",
       PERLU_PERHATIAN: ai.perlu_perhatian ?? "",
+      NEED_ATTENTION_NAMA: (ai.perlu_perhatian ?? "").split(/[:\-]/)[0]?.trim() ?? "",
+      NEED_ATTENTION_DESC: ai.perlu_perhatian ?? "",
       NARASI_KPI: ai.narasi_kpi ?? "",
       NARASI_PIPELINE: ai.narasi_pipeline ?? "",
       NARASI_AKTIVITAS: ai.narasi_aktivitas ?? "",
+      NARASI_EFEKTIVITAS: ai.narasi_aktivitas ?? "",
       EARLY_WARNING: ai.early_warning ?? "",
+      PERINGATAN_1_DESC: ew[0]?.message ?? ew[0]?.text ?? ai.early_warning ?? "",
+      PERINGATAN_2_DESC: ew[1]?.message ?? ew[1]?.text ?? "",
+      COACHING_FOKUS: ai.rekomendasi_leader ?? "",
+      REMEDIAL_NAMA: (ai.perlu_perhatian ?? "").split(/[:\-]/)[0]?.trim() ?? "",
+      REMEDIAL_TOPIK: "Follow-up & closing discipline",
       ACTION_1: ai.action_plan?.[0] ?? "",
       ACTION_2: ai.action_plan?.[1] ?? "",
       ACTION_3: ai.action_plan?.[2] ?? "",
+      AKSI_1: ai.action_plan?.[0] ?? "",
+      AKSI_2: ai.action_plan?.[1] ?? "",
+      AKSI_3: ai.action_plan?.[2] ?? "",
+      PIC_1: leaderName ?? "",
+      PIC_2: leaderName ?? "",
+      PIC_3: leaderName ?? "",
+      DEADLINE_1: "Minggu depan",
+      DEADLINE_2: "Minggu depan",
+      DEADLINE_3: "Rutin",
+      TANGGAL_REVIEW: today,
       REKOMENDASI: ai.rekomendasi_leader ?? "",
+      TOTAL_LEAD: String(dashboard.kpi?.totalLeads ?? ""),
       TOTAL_LEADS: String(dashboard.kpi?.totalLeads ?? ""),
+      TOTAL_LEAD_PIPELINE: String(totalPipe || dashboard.kpi?.totalLeads || ""),
       CONVERSION_RATE: String(dashboard.kpi?.conversionRate ?? ""),
       GAP_TARGET: String(dashboard.kpi?.gapToTarget ?? ""),
+      LEAD_PRIORITAS: String(dashboard.kpi?.leadPrioritasHigh ?? ""),
       LEAD_PRIORITAS_HIGH: String(dashboard.kpi?.leadPrioritasHigh ?? ""),
+      PERSEN_HOT: String(pct(dist.hot)),
+      PERSEN_WARM: String(pct(dist.warm)),
+      PERSEN_COLD: String(pct(dist.cold)),
+      SKOR_EFEKTIVITAS: String(dashboard.efektivitas?.keseluruhan ?? ""),
+      EFEKTIVITAS_PROSPECTING: String(findEff("prospect")),
+      EFEKTIVITAS_FOLLOWUP: String(findEff("follow")),
+      EFEKTIVITAS_APPOINTMENT: String(findEff("appoint") || findEff("meeting")),
+      REVENUE_AKTUAL: String(area.revenueActual ?? dashboard.kpi?.actual ?? ""),
+      REVENUE_TARGET: String(area.revenueTarget ?? dashboard.kpi?.target ?? ""),
+      ENGAGEMENT_PERSEN: String(area.engagement ?? ""),
+      GROWTH_PERSEN: String(area.growth ?? ""),
+      LEADERSHIP_STATUS: String(area.leadershipStatus ?? "On Track"),
+      COACHING_TERPENUHI: String(area.coachingDone ?? tim.length),
+      TOTAL_RM: String(tim.length),
+      RM1_NAMA: String(rm(0).name ?? ""),
+      RM1_PROSPECTING: String(rm(0).prospecting ?? rm(0).target ?? ""),
+      RM1_FOLLOWUP: String(rm(0).followup ?? ""),
+      RM1_MEETING: String(rm(0).meeting ?? ""),
+      RM1_CLOSING: String(rm(0).closing ?? ""),
+      RM1_STATUS: String(rm(0).status ?? "On Track"),
+      RM2_NAMA: String(rm(1).name ?? ""),
+      RM2_PROSPECTING: String(rm(1).prospecting ?? rm(1).target ?? ""),
+      RM2_FOLLOWUP: String(rm(1).followup ?? ""),
+      RM2_MEETING: String(rm(1).meeting ?? ""),
+      RM2_CLOSING: String(rm(1).closing ?? ""),
+      RM2_STATUS: String(rm(1).status ?? "On Track"),
+      RM3_NAMA: String(rm(2).name ?? ""),
+      RM3_PROSPECTING: String(rm(2).prospecting ?? rm(2).target ?? ""),
+      RM3_FOLLOWUP: String(rm(2).followup ?? ""),
+      RM3_MEETING: String(rm(2).meeting ?? ""),
+      RM3_CLOSING: String(rm(2).closing ?? ""),
+      RM3_STATUS: String(rm(2).status ?? "On Track"),
     };
 
     // 3. Slides
