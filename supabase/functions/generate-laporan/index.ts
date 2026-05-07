@@ -137,134 +137,58 @@ Kembalikan HANYA JSON valid (tanpa markdown fence) dengan struktur:
   return JSON.parse(text);
 }
 
+const TEMPLATE_ID = "1e_paf4UWA_3fpr829436SNkQZgMoHbCVQeWU7spOOGk";
+
 async function generateSlides(vars: Record<string, string>) {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   const SLIDES_KEY = Deno.env.get("GOOGLE_SLIDES_API_KEY");
   const DRIVE_KEY = Deno.env.get("GOOGLE_DRIVE_API_KEY");
   if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
   if (!SLIDES_KEY) throw new Error("GOOGLE_SLIDES_API_KEY is not configured");
+  if (!DRIVE_KEY) throw new Error("GOOGLE_DRIVE_API_KEY is not configured");
 
   const slidesHeaders = {
     Authorization: `Bearer ${LOVABLE_API_KEY}`,
     "X-Connection-Api-Key": SLIDES_KEY,
     "Content-Type": "application/json",
   };
+  const driveHeaders = {
+    Authorization: `Bearer ${LOVABLE_API_KEY}`,
+    "X-Connection-Api-Key": DRIVE_KEY,
+    "Content-Type": "application/json",
+  };
 
+  // 1. Copy template via Drive API
   const title = `Laporan ${vars.NAMA_LEADER || ""} - ${vars.PERIODE || new Date().toISOString().slice(0, 10)}`.trim();
-  const createR = await fetch(`https://connector-gateway.lovable.dev/google_slides/v1/presentations`, {
-    method: "POST",
-    headers: slidesHeaders,
-    body: JSON.stringify({ title }),
-  });
-  const createData = await createR.json();
-  if (!createR.ok) throw new Error(`Slides create error [${createR.status}]: ${JSON.stringify(createData)}`);
-  const newId = createData.presentationId as string;
-  const firstSlideId = createData?.slides?.[0]?.objectId as string | undefined;
-
-  // Best-effort: share read-only via Drive connector (drive.file scope works on files created by the app)
-  if (DRIVE_KEY) {
-    await fetch(`https://connector-gateway.lovable.dev/google_drive/drive/v3/files/${newId}/permissions?supportsAllDrives=true`, {
+  const copyR = await fetch(
+    `https://connector-gateway.lovable.dev/google_drive/drive/v3/files/${TEMPLATE_ID}/copy?supportsAllDrives=true`,
+    {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "X-Connection-Api-Key": DRIVE_KEY,
-        "Content-Type": "application/json",
-      },
+      headers: driveHeaders,
+      body: JSON.stringify({ name: title }),
+    },
+  );
+  const copyData = await copyR.json();
+  if (!copyR.ok) throw new Error(`Drive copy error [${copyR.status}]: ${JSON.stringify(copyData)}`);
+  const newId = copyData.id as string;
+
+  // 2. Best-effort: share read-only
+  await fetch(
+    `https://connector-gateway.lovable.dev/google_drive/drive/v3/files/${newId}/permissions?supportsAllDrives=true`,
+    {
+      method: "POST",
+      headers: driveHeaders,
       body: JSON.stringify({ role: "reader", type: "anyone" }),
-    }).catch(() => {});
-  }
-
-  // Build slide deck content
-  const deck: { title: string; body: string }[] = [
-    { title: `${vars.JENIS_LAPORAN || "Laporan Mingguan"}`, body: `${vars.NAMA_LEADER}\n${vars.PERIODE}\n${vars.TANGGAL}` },
-    { title: "Ringkasan Eksekutif", body: vars.RINGKASAN_EKSEKUTIF },
-    {
-      title: "KPI Utama",
-      body: `Total Leads: ${vars.TOTAL_LEADS}\nConversion Rate: ${vars.CONVERSION_RATE}\nGap Target: ${vars.GAP_TARGET}\nLead Prioritas High: ${vars.LEAD_PRIORITAS_HIGH}\n\n${vars.NARASI_KPI}`,
     },
-    {
-      title: "Insight Utama",
-      body: [vars.INSIGHT_1, vars.INSIGHT_2, vars.INSIGHT_3, vars.INSIGHT_4]
-        .filter(Boolean).map((s, i) => `${i + 1}. ${s}`).join("\n"),
-    },
-    { title: "Pipeline & Distribusi", body: vars.NARASI_PIPELINE },
-    { title: "Efektivitas Aktivitas Tim", body: vars.NARASI_AKTIVITAS },
-    { title: "Top Performer & Perlu Perhatian", body: `Top Performer:\n${vars.TOP_PERFORMER}\n\nPerlu Perhatian:\n${vars.PERLU_PERHATIAN}` },
-    { title: "Early Warning", body: vars.EARLY_WARNING },
-    {
-      title: "Action Plan",
-      body: [vars.ACTION_1, vars.ACTION_2, vars.ACTION_3]
-        .filter(Boolean).map((s, i) => `${i + 1}. ${s}`).join("\n"),
-    },
-    { title: "Rekomendasi untuk Sales Leader", body: vars.REKOMENDASI },
-  ];
+  ).catch(() => {});
 
-  const requests: any[] = [];
-  const slideIds: string[] = [];
-  deck.forEach((_, i) => {
-    const sid = `slide_${i}_${Date.now().toString(36)}`;
-    slideIds.push(sid);
-    if (i === 0 && firstSlideId) {
-      // reuse the first auto-created slide
-      slideIds[0] = firstSlideId;
-      return;
-    }
-    requests.push({
-      createSlide: {
-        objectId: sid,
-        slideLayoutReference: { predefinedLayout: "BLANK" },
-      },
-    });
-  });
-
-  // Add title + body text boxes per slide
-  deck.forEach((s, i) => {
-    const sid = slideIds[i];
-    const titleId = `title_${i}_${Date.now().toString(36)}`;
-    const bodyId = `body_${i}_${Date.now().toString(36)}`;
-    requests.push(
-      {
-        createShape: {
-          objectId: titleId,
-          shapeType: "TEXT_BOX",
-          elementProperties: {
-            pageObjectId: sid,
-            size: { width: { magnitude: 9000000, unit: "EMU" }, height: { magnitude: 700000, unit: "EMU" } },
-            transform: { scaleX: 1, scaleY: 1, translateX: 457200, translateY: 457200, unit: "EMU" },
-          },
-        },
-      },
-      { insertText: { objectId: titleId, text: s.title || "" } },
-      {
-        updateTextStyle: {
-          objectId: titleId,
-          textRange: { type: "ALL" },
-          style: { fontSize: { magnitude: 24, unit: "PT" }, bold: true, foregroundColor: { opaqueColor: { rgbColor: { red: 0.05, green: 0.16, blue: 0.36 } } } },
-          fields: "fontSize,bold,foregroundColor",
-        },
-      },
-      {
-        createShape: {
-          objectId: bodyId,
-          shapeType: "TEXT_BOX",
-          elementProperties: {
-            pageObjectId: sid,
-            size: { width: { magnitude: 9000000, unit: "EMU" }, height: { magnitude: 4000000, unit: "EMU" } },
-            transform: { scaleX: 1, scaleY: 1, translateX: 457200, translateY: 1300000, unit: "EMU" },
-          },
-        },
-      },
-      { insertText: { objectId: bodyId, text: (s.body || "").toString() } },
-      {
-        updateTextStyle: {
-          objectId: bodyId,
-          textRange: { type: "ALL" },
-          style: { fontSize: { magnitude: 14, unit: "PT" } },
-          fields: "fontSize",
-        },
-      },
-    );
-  });
+  // 3. Replace all placeholders via Slides batchUpdate
+  const requests = Object.entries(vars).map(([key, value]) => ({
+    replaceAllText: {
+      containsText: { text: `[${key}]`, matchCase: true },
+      replaceText: (value ?? "").toString(),
+    },
+  }));
 
   const updR = await fetch(
     `https://connector-gateway.lovable.dev/google_slides/v1/presentations/${newId}:batchUpdate`,
@@ -277,9 +201,8 @@ async function generateSlides(vars: Record<string, string>) {
   const updData = await updR.json();
   if (!updR.ok) throw new Error(`Slides update error [${updR.status}]: ${JSON.stringify(updData)}`);
 
-  // Export as PPTX
-  const exportUrl = `https://docs.google.com/presentation/d/${newId}/export/pptx`;
   const viewUrl = `https://docs.google.com/presentation/d/${newId}/edit`;
+  const exportUrl = `https://docs.google.com/presentation/d/${newId}/export/pptx`;
   const downloadUrl = `https://www.googleapis.com/drive/v3/files/${newId}/export?mimeType=application/vnd.openxmlformats-officedocument.presentationml.presentation`;
 
   return { presentationId: newId, viewUrl, exportUrl, downloadUrl };
@@ -302,30 +225,103 @@ Deno.serve(async (req) => {
 
     // 2. Slides variables
     const today = new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" });
+    const tim = Array.isArray(dashboard.tim) ? dashboard.tim : [];
+    const rm = (i: number) => tim[i] || {};
+    const eff = dashboard.efektivitas?.detail || [];
+    const findEff = (kw: string) => {
+      const f = eff.find((e: any) => String(e?.label ?? e?.name ?? "").toLowerCase().includes(kw));
+      return f?.value ?? "";
+    };
+    const dist = dashboard.pipeline?.distribusi || {};
+    const totalPipe = (Number(dist.hot) || 0) + (Number(dist.warm) || 0) + (Number(dist.cold) || 0);
+    const pct = (n: any) => totalPipe ? Math.round((Number(n) / totalPipe) * 100) : 0;
+    const area = dashboard.areaHasil || {};
+    const ew = Array.isArray(dashboard.earlyWarning) ? dashboard.earlyWarning : [];
+
     const vars: Record<string, string> = {
       NAMA_LEADER: leaderName ?? "",
+      "NAMA SALES LEADER": leaderName ?? "",
       PERIODE: periode ?? "",
+      "PERIODE LAPORAN": periode ?? "",
       TANGGAL: today,
       JENIS_LAPORAN: jenisLaporan ?? "Laporan Mingguan Tim",
       RINGKASAN_EKSEKUTIF: ai.ringkasan_eksekutif ?? "",
+      RINGKASAN_1: ai.insight_utama?.[0] ?? ai.ringkasan_eksekutif ?? "",
+      RINGKASAN_2: ai.insight_utama?.[1] ?? "",
+      RINGKASAN_3: ai.insight_utama?.[2] ?? "",
       INSIGHT_1: ai.insight_utama?.[0] ?? "",
       INSIGHT_2: ai.insight_utama?.[1] ?? "",
       INSIGHT_3: ai.insight_utama?.[2] ?? "",
       INSIGHT_4: ai.insight_utama?.[3] ?? "",
       TOP_PERFORMER: ai.top_performer ?? "",
+      TOP_PERFORMER_NAMA: (ai.top_performer ?? "").split(/[:\-]/)[0]?.trim() ?? "",
+      TOP_PERFORMER_DESC: ai.top_performer ?? "",
       PERLU_PERHATIAN: ai.perlu_perhatian ?? "",
+      NEED_ATTENTION_NAMA: (ai.perlu_perhatian ?? "").split(/[:\-]/)[0]?.trim() ?? "",
+      NEED_ATTENTION_DESC: ai.perlu_perhatian ?? "",
       NARASI_KPI: ai.narasi_kpi ?? "",
       NARASI_PIPELINE: ai.narasi_pipeline ?? "",
       NARASI_AKTIVITAS: ai.narasi_aktivitas ?? "",
+      NARASI_EFEKTIVITAS: ai.narasi_aktivitas ?? "",
       EARLY_WARNING: ai.early_warning ?? "",
+      PERINGATAN_1_DESC: ew[0]?.message ?? ew[0]?.text ?? ai.early_warning ?? "",
+      PERINGATAN_2_DESC: ew[1]?.message ?? ew[1]?.text ?? "",
+      COACHING_FOKUS: ai.rekomendasi_leader ?? "",
+      REMEDIAL_NAMA: (ai.perlu_perhatian ?? "").split(/[:\-]/)[0]?.trim() ?? "",
+      REMEDIAL_TOPIK: "Follow-up & closing discipline",
       ACTION_1: ai.action_plan?.[0] ?? "",
       ACTION_2: ai.action_plan?.[1] ?? "",
       ACTION_3: ai.action_plan?.[2] ?? "",
+      AKSI_1: ai.action_plan?.[0] ?? "",
+      AKSI_2: ai.action_plan?.[1] ?? "",
+      AKSI_3: ai.action_plan?.[2] ?? "",
+      PIC_1: leaderName ?? "",
+      PIC_2: leaderName ?? "",
+      PIC_3: leaderName ?? "",
+      DEADLINE_1: "Minggu depan",
+      DEADLINE_2: "Minggu depan",
+      DEADLINE_3: "Rutin",
+      TANGGAL_REVIEW: today,
       REKOMENDASI: ai.rekomendasi_leader ?? "",
+      TOTAL_LEAD: String(dashboard.kpi?.totalLeads ?? ""),
       TOTAL_LEADS: String(dashboard.kpi?.totalLeads ?? ""),
+      TOTAL_LEAD_PIPELINE: String(totalPipe || dashboard.kpi?.totalLeads || ""),
       CONVERSION_RATE: String(dashboard.kpi?.conversionRate ?? ""),
       GAP_TARGET: String(dashboard.kpi?.gapToTarget ?? ""),
+      LEAD_PRIORITAS: String(dashboard.kpi?.leadPrioritasHigh ?? ""),
       LEAD_PRIORITAS_HIGH: String(dashboard.kpi?.leadPrioritasHigh ?? ""),
+      PERSEN_HOT: String(pct(dist.hot)),
+      PERSEN_WARM: String(pct(dist.warm)),
+      PERSEN_COLD: String(pct(dist.cold)),
+      SKOR_EFEKTIVITAS: String(dashboard.efektivitas?.keseluruhan ?? ""),
+      EFEKTIVITAS_PROSPECTING: String(findEff("prospect")),
+      EFEKTIVITAS_FOLLOWUP: String(findEff("follow")),
+      EFEKTIVITAS_APPOINTMENT: String(findEff("appoint") || findEff("meeting")),
+      REVENUE_AKTUAL: String(area.revenueActual ?? dashboard.kpi?.actual ?? ""),
+      REVENUE_TARGET: String(area.revenueTarget ?? dashboard.kpi?.target ?? ""),
+      ENGAGEMENT_PERSEN: String(area.engagement ?? ""),
+      GROWTH_PERSEN: String(area.growth ?? ""),
+      LEADERSHIP_STATUS: String(area.leadershipStatus ?? "On Track"),
+      COACHING_TERPENUHI: String(area.coachingDone ?? tim.length),
+      TOTAL_RM: String(tim.length),
+      RM1_NAMA: String(rm(0).name ?? ""),
+      RM1_PROSPECTING: String(rm(0).prospecting ?? rm(0).target ?? ""),
+      RM1_FOLLOWUP: String(rm(0).followup ?? ""),
+      RM1_MEETING: String(rm(0).meeting ?? ""),
+      RM1_CLOSING: String(rm(0).closing ?? ""),
+      RM1_STATUS: String(rm(0).status ?? "On Track"),
+      RM2_NAMA: String(rm(1).name ?? ""),
+      RM2_PROSPECTING: String(rm(1).prospecting ?? rm(1).target ?? ""),
+      RM2_FOLLOWUP: String(rm(1).followup ?? ""),
+      RM2_MEETING: String(rm(1).meeting ?? ""),
+      RM2_CLOSING: String(rm(1).closing ?? ""),
+      RM2_STATUS: String(rm(1).status ?? "On Track"),
+      RM3_NAMA: String(rm(2).name ?? ""),
+      RM3_PROSPECTING: String(rm(2).prospecting ?? rm(2).target ?? ""),
+      RM3_FOLLOWUP: String(rm(2).followup ?? ""),
+      RM3_MEETING: String(rm(2).meeting ?? ""),
+      RM3_CLOSING: String(rm(2).closing ?? ""),
+      RM3_STATUS: String(rm(2).status ?? "On Track"),
     };
 
     // 3. Slides
