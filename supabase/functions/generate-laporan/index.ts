@@ -1,9 +1,10 @@
 // deno-lint-ignore-file no-explicit-any
-import { create, getNumericDate } from "https://deno.land/x/djwt@v3.0.2/mod.ts";
+import JSZip from "https://esm.sh/jszip@3.10.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Expose-Headers": "Content-Disposition, X-Report-Warning",
 };
 
 function json(body: any, status = 200) {
@@ -13,48 +14,7 @@ function json(body: any, status = 200) {
   });
 }
 
-function pemToArrayBuffer(pem: string): ArrayBuffer {
-  const b64 = pem
-    .replace(/-----BEGIN [^-]+-----/g, "")
-    .replace(/-----END [^-]+-----/g, "")
-    .replace(/\s+/g, "");
-  const bin = atob(b64);
-  const buf = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
-  return buf.buffer;
-}
-
-async function getAccessToken(saJson: any, scope: string): Promise<string> {
-  const key = await crypto.subtle.importKey(
-    "pkcs8",
-    pemToArrayBuffer(saJson.private_key),
-    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const jwt = await create(
-    { alg: "RS256", typ: "JWT" },
-    {
-      iss: saJson.client_email,
-      scope,
-      aud: "https://oauth2.googleapis.com/token",
-      exp: getNumericDate(3600),
-      iat: getNumericDate(0),
-    },
-    key,
-  );
-  const r = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
-      assertion: jwt,
-    }),
-  });
-  const data = await r.json();
-  if (!r.ok) throw new Error("OAuth error: " + JSON.stringify(data));
-  return data.access_token as string;
-}
+const TEMPLATE_URL = `${Deno.env.get("SUPABASE_URL")}/storage/v1/object/public/templates/laporan-template.pptx`;
 
 function buildFallbackInsight(dashboard: any) {
   const team = Array.isArray(dashboard?.tim) ? dashboard.tim : [];
@@ -66,48 +26,46 @@ function buildFallbackInsight(dashboard: any) {
   const high = dashboard?.kpi?.leadPrioritasHigh ?? 0;
 
   return {
-    ringkasan_eksekutif: `Dashboard menunjukkan ${totalLeads} leads dengan conversion rate ${conversionRate}. Gap terhadap target saat ini berada di ${gap}, sehingga fokus utama perlu diarahkan pada percepatan follow-up lead prioritas tinggi. Terdapat ${high} lead prioritas tinggi yang perlu dikawal untuk menjaga momentum pipeline.`,
+    ringkasan_eksekutif: `Dashboard menunjukkan ${totalLeads} leads dengan conversion rate ${conversionRate}. Gap target ${gap}, fokus pada percepatan follow-up lead prioritas tinggi (${high}).`,
     insight_utama: [
       `Total lead aktif: ${totalLeads}, dengan ${high} lead prioritas tinggi.`,
-      `Conversion rate saat ini ${conversionRate}; aktivitas tim perlu diarahkan ke prospek dengan peluang closing tertinggi.`,
-      `Gap target ${gap} perlu ditutup melalui ritme follow-up yang lebih disiplin.`,
-      "Pantau lead aging dan aktivitas RM agar risiko pipeline dapat ditangani lebih awal.",
+      `Conversion rate ${conversionRate}; arahkan aktivitas tim ke prospek peluang closing tertinggi.`,
+      `Gap target ${gap} perlu ditutup melalui ritme follow-up disiplin.`,
+      "Pantau lead aging dan aktivitas RM untuk mitigasi risiko pipeline.",
     ],
-    top_performer: top?.name ? `${top.name} menunjukkan performa paling menonjol berdasarkan data aktivitas tim.` : "Belum ada top performer yang dapat ditentukan dari data saat ini.",
-    perlu_perhatian: attention?.name ? `${attention.name} perlu perhatian tambahan agar progres pipeline tetap sesuai target.` : "Belum ada RM spesifik yang memerlukan perhatian dari data saat ini.",
-    narasi_kpi: `KPI utama mencatat ${totalLeads} leads, conversion rate ${conversionRate}, dan gap target ${gap}.`,
-    narasi_pipeline: `Pipeline perlu diprioritaskan pada ${high} lead high priority dan prospek dengan stage paling dekat ke closing.`,
-    narasi_aktivitas: "Efektivitas aktivitas perlu dijaga melalui follow-up konsisten, pembaruan status lead, dan eskalasi hambatan closing.",
-    early_warning: "Early warning utama adalah potensi stagnasi pipeline jika lead prioritas tinggi tidak segera ditindaklanjuti.",
+    top_performer: top?.name ? `${top.name}: performa paling menonjol berdasarkan data aktivitas.` : "Belum ada top performer.",
+    perlu_perhatian: attention?.name ? `${attention.name}: perlu perhatian agar progres pipeline sesuai target.` : "Belum ada RM yang perlu perhatian.",
+    narasi_kpi: `KPI: ${totalLeads} leads, conversion ${conversionRate}, gap ${gap}.`,
+    narasi_pipeline: `Prioritaskan ${high} lead high priority dan stage dekat closing.`,
+    narasi_aktivitas: "Jaga efektivitas via follow-up konsisten dan eskalasi hambatan.",
+    early_warning: "Risiko stagnasi pipeline jika lead prioritas tinggi tidak ditindaklanjuti.",
     action_plan: [
-      "Lakukan review harian untuk lead prioritas tinggi.",
-      "Tetapkan next action yang jelas untuk setiap lead di stage kritis.",
-      "Berikan coaching terarah kepada RM yang progresnya tertinggal.",
+      "Review harian lead prioritas tinggi.",
+      "Tetapkan next action setiap lead di stage kritis.",
+      "Coaching terarah untuk RM yang tertinggal.",
     ],
-    rekomendasi_leader: "Sales Leader disarankan memfokuskan ritme manajemen pada lead prioritas tinggi, aktivitas follow-up, dan coaching berbasis gap KPI.",
+    rekomendasi_leader: "Fokus pada lead prioritas tinggi, follow-up, dan coaching berbasis gap KPI.",
   };
 }
 
 async function callGemini(apiKey: string, dashboard: any) {
-  const prompt = `Anda adalah analis sales senior. Berdasarkan data dashboard A.C.T Sales CRM berikut, buat laporan mingguan profesional dalam Bahasa Indonesia.
+  const prompt = `Anda analis sales senior. Berdasarkan data dashboard A.C.T Sales CRM berikut, buat laporan mingguan profesional Bahasa Indonesia.
 
-DATA DASHBOARD:
-${JSON.stringify(dashboard, null, 2)}
+DATA: ${JSON.stringify(dashboard, null, 2)}
 
-Kembalikan HANYA JSON valid (tanpa markdown fence) dengan struktur:
+Kembalikan HANYA JSON valid:
 {
   "ringkasan_eksekutif": "paragraf 3-4 kalimat",
-  "insight_utama": ["poin 1", "poin 2", "poin 3", "poin 4"],
-  "top_performer": "nama RM dengan alasan singkat",
-  "perlu_perhatian": "nama RM dengan alasan singkat",
-  "narasi_kpi": "narasi singkat KPI dan gap",
-  "narasi_pipeline": "narasi pipeline & distribusi prioritas",
-  "narasi_aktivitas": "narasi efektivitas aktivitas tim",
-  "early_warning": "narasi early warning",
-  "action_plan": ["aksi 1", "aksi 2", "aksi 3"],
-  "rekomendasi_leader": "rekomendasi untuk Sales Leader"
+  "insight_utama": ["1","2","3","4"],
+  "top_performer": "nama RM + alasan",
+  "perlu_perhatian": "nama RM + alasan",
+  "narasi_kpi": "...",
+  "narasi_pipeline": "...",
+  "narasi_aktivitas": "...",
+  "early_warning": "...",
+  "action_plan": ["1","2","3"],
+  "rekomendasi_leader": "..."
 }`;
-
   const model = Deno.env.get("GEMINI_MODEL") || "gemini-2.5-flash-lite";
   const r = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
@@ -122,90 +80,95 @@ Kembalikan HANYA JSON valid (tanpa markdown fence) dengan struktur:
   );
   const data = await r.json();
   if (!r.ok) {
-    const status = data?.error?.status;
-    const retryDelay = data?.error?.details?.find((d: any) => d?.["@type"]?.includes("RetryInfo"))?.retryDelay;
-    if (r.status === 429 || status === "RESOURCE_EXHAUSTED") {
-      return {
-        ...buildFallbackInsight(dashboard),
-        _fallback: true,
-        _warning: `Kuota Gemini API untuk model ${model} sedang habis${retryDelay ? `, coba lagi sekitar ${retryDelay}` : ""}. Laporan dibuat memakai analisis berbasis data tanpa AI agar proses tetap selesai.`,
-      };
+    if (r.status === 429 || data?.error?.status === "RESOURCE_EXHAUSTED") {
+      return { ...buildFallbackInsight(dashboard), _fallback: true, _warning: `Kuota Gemini habis untuk ${model}. Memakai analisis berbasis data.` };
     }
-    throw new Error(data?.error?.message ? `Gemini error: ${data.error.message}` : "Gemini error: " + JSON.stringify(data));
+    throw new Error(data?.error?.message ?? JSON.stringify(data));
   }
   const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "{}";
   return JSON.parse(text);
 }
 
-const TEMPLATE_ID = "1e_paf4UWA_3fpr829436SNkQZgMoHbCVQeWU7spOOGk";
+function xmlEscape(s: string) {
+  return String(s ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
 
-async function generateSlides(vars: Record<string, string>) {
-  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-  const SLIDES_KEY = Deno.env.get("GOOGLE_SLIDES_API_KEY");
-  const DRIVE_KEY = Deno.env.get("GOOGLE_DRIVE_API_KEY");
-  if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
-  if (!SLIDES_KEY) throw new Error("GOOGLE_SLIDES_API_KEY is not configured");
-  if (!DRIVE_KEY) throw new Error("GOOGLE_DRIVE_API_KEY is not configured");
+/**
+ * Replace [KEY] placeholders inside a slide XML string.
+ * Handles cases where PowerPoint splits a placeholder across <a:r> runs by
+ * first stripping run boundaries inside any text that contains '[' or ']'.
+ */
+function replacePlaceholders(xml: string, vars: Record<string, string>): string {
+  // Merge consecutive runs inside the same paragraph that together contain a placeholder.
+  // Simple heuristic: collapse </a:t></a:r><a:r ...><a:rPr.../><a:t> sequences into a single run
+  // when the surrounding text could form a placeholder. To keep it safe we only collapse when
+  // the joined text in a paragraph contains a '['.
+  xml = xml.replace(/<a:p\b[^>]*>[\s\S]*?<\/a:p>/g, (para) => {
+    if (!para.includes("[")) return para;
+    // Extract the first run's properties to preserve formatting
+    const firstRunMatch = para.match(/<a:r\b[^>]*>([\s\S]*?)<\/a:r>/);
+    if (!firstRunMatch) return para;
+    // Concatenate all <a:t>...</a:t> contents in order
+    const texts: string[] = [];
+    para.replace(/<a:t(?:\s[^>]*)?>([\s\S]*?)<\/a:t>/g, (_m, t) => {
+      texts.push(t);
+      return "";
+    });
+    const joined = texts.join("");
+    if (!/\[[A-Z0-9_ ]+\]/.test(joined)) return para;
+    // Replace placeholders in joined text
+    let replaced = joined;
+    for (const [k, v] of Object.entries(vars)) {
+      replaced = replaced.split(`[${k}]`).join(xmlEscape(v));
+    }
+    // Rebuild paragraph: keep first run's <a:rPr.../> if present, replace text with joined replaced
+    const rPrMatch = firstRunMatch[1].match(/<a:rPr\b[^>]*\/>|<a:rPr\b[^>]*>[\s\S]*?<\/a:rPr>/);
+    const rPr = rPrMatch ? rPrMatch[0] : "";
+    const newRun = `<a:r>${rPr}<a:t>${replaced}</a:t></a:r>`;
+    // Preserve paragraph properties (<a:pPr.../>) if any
+    const pPrMatch = para.match(/<a:pPr\b[^>]*\/>|<a:pPr\b[^>]*>[\s\S]*?<\/a:pPr>/);
+    const pPr = pPrMatch ? pPrMatch[0] : "";
+    // Preserve paragraph end run properties
+    const endParaMatch = para.match(/<a:endParaRPr\b[^>]*\/>|<a:endParaRPr\b[^>]*>[\s\S]*?<\/a:endParaRPr>/);
+    const endPara = endParaMatch ? endParaMatch[0] : "";
+    const openTag = para.match(/^<a:p\b[^>]*>/)?.[0] ?? "<a:p>";
+    return `${openTag}${pPr}${newRun}${endPara}</a:p>`;
+  });
 
-  const slidesHeaders = {
-    Authorization: `Bearer ${LOVABLE_API_KEY}`,
-    "X-Connection-Api-Key": SLIDES_KEY,
-    "Content-Type": "application/json",
-  };
-  const driveHeaders = {
-    Authorization: `Bearer ${LOVABLE_API_KEY}`,
-    "X-Connection-Api-Key": DRIVE_KEY,
-    "Content-Type": "application/json",
-  };
+  // Fallback: also replace any remaining [KEY] occurrences (e.g. inside chart XML, single-run text).
+  for (const [k, v] of Object.entries(vars)) {
+    xml = xml.split(`[${k}]`).join(xmlEscape(v));
+  }
+  return xml;
+}
 
-  // 1. Copy template via Drive API
-  const title = `Laporan ${vars.NAMA_LEADER || ""} - ${vars.PERIODE || new Date().toISOString().slice(0, 10)}`.trim();
-  const copyR = await fetch(
-    `https://connector-gateway.lovable.dev/google_drive/drive/v3/files/${TEMPLATE_ID}/copy?supportsAllDrives=true`,
-    {
-      method: "POST",
-      headers: driveHeaders,
-      body: JSON.stringify({ name: title }),
-    },
+async function fillTemplate(vars: Record<string, string>): Promise<Uint8Array> {
+  const r = await fetch(TEMPLATE_URL);
+  if (!r.ok) throw new Error(`Failed to download template: ${r.status} ${r.statusText}`);
+  const buf = new Uint8Array(await r.arrayBuffer());
+  const zip = await JSZip.loadAsync(buf);
+
+  const targets = Object.keys(zip.files).filter((f) =>
+    /^ppt\/(slides|notesSlides|charts|diagrams|drawings)\/.*\.xml$/.test(f)
   );
-  const copyData = await copyR.json();
-  if (!copyR.ok) throw new Error(`Drive copy error [${copyR.status}]: ${JSON.stringify(copyData)}`);
-  const newId = copyData.id as string;
+  for (const path of targets) {
+    const file = zip.file(path);
+    if (!file) continue;
+    const content = await file.async("string");
+    if (!content.includes("[")) continue;
+    zip.file(path, replacePlaceholders(content, vars));
+  }
 
-  // 2. Best-effort: share read-only
-  await fetch(
-    `https://connector-gateway.lovable.dev/google_drive/drive/v3/files/${newId}/permissions?supportsAllDrives=true`,
-    {
-      method: "POST",
-      headers: driveHeaders,
-      body: JSON.stringify({ role: "reader", type: "anyone" }),
-    },
-  ).catch(() => {});
+  return await zip.generateAsync({ type: "uint8array", compression: "DEFLATE" });
+}
 
-  // 3. Replace all placeholders via Slides batchUpdate
-  const requests = Object.entries(vars).map(([key, value]) => ({
-    replaceAllText: {
-      containsText: { text: `[${key}]`, matchCase: true },
-      replaceText: (value ?? "").toString(),
-    },
-  }));
-
-  const updR = await fetch(
-    `https://connector-gateway.lovable.dev/google_slides/v1/presentations/${newId}:batchUpdate`,
-    {
-      method: "POST",
-      headers: slidesHeaders,
-      body: JSON.stringify({ requests }),
-    },
-  );
-  const updData = await updR.json();
-  if (!updR.ok) throw new Error(`Slides update error [${updR.status}]: ${JSON.stringify(updData)}`);
-
-  const viewUrl = `https://docs.google.com/presentation/d/${newId}/edit`;
-  const exportUrl = `https://docs.google.com/presentation/d/${newId}/export/pptx`;
-  const downloadUrl = `https://www.googleapis.com/drive/v3/files/${newId}/export?mimeType=application/vnd.openxmlformats-officedocument.presentationml.presentation`;
-
-  return { presentationId: newId, viewUrl, exportUrl, downloadUrl };
+function safeFile(s: string) {
+  return String(s || "Laporan").replace(/[^a-zA-Z0-9_\-]+/g, "_").slice(0, 60);
 }
 
 Deno.serve(async (req) => {
@@ -213,17 +176,13 @@ Deno.serve(async (req) => {
 
   try {
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-    if (!GEMINI_API_KEY) {
-      return json({ error: "Missing GEMINI_API_KEY" }, 500);
-    }
+    if (!GEMINI_API_KEY) return json({ error: "Missing GEMINI_API_KEY" }, 500);
 
     const { dashboard, leaderName, periode, jenisLaporan } = await req.json();
     if (!dashboard) return json({ error: "Missing dashboard data" }, 400);
 
-    // 1. Gemini
     const ai = await callGemini(GEMINI_API_KEY, dashboard);
 
-    // 2. Slides variables
     const today = new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" });
     const tim = Array.isArray(dashboard.tim) ? dashboard.tim : [];
     const rm = (i: number) => tim[i] || {};
@@ -234,76 +193,32 @@ Deno.serve(async (req) => {
     };
     const dist = dashboard.pipeline?.distribusi || {};
     const totalPipe = (Number(dist.hot) || 0) + (Number(dist.warm) || 0) + (Number(dist.cold) || 0);
-    const pct = (n: any) => totalPipe ? Math.round((Number(n) / totalPipe) * 100) : 0;
     const area = dashboard.areaHasil || {};
     const ew = Array.isArray(dashboard.earlyWarning) ? dashboard.earlyWarning : [];
+    const followupDue = Array.isArray(dashboard.leads)
+      ? dashboard.leads.filter((l: any) => /follow/i.test(l?.stage ?? "")).length
+      : (dashboard.pipeline?.followupDue ?? "");
+
+    const splitName = (s: string) => (s ?? "").split(/[:\-—]/)[0]?.trim() ?? "";
 
     const vars: Record<string, string> = {
+      // Cover
+      NAMA_SALES_LEADER: leaderName ?? "",
       NAMA_LEADER: leaderName ?? "",
-      "NAMA SALES LEADER": leaderName ?? "",
+      PERIODE_LAPORAN: periode ?? "",
       PERIODE: periode ?? "",
-      "PERIODE LAPORAN": periode ?? "",
+      TANGGAL_GENERATE: today,
       TANGGAL: today,
       JENIS_LAPORAN: jenisLaporan ?? "Laporan Mingguan Tim",
-      RINGKASAN_EKSEKUTIF: ai.ringkasan_eksekutif ?? "",
-      RINGKASAN_1: ai.insight_utama?.[0] ?? ai.ringkasan_eksekutif ?? "",
-      RINGKASAN_2: ai.insight_utama?.[1] ?? "",
-      RINGKASAN_3: ai.insight_utama?.[2] ?? "",
-      INSIGHT_1: ai.insight_utama?.[0] ?? "",
-      INSIGHT_2: ai.insight_utama?.[1] ?? "",
-      INSIGHT_3: ai.insight_utama?.[2] ?? "",
-      INSIGHT_4: ai.insight_utama?.[3] ?? "",
-      TOP_PERFORMER: ai.top_performer ?? "",
-      TOP_PERFORMER_NAMA: (ai.top_performer ?? "").split(/[:\-]/)[0]?.trim() ?? "",
-      TOP_PERFORMER_DESC: ai.top_performer ?? "",
-      PERLU_PERHATIAN: ai.perlu_perhatian ?? "",
-      NEED_ATTENTION_NAMA: (ai.perlu_perhatian ?? "").split(/[:\-]/)[0]?.trim() ?? "",
-      NEED_ATTENTION_DESC: ai.perlu_perhatian ?? "",
-      NARASI_KPI: ai.narasi_kpi ?? "",
-      NARASI_PIPELINE: ai.narasi_pipeline ?? "",
-      NARASI_AKTIVITAS: ai.narasi_aktivitas ?? "",
-      NARASI_EFEKTIVITAS: ai.narasi_aktivitas ?? "",
-      EARLY_WARNING: ai.early_warning ?? "",
-      PERINGATAN_1_DESC: ew[0]?.message ?? ew[0]?.text ?? ai.early_warning ?? "",
-      PERINGATAN_2_DESC: ew[1]?.message ?? ew[1]?.text ?? "",
-      COACHING_FOKUS: ai.rekomendasi_leader ?? "",
-      REMEDIAL_NAMA: (ai.perlu_perhatian ?? "").split(/[:\-]/)[0]?.trim() ?? "",
-      REMEDIAL_TOPIK: "Follow-up & closing discipline",
-      ACTION_1: ai.action_plan?.[0] ?? "",
-      ACTION_2: ai.action_plan?.[1] ?? "",
-      ACTION_3: ai.action_plan?.[2] ?? "",
-      AKSI_1: ai.action_plan?.[0] ?? "",
-      AKSI_2: ai.action_plan?.[1] ?? "",
-      AKSI_3: ai.action_plan?.[2] ?? "",
-      PIC_1: leaderName ?? "",
-      PIC_2: leaderName ?? "",
-      PIC_3: leaderName ?? "",
-      DEADLINE_1: "Minggu depan",
-      DEADLINE_2: "Minggu depan",
-      DEADLINE_3: "Rutin",
-      TANGGAL_REVIEW: today,
-      REKOMENDASI: ai.rekomendasi_leader ?? "",
+
+      // KPI
       TOTAL_LEAD: String(dashboard.kpi?.totalLeads ?? ""),
-      TOTAL_LEADS: String(dashboard.kpi?.totalLeads ?? ""),
-      TOTAL_LEAD_PIPELINE: String(totalPipe || dashboard.kpi?.totalLeads || ""),
       CONVERSION_RATE: String(dashboard.kpi?.conversionRate ?? ""),
       GAP_TARGET: String(dashboard.kpi?.gapToTarget ?? ""),
       LEAD_PRIORITAS: String(dashboard.kpi?.leadPrioritasHigh ?? ""),
-      LEAD_PRIORITAS_HIGH: String(dashboard.kpi?.leadPrioritasHigh ?? ""),
-      PERSEN_HOT: String(pct(dist.hot)),
-      PERSEN_WARM: String(pct(dist.warm)),
-      PERSEN_COLD: String(pct(dist.cold)),
-      SKOR_EFEKTIVITAS: String(dashboard.efektivitas?.keseluruhan ?? ""),
-      EFEKTIVITAS_PROSPECTING: String(findEff("prospect")),
-      EFEKTIVITAS_FOLLOWUP: String(findEff("follow")),
-      EFEKTIVITAS_APPOINTMENT: String(findEff("appoint") || findEff("meeting")),
-      REVENUE_AKTUAL: String(area.revenueActual ?? dashboard.kpi?.actual ?? ""),
-      REVENUE_TARGET: String(area.revenueTarget ?? dashboard.kpi?.target ?? ""),
-      ENGAGEMENT_PERSEN: String(area.engagement ?? ""),
-      GROWTH_PERSEN: String(area.growth ?? ""),
-      LEADERSHIP_STATUS: String(area.leadershipStatus ?? "On Track"),
-      COACHING_TERPENUHI: String(area.coachingDone ?? tim.length),
-      TOTAL_RM: String(tim.length),
+      STATUS_KPI: String(dashboard.kpi?.status ?? (Number(dashboard.kpi?.gapToTarget) >= 0 ? "On Track" : "Perlu Perhatian")),
+
+      // Tim
       RM1_NAMA: String(rm(0).name ?? ""),
       RM1_PROSPECTING: String(rm(0).prospecting ?? rm(0).target ?? ""),
       RM1_FOLLOWUP: String(rm(0).followup ?? ""),
@@ -322,12 +237,69 @@ Deno.serve(async (req) => {
       RM3_MEETING: String(rm(2).meeting ?? ""),
       RM3_CLOSING: String(rm(2).closing ?? ""),
       RM3_STATUS: String(rm(2).status ?? "On Track"),
+      TOP_PERFORMER_NAMA: splitName(ai.top_performer),
+      TOP_PERFORMER_DESC: ai.top_performer ?? "",
+      NEED_ATTENTION_NAMA: splitName(ai.perlu_perhatian),
+      NEED_ATTENTION_DESC: ai.perlu_perhatian ?? "",
+
+      // Pipeline
+      JUMLAH_FOLLOWUP_DUE: String(followupDue ?? ""),
+
+      // Efektivitas
+      TREN_EFEKTIVITAS: ai.narasi_aktivitas ?? "",
+      EFEKTIVITAS_PROSPECTING: String(findEff("prospect")),
+      EFEKTIVITAS_FOLLOWUP: String(findEff("follow")),
+      EFEKTIVITAS_MEETING: String(findEff("meeting") || findEff("appoint")),
+
+      // Early warning
+      PERINGATAN_1_DESC: ew[0]?.message ?? ew[0]?.text ?? ai.early_warning ?? "",
+      PERINGATAN_2_DESC: ew[1]?.message ?? ew[1]?.text ?? "",
+      REMEDIAL_NAMA: splitName(ai.perlu_perhatian),
+      REMEDIAL_TOPIK: "Follow-up & closing discipline",
+      COACHING_FOKUS: ai.rekomendasi_leader ?? "",
+      GAP_ALIGNMENT: String(dashboard.kpi?.gapToTarget ?? ""),
+
+      // Action plan
+      AKSI_1: ai.action_plan?.[0] ?? "",
+      AKSI_2: ai.action_plan?.[1] ?? "",
+      AKSI_3: ai.action_plan?.[2] ?? "",
+      PIC_1: leaderName ?? "",
+      PIC_2: leaderName ?? "",
+      PIC_3: leaderName ?? "",
+      DEADLINE_1: "Minggu depan",
+      DEADLINE_2: "Minggu depan",
+      DEADLINE_3: "Rutin",
+      TANGGAL_REVIEW: today,
+
+      // Area Hasil
+      REVENUE_AKTUAL: String(area.revenueActual ?? dashboard.kpi?.actual ?? ""),
+      REVENUE_TARGET: String(area.revenueTarget ?? dashboard.kpi?.target ?? ""),
+      ENGAGEMENT_PERSEN: String(area.engagement ?? ""),
+      GROWTH_PERSEN: String(area.growth ?? ""),
+      LEADERSHIP_STATUS: String(area.leadershipStatus ?? "On Track"),
+      COACHING_TERPENUHI: String(area.coachingDone ?? tim.length),
+      TOTAL_RM: String(tim.length),
+
+      // Ringkasan
+      RINGKASAN_1: ai.insight_utama?.[0] ?? ai.ringkasan_eksekutif ?? "",
+      RINGKASAN_2: ai.insight_utama?.[1] ?? "",
+      RINGKASAN_3: ai.insight_utama?.[2] ?? "",
+      HIGHLIGHT_POSITIF: ai.top_performer ?? "",
+      AREA_FOKUS: ai.rekomendasi_leader ?? "",
     };
 
-    // 3. Slides
-    const slides = await generateSlides(vars);
+    const pptx = await fillTemplate(vars);
 
-    return json({ ok: true, ai, slides, vars, warning: ai._warning ?? null });
+    const filename = `Laporan_${safeFile(leaderName)}_${safeFile(periode)}.pptx`;
+    return new Response(pptx, {
+      status: 200,
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        "Content-Disposition": `attachment; filename="${filename}"`,
+        "X-Report-Warning": ai._warning ? encodeURIComponent(ai._warning) : "",
+      },
+    });
   } catch (e: any) {
     console.error("generate-laporan error:", e);
     return json({ error: e?.message ?? "Unknown error" }, 500);

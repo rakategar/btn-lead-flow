@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FileText, Loader2, CheckCircle2, Download, RefreshCw, Sparkles, AlertCircle, ExternalLink } from "lucide-react";
+import { FileText, Loader2, CheckCircle2, Download, RefreshCw, Sparkles, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -75,7 +75,7 @@ export function GenerateLaporanPage({ user, leads }: Props) {
 
   const [running, setRunning] = useState(false);
   const [stepIdx, setStepIdx] = useState(-1);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<{ url: string; filename: string; warning?: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
 
@@ -104,19 +104,48 @@ export function GenerateLaporanPage({ user, leads }: Props) {
       await new Promise((r) => setTimeout(r, 400));
       setStepIdx(2);
 
-      const { data, error: fnErr } = await supabase.functions.invoke("generate-laporan", {
-        body: { dashboard, leaderName: namaLeader, periode, jenisLaporan: jenis },
+      const fnUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-laporan`;
+      const { data: { session } } = await supabase.auth.getSession();
+      const resp = await fetch(fnUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${session?.access_token ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ dashboard, leaderName: namaLeader, periode, jenisLaporan: jenis }),
       });
-      if (fnErr) throw new Error(fnErr.message);
-      if ((data as any)?.error) throw new Error((data as any).error);
+
+      if (!resp.ok) {
+        const txt = await resp.text();
+        let msg = txt;
+        try { msg = JSON.parse(txt)?.error ?? txt; } catch { /* ignore */ }
+        throw new Error(msg || `HTTP ${resp.status}`);
+      }
+
+      const blob = await resp.blob();
+      const cd = resp.headers.get("Content-Disposition") ?? "";
+      const match = cd.match(/filename="?([^"]+)"?/);
+      const filename = match?.[1] ?? `Laporan_${namaLeader}_${periode}.pptx`;
+      const url = URL.createObjectURL(blob);
+      const warningRaw = resp.headers.get("X-Report-Warning") ?? "";
+      const warning = warningRaw ? decodeURIComponent(warningRaw) : undefined;
 
       setStepIdx(3);
-      await new Promise((r) => setTimeout(r, 500));
+      await new Promise((r) => setTimeout(r, 400));
       setStepIdx(4);
-      setResult(data);
+      setResult({ url, filename, warning });
       setGeneratedAt(new Date().toLocaleString("id-ID"));
-      if ((data as any)?.warning) {
-        toast.warning("Laporan dibuat dengan fallback", { description: (data as any).warning });
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      if (warning) {
+        toast.warning("Laporan dibuat dengan fallback", { description: warning });
       } else {
         toast.success("Laporan berhasil dibuat");
       }
@@ -129,7 +158,6 @@ export function GenerateLaporanPage({ user, leads }: Props) {
     }
   };
 
-  const insights: string[] = result?.ai?.insight_utama ?? [];
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -235,40 +263,22 @@ export function GenerateLaporanPage({ user, leads }: Props) {
             </div>
           )}
 
-          {result.ai?.ringkasan_eksekutif && (
-            <p className="text-sm text-navy/80 leading-relaxed bg-muted/40 rounded-md p-3 border border-border">
-              {result.ai.ringkasan_eksekutif}
-            </p>
-          )}
-
-          <div className="grid sm:grid-cols-2 gap-3">
-            {insights.slice(0, 4).map((it, i) => (
-              <div key={i} className="rounded-lg border border-border p-3 bg-card">
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-                  Insight {i + 1}
-                </div>
-                <div className="text-sm text-navy">{it}</div>
-              </div>
-            ))}
-          </div>
+          <p className="text-sm text-navy/80 leading-relaxed bg-muted/40 rounded-md p-3 border border-border">
+            File <span className="font-mono text-xs">{result.filename}</span> berhasil dibuat.
+            Download akan otomatis dimulai. Jika tidak, klik tombol di bawah.
+          </p>
 
           <div className="flex gap-2 pt-2 flex-wrap">
             <Button asChild className="bg-primary text-primary-foreground hover:bg-primary/90">
-              <a href={result.slides?.exportUrl} target="_blank" rel="noreferrer">
+              <a href={result.url} download={result.filename}>
                 <Download className="h-4 w-4 mr-2" /> Download Laporan (.pptx)
               </a>
             </Button>
-            {result.slides?.viewUrl && (
-              <Button asChild variant="outline">
-                <a href={result.slides.viewUrl} target="_blank" rel="noreferrer">
-                  <ExternalLink className="h-4 w-4 mr-2" /> Buka di Google Slides
-                </a>
-              </Button>
-            )}
             <Button variant="outline" onClick={handleGenerate} disabled={running}>
               <RefreshCw className="h-4 w-4 mr-2" /> Generate Ulang
             </Button>
           </div>
+
         </Card>
       )}
     </div>
