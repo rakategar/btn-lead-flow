@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { pipelineSummary, priorityAlerts, picActivities, leaders, type Lead } from "@/lib/dummy-data";
 import type { PageKey } from "@/components/AppShell";
 import type { SessionUser } from "@/lib/auth";
+import { AiPriorityToday, AiEarlyWarningPanel } from "@/components/ai/AiPanels";
 
 const actPillars = [
   { letter: "A", title: "Action Daily", desc: "Aktivitas nyata harian: prospecting, kunjungan, follow-up, appointment.", tone: "blue" as const },
@@ -58,6 +59,12 @@ export function OverviewPage({ onNavigate, user, leads }: Props) {
         <div className="text-xs uppercase tracking-wider font-semibold text-primary">{roleLabel}</div>
         <h2 className="mt-1 text-xl sm:text-2xl font-bold text-navy">Halo, {user.name} — {roleLabel}</h2>
         <p className="mt-1 text-sm text-muted-foreground">{greetingSub}</p>
+      </div>
+
+      {/* AI: Prioritas Hari Ini & Early Warning Personal */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <AiPriorityToday leads={leads} onNavigatePipeline={() => onNavigate("pipeline")} />
+        <AiEarlyWarningPanel leads={leads} onOpenLead={() => onNavigate("pipeline")} />
       </div>
 
       {/* Hero */}

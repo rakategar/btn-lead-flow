@@ -44,9 +44,10 @@ interface Props {
   pageSubtitle: string;
   user: SessionUser;
   onLogout: () => void;
+  warningCount?: number;
 }
 
-export function AppShell({ current, onChange, onAddActivity, search, onSearch, children, pageTitle, pageSubtitle, user, onLogout }: Props) {
+export function AppShell({ current, onChange, onAddActivity, search, onSearch, children, pageTitle, pageSubtitle, user, onLogout, warningCount = 0 }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const isMgmt = user.role === "management";
   const visibleMenu = menu.filter((m) => {
@@ -140,6 +141,21 @@ export function AppShell({ current, onChange, onAddActivity, search, onSearch, c
                   className="h-9 w-full rounded-lg border border-input bg-background pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/40"
                 />
               </div>
+              {!isMgmt && (
+                <button
+                  onClick={() => onChange("overview")}
+                  className="relative p-2 rounded-md hover:bg-muted text-muted-foreground hover:text-navy"
+                  title="AI Early Warning"
+                  aria-label="AI Early Warning"
+                >
+                  <BellRing className="h-5 w-5" />
+                  {warningCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-danger text-white text-[10px] font-bold flex items-center justify-center">
+                      {warningCount > 99 ? "99+" : warningCount}
+                    </span>
+                  )}
+                </button>
+              )}
               {!isMgmt && (
                 <Button variant="outline" size="sm" className="hidden md:inline-flex" onClick={() => onChange("pipeline")}>
                   <ListChecks className="h-4 w-4 mr-1.5" /> Lihat Pipeline
