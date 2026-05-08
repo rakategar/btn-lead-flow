@@ -21,6 +21,7 @@ import { initialLeads, leaderOfRM, leaders, type Lead } from "@/lib/dummy-data";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { LoginScreen } from "@/components/LoginScreen";
 import { toast } from "sonner";
+import { personalWarnings } from "@/lib/ai-sales";
 
 const pageMeta: Record<PageKey, { title: string; subtitle: string }> = {
   overview: { title: "A.C.T Sales CRM Demo", subtitle: "Sales Performance Dashboard & CRM Concept — Primera Karya Sinergia." },
