@@ -75,7 +75,7 @@ export function GenerateLaporanPage({ user, leads }: Props) {
 
   const [running, setRunning] = useState(false);
   const [stepIdx, setStepIdx] = useState(-1);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<{ url: string; filename: string; warning?: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
 
