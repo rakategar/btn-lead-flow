@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import type { BranchStatus } from "@/lib/dummy-data";
-import type { Tone } from "@/components/StatusBadge";
+
+type Tone = "blue" | "orange" | "green" | "red" | "gray" | "purple" | "navy" | "gold";
 
 export function PageHero({ title, subtitle, badge }: { title: string; subtitle: string; badge?: string }) {
   return (
