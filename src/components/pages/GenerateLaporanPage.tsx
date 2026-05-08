@@ -104,19 +104,48 @@ export function GenerateLaporanPage({ user, leads }: Props) {
       await new Promise((r) => setTimeout(r, 400));
       setStepIdx(2);
 
-      const { data, error: fnErr } = await supabase.functions.invoke("generate-laporan", {
-        body: { dashboard, leaderName: namaLeader, periode, jenisLaporan: jenis },
+      const fnUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-laporan`;
+      const { data: { session } } = await supabase.auth.getSession();
+      const resp = await fetch(fnUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${session?.access_token ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ dashboard, leaderName: namaLeader, periode, jenisLaporan: jenis }),
       });
-      if (fnErr) throw new Error(fnErr.message);
-      if ((data as any)?.error) throw new Error((data as any).error);
+
+      if (!resp.ok) {
+        const txt = await resp.text();
+        let msg = txt;
+        try { msg = JSON.parse(txt)?.error ?? txt; } catch { /* ignore */ }
+        throw new Error(msg || `HTTP ${resp.status}`);
+      }
+
+      const blob = await resp.blob();
+      const cd = resp.headers.get("Content-Disposition") ?? "";
+      const match = cd.match(/filename="?([^"]+)"?/);
+      const filename = match?.[1] ?? `Laporan_${namaLeader}_${periode}.pptx`;
+      const url = URL.createObjectURL(blob);
+      const warningRaw = resp.headers.get("X-Report-Warning") ?? "";
+      const warning = warningRaw ? decodeURIComponent(warningRaw) : undefined;
 
       setStepIdx(3);
-      await new Promise((r) => setTimeout(r, 500));
+      await new Promise((r) => setTimeout(r, 400));
       setStepIdx(4);
-      setResult(data);
+      setResult({ url, filename, warning });
       setGeneratedAt(new Date().toLocaleString("id-ID"));
-      if ((data as any)?.warning) {
-        toast.warning("Laporan dibuat dengan fallback", { description: (data as any).warning });
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      if (warning) {
+        toast.warning("Laporan dibuat dengan fallback", { description: warning });
       } else {
         toast.success("Laporan berhasil dibuat");
       }
@@ -129,7 +158,6 @@ export function GenerateLaporanPage({ user, leads }: Props) {
     }
   };
 
-  const insights: string[] = result?.ai?.insight_utama ?? [];
 
   return (
     <div className="space-y-6 max-w-4xl">
