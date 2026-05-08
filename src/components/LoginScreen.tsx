@@ -83,14 +83,20 @@ export function LoginScreen() {
           </div>
           <div className="space-y-2">
             {DEMO_ACCOUNTS.map((acc) => {
-              const Icon = acc.role === "leader" ? Crown : UserRound;
+              const Icon = acc.role === "management" ? Building2 : acc.role === "leader" ? Crown : UserRound;
+              const iconCls =
+                acc.role === "management"
+                  ? "bg-gold text-navy"
+                  : acc.role === "leader"
+                    ? "bg-navy text-gold"
+                    : "bg-primary-light text-primary";
               return (
                 <button
                   key={acc.email}
-                  onClick={() => login({ role: acc.role, name: acc.name, leaderName: acc.leaderName })}
+                  onClick={() => login({ role: acc.role, name: acc.name, leaderName: (acc as any).leaderName })}
                   className="w-full text-left rounded-lg border border-border bg-card hover:border-navy/50 hover:shadow-soft transition-all px-3 py-2.5 flex items-center gap-3 group"
                 >
-                  <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${acc.role === "leader" ? "bg-navy text-gold" : "bg-primary-light text-primary"}`}>
+                  <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${iconCls}`}>
                     <Icon className="h-4 w-4" />
                   </div>
                   <div className="flex-1 min-w-0">
