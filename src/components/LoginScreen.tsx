@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ShieldCheck, Crown, UserRound, ArrowRight, Mail, Lock } from "lucide-react";
+import { ShieldCheck, Crown, UserRound, ArrowRight, Mail, Lock, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
