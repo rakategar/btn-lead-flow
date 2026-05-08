@@ -1,5 +1,5 @@
 // deno-lint-ignore-file no-explicit-any
-import JSZip from "https://esm.sh/jszip@3.10.1";
+import pptxgen from "npm:pptxgenjs@3.12.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,30 +14,43 @@ function json(body: any, status = 200) {
   });
 }
 
-const TEMPLATE_URL = `${Deno.env.get("SUPABASE_URL")}/storage/v1/object/public/templates/laporan-template.pptx`;
+// BTN brand palette
+const C = {
+  navy: "001A80",
+  blue: "0033CC",
+  blueLight: "3B82F6",
+  blueLighter: "93C5FD",
+  blueLightest: "BFDBFE",
+  red: "CC0000",
+  gray: "E8EDF5",
+  text: "1E293B",
+  textMuted: "64748B",
+  green: "16A34A",
+  yellow: "EAB308",
+  orange: "D97706",
+  white: "FFFFFF",
+};
 
 function buildFallbackInsight(dashboard: any) {
   const team = Array.isArray(dashboard?.tim) ? dashboard.tim : [];
-  const top = [...team].sort((a, b) => Number(b?.target ?? b?.value ?? 0) - Number(a?.target ?? a?.value ?? 0))[0];
-  const attention = [...team].sort((a, b) => Number(a?.target ?? a?.value ?? 0) - Number(b?.target ?? b?.value ?? 0))[0];
+  const top = [...team].sort((a, b) => Number(b?.closing ?? 0) - Number(a?.closing ?? 0))[0];
+  const att = [...team].sort((a, b) => Number(a?.closing ?? 0) - Number(b?.closing ?? 0))[0];
   const totalLeads = dashboard?.kpi?.totalLeads ?? 0;
   const conversionRate = dashboard?.kpi?.conversionRate ?? "0%";
   const gap = dashboard?.kpi?.gapToTarget ?? "belum tersedia";
   const high = dashboard?.kpi?.leadPrioritasHigh ?? 0;
-
   return {
     ringkasan_eksekutif: `Dashboard menunjukkan ${totalLeads} leads dengan conversion rate ${conversionRate}. Gap target ${gap}, fokus pada percepatan follow-up lead prioritas tinggi (${high}).`,
     insight_utama: [
       `Total lead aktif: ${totalLeads}, dengan ${high} lead prioritas tinggi.`,
       `Conversion rate ${conversionRate}; arahkan aktivitas tim ke prospek peluang closing tertinggi.`,
       `Gap target ${gap} perlu ditutup melalui ritme follow-up disiplin.`,
-      "Pantau lead aging dan aktivitas RM untuk mitigasi risiko pipeline.",
     ],
-    top_performer: top?.name ? `${top.name}: performa paling menonjol berdasarkan data aktivitas.` : "Belum ada top performer.",
-    perlu_perhatian: attention?.name ? `${attention.name}: perlu perhatian agar progres pipeline sesuai target.` : "Belum ada RM yang perlu perhatian.",
+    top_performer: top?.pic ? `${top.pic}: closing tertinggi minggu ini.` : "Belum ada top performer.",
+    perlu_perhatian: att?.pic ? `${att.pic}: perlu perhatian agar progres pipeline sesuai target.` : "Belum ada RM yang perlu perhatian.",
     narasi_kpi: `KPI: ${totalLeads} leads, conversion ${conversionRate}, gap ${gap}.`,
     narasi_pipeline: `Prioritaskan ${high} lead high priority dan stage dekat closing.`,
-    narasi_aktivitas: "Jaga efektivitas via follow-up konsisten dan eskalasi hambatan.",
+    narasi_aktivitas: "Tren efektivitas stabil; jaga follow-up konsisten.",
     early_warning: "Risiko stagnasi pipeline jika lead prioritas tinggi tidak ditindaklanjuti.",
     action_plan: [
       "Review harian lead prioritas tinggi.",
@@ -56,119 +69,529 @@ DATA: ${JSON.stringify(dashboard, null, 2)}
 Kembalikan HANYA JSON valid:
 {
   "ringkasan_eksekutif": "paragraf 3-4 kalimat",
-  "insight_utama": ["1","2","3","4"],
+  "insight_utama": ["1","2","3"],
   "top_performer": "nama RM + alasan",
   "perlu_perhatian": "nama RM + alasan",
-  "narasi_kpi": "...",
+  "narasi_kpi": "kalimat singkat dengan kata kritis/perhatian/baik",
   "narasi_pipeline": "...",
-  "narasi_aktivitas": "...",
+  "narasi_aktivitas": "tren naik/turun/stabil",
   "early_warning": "...",
   "action_plan": ["1","2","3"],
   "rekomendasi_leader": "..."
 }`;
   const model = Deno.env.get("GEMINI_MODEL") || "gemini-2.5-flash-lite";
-  const r = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { responseMimeType: "application/json" },
-      }),
-    },
-  );
-  const data = await r.json();
-  if (!r.ok) {
-    if (r.status === 429 || data?.error?.status === "RESOURCE_EXHAUSTED") {
-      return { ...buildFallbackInsight(dashboard), _fallback: true, _warning: `Kuota Gemini habis untuk ${model}. Memakai analisis berbasis data.` };
+  try {
+    const r = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { responseMimeType: "application/json" },
+        }),
+      },
+    );
+    const data = await r.json();
+    if (!r.ok) {
+      return { ...buildFallbackInsight(dashboard), _warning: `Gemini error (${r.status}). Memakai analisis berbasis data.` };
     }
-    throw new Error(data?.error?.message ?? JSON.stringify(data));
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "{}";
+    return JSON.parse(text);
+  } catch (e: any) {
+    return { ...buildFallbackInsight(dashboard), _warning: `Gemini gagal: ${e?.message}. Memakai fallback.` };
   }
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "{}";
-  return JSON.parse(text);
-}
-
-function xmlEscape(s: string) {
-  return String(s ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
-}
-
-/**
- * Replace [KEY] placeholders inside a slide XML string.
- * Handles cases where PowerPoint splits a placeholder across <a:r> runs by
- * first stripping run boundaries inside any text that contains '[' or ']'.
- */
-function replacePlaceholders(xml: string, vars: Record<string, string>): string {
-  // Merge consecutive runs inside the same paragraph that together contain a placeholder.
-  // Simple heuristic: collapse </a:t></a:r><a:r ...><a:rPr.../><a:t> sequences into a single run
-  // when the surrounding text could form a placeholder. To keep it safe we only collapse when
-  // the joined text in a paragraph contains a '['.
-  xml = xml.replace(/<a:p\b[^>]*>[\s\S]*?<\/a:p>/g, (para) => {
-    if (!para.includes("[")) return para;
-    // Extract the first run's properties to preserve formatting
-    const firstRunMatch = para.match(/<a:r\b[^>]*>([\s\S]*?)<\/a:r>/);
-    if (!firstRunMatch) return para;
-    // Concatenate all <a:t>...</a:t> contents in order
-    const texts: string[] = [];
-    para.replace(/<a:t(?:\s[^>]*)?>([\s\S]*?)<\/a:t>/g, (_m, t) => {
-      texts.push(t);
-      return "";
-    });
-    const joined = texts.join("");
-    if (!/\[[A-Z0-9_ ]+\]/.test(joined)) return para;
-    // Replace placeholders in joined text
-    let replaced = joined;
-    for (const [k, v] of Object.entries(vars)) {
-      replaced = replaced.split(`[${k}]`).join(xmlEscape(v));
-    }
-    // Rebuild paragraph: keep first run's <a:rPr.../> if present, replace text with joined replaced
-    const rPrMatch = firstRunMatch[1].match(/<a:rPr\b[^>]*\/>|<a:rPr\b[^>]*>[\s\S]*?<\/a:rPr>/);
-    const rPr = rPrMatch ? rPrMatch[0] : "";
-    const newRun = `<a:r>${rPr}<a:t>${replaced}</a:t></a:r>`;
-    // Preserve paragraph properties (<a:pPr.../>) if any
-    const pPrMatch = para.match(/<a:pPr\b[^>]*\/>|<a:pPr\b[^>]*>[\s\S]*?<\/a:pPr>/);
-    const pPr = pPrMatch ? pPrMatch[0] : "";
-    // Preserve paragraph end run properties
-    const endParaMatch = para.match(/<a:endParaRPr\b[^>]*\/>|<a:endParaRPr\b[^>]*>[\s\S]*?<\/a:endParaRPr>/);
-    const endPara = endParaMatch ? endParaMatch[0] : "";
-    const openTag = para.match(/^<a:p\b[^>]*>/)?.[0] ?? "<a:p>";
-    return `${openTag}${pPr}${newRun}${endPara}</a:p>`;
-  });
-
-  // Fallback: also replace any remaining [KEY] occurrences (e.g. inside chart XML, single-run text).
-  for (const [k, v] of Object.entries(vars)) {
-    xml = xml.split(`[${k}]`).join(xmlEscape(v));
-  }
-  return xml;
-}
-
-async function fillTemplate(vars: Record<string, string>): Promise<Uint8Array> {
-  const r = await fetch(TEMPLATE_URL);
-  if (!r.ok) throw new Error(`Failed to download template: ${r.status} ${r.statusText}`);
-  const buf = new Uint8Array(await r.arrayBuffer());
-  const zip = await JSZip.loadAsync(buf);
-
-  const targets = Object.keys(zip.files).filter((f) =>
-    /^ppt\/(slides|notesSlides|charts|diagrams|drawings)\/.*\.xml$/.test(f)
-  );
-  for (const path of targets) {
-    const file = zip.file(path);
-    if (!file) continue;
-    const content = await file.async("string");
-    if (!content.includes("[")) continue;
-    zip.file(path, replacePlaceholders(content, vars));
-  }
-
-  return await zip.generateAsync({ type: "uint8array", compression: "DEFLATE" });
 }
 
 function safeFile(s: string) {
   return String(s || "Laporan").replace(/[^a-zA-Z0-9_\-]+/g, "_").slice(0, 60);
+}
+
+function num(v: any, d = 0) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : d;
+}
+
+// ---------- Slide helpers ----------
+function addHeader(slide: any, title: string) {
+  slide.addShape("rect", { x: 0, y: 0, w: 10, h: 0.55, fill: { color: C.navy } });
+  slide.addText(title, {
+    x: 0.3, y: 0, w: 9.4, h: 0.55,
+    fontFace: "Calibri", fontSize: 18, bold: true, color: C.white, valign: "middle",
+  });
+}
+
+function kpiCard(slide: any, x: number, y: number, w: number, h: number, label: string, value: string) {
+  slide.addShape("roundRect", {
+    x, y, w, h, fill: { color: C.white },
+    line: { color: C.gray, width: 1 }, rectRadius: 0.08,
+  });
+  slide.addText(label, {
+    x: x + 0.1, y: y + 0.1, w: w - 0.2, h: 0.35,
+    fontSize: 10, color: C.textMuted, fontFace: "Calibri",
+  });
+  slide.addText(value, {
+    x: x + 0.1, y: y + 0.45, w: w - 0.2, h: h - 0.55,
+    fontSize: 24, bold: true, color: C.navy, fontFace: "Calibri", valign: "middle",
+  });
+}
+
+function buildSlides(pres: any, dashboard: any, ai: any, leaderName: string, periode: string, today: string) {
+  pres.layout = "LAYOUT_WIDE_16x9";
+  pres.defineLayout({ name: "LAYOUT_10x5_625", width: 10, height: 5.625 });
+  pres.layout = "LAYOUT_10x5_625";
+
+  const tim = Array.isArray(dashboard.tim) ? dashboard.tim : [];
+  const eff = dashboard.efektivitas?.detail || [];
+  const findEff = (kw: string) => {
+    const f = eff.find((e: any) => String(e?.label ?? e?.name ?? "").toLowerCase().includes(kw));
+    return num(f?.value, 0);
+  };
+  const effProsp = findEff("prospect");
+  const effFu = findEff("follow");
+  const effAppt = findEff("meeting") || findEff("appoint");
+  const effOverall = num(dashboard.efektivitas?.keseluruhan, Math.round((effProsp + effFu + effAppt) / 3));
+
+  const dist = dashboard.pipeline?.distribusi || {};
+  const perStage = Array.isArray(dashboard.pipeline?.perStage) ? dashboard.pipeline.perStage : [];
+
+  // ===== SLIDE 1 — COVER =====
+  {
+    const s = pres.addSlide();
+    s.background = { color: C.white };
+    s.addShape("rect", { x: 0, y: 0, w: 0.18, h: 5.625, fill: { color: C.blue }, line: { color: C.blue } });
+    s.addShape("rect", { x: 9.2, y: 0, w: 0.8, h: 0.18, fill: { color: C.red }, line: { color: C.red } });
+    s.addShape("rect", { x: 0.4, y: 0.25, w: 1.4, h: 0.5, fill: { color: C.blue }, line: { color: C.blue } });
+    s.addText("BTN", {
+      x: 0.4, y: 0.25, w: 1.4, h: 0.5,
+      fontSize: 22, bold: true, color: C.white, align: "center", valign: "middle", fontFace: "Calibri",
+    });
+    s.addText("Laporan Performa\nPenjualan Mingguan", {
+      x: 0.6, y: 1.3, w: 8.5, h: 1.6,
+      fontSize: 40, bold: true, color: C.navy, fontFace: "Calibri",
+    });
+    s.addText("Banking Sales Command Center", {
+      x: 0.6, y: 2.95, w: 8.5, h: 0.4,
+      fontSize: 16, color: C.textMuted, fontFace: "Calibri",
+    });
+    s.addShape("roundRect", {
+      x: 0.6, y: 3.55, w: 5.5, h: 1.3,
+      fill: { color: C.gray }, line: { color: C.gray }, rectRadius: 0.08,
+    });
+    s.addText(
+      [
+        { text: "Sales Leader: ", options: { bold: true, color: C.navy } },
+        { text: `${leaderName}\n`, options: { color: C.text } },
+        { text: "Periode: ", options: { bold: true, color: C.navy } },
+        { text: `${periode}\n`, options: { color: C.text } },
+        { text: "Tanggal: ", options: { bold: true, color: C.navy } },
+        { text: today, options: { color: C.text } },
+      ],
+      { x: 0.8, y: 3.65, w: 5.1, h: 1.1, fontSize: 13, fontFace: "Calibri", valign: "middle" },
+    );
+    s.addText("Didukung oleh Kerangka A.C.T — Action · Control · Track", {
+      x: 0.6, y: 5.05, w: 8.5, h: 0.35,
+      italic: true, fontSize: 11, color: C.textMuted, fontFace: "Calibri",
+    });
+  }
+
+  // ===== SLIDE 2 — KPI =====
+  {
+    const s = pres.addSlide();
+    s.background = { color: C.white };
+    addHeader(s, "INDIKATOR KINERJA UTAMA (KPI)");
+    kpiCard(s, 0.3, 0.7, 2.2, 1.5, "Total Lead Tim", String(dashboard.kpi?.totalLeads ?? "-"));
+    kpiCard(s, 2.68, 0.7, 2.2, 1.5, "Conversion Rate", String(dashboard.kpi?.conversionRate ?? "-"));
+    kpiCard(s, 5.06, 0.7, 2.2, 1.5, "Gap ke Target", String(dashboard.kpi?.gapToTarget ?? "-"));
+    kpiCard(s, 7.44, 0.7, 2.2, 1.5, "Lead Prioritas Tinggi", String(dashboard.kpi?.leadPrioritasHigh ?? "-"));
+
+    const narasi = String(ai.narasi_kpi ?? "").toLowerCase();
+    const badgeColor = /kritis/.test(narasi) ? C.red : /perhatian/.test(narasi) ? C.yellow : C.green;
+    const badgeText = /kritis/.test(narasi) ? "Status: Kritis" : /perhatian/.test(narasi) ? "Status: Perlu Perhatian" : "Status: On Track";
+    s.addShape("roundRect", {
+      x: 7.6, y: 0.62, w: 2.1, h: 0.28,
+      fill: { color: badgeColor }, line: { color: badgeColor }, rectRadius: 0.05,
+    });
+    s.addText(badgeText, {
+      x: 7.6, y: 0.62, w: 2.1, h: 0.28,
+      fontSize: 9, bold: true, color: C.white, align: "center", valign: "middle", fontFace: "Calibri",
+    });
+
+    s.addChart(pres.ChartType.bar, [
+      { name: "Aktual MTD", labels: ["MTD"], values: [num(dashboard.kpi?.actual)] },
+      { name: "Target MTD", labels: ["MTD"], values: [num(dashboard.kpi?.target)] },
+    ], {
+      x: 2.3, y: 2.3, w: 7.4, h: 3.0,
+      barDir: "bar", chartColors: [C.blue, C.gray],
+      showValue: true, showLegend: true, legendPos: "b",
+      showTitle: true, title: "Target MTD vs Aktual MTD",
+      titleFontSize: 12, titleColor: C.navy,
+    });
+  }
+
+  // ===== SLIDE 3 — AKTIVITAS TIM =====
+  {
+    const s = pres.addSlide();
+    s.background = { color: C.white };
+    addHeader(s, "PERFORMA AKTIVITAS HARIAN PER RM");
+
+    const headerRow = ["Nama RM", "Prospecting", "Follow-Up", "Meeting", "Closing", "Status"].map((t) => ({
+      text: t, options: { bold: true, color: C.white, fill: { color: C.blue }, align: "center" },
+    }));
+    const bodyRows = tim.map((r: any) => [
+      { text: String(r.pic ?? r.name ?? "-"), options: { color: C.text } },
+      { text: String(r.prospecting ?? "-"), options: { align: "center", color: C.text } },
+      { text: String(r.followUp ?? r.followup ?? "-"), options: { align: "center", color: C.text } },
+      { text: String(r.meeting ?? "-"), options: { align: "center", color: C.text } },
+      { text: String(r.closing ?? "-"), options: { align: "center", color: C.text } },
+      { text: String(r.status ?? "On Track"), options: { align: "center", color: C.text } },
+    ]);
+    s.addTable([headerRow, ...bodyRows], {
+      x: 0.3, y: 0.7, w: 9.4, colW: [2.2, 1.6, 1.6, 1.5, 1.5, 1.0],
+      fontSize: 10, fontFace: "Calibri",
+      border: { type: "solid", color: C.gray, pt: 1 },
+    });
+
+    const labels = tim.map((r: any) => String(r.pic ?? r.name ?? ""));
+    s.addChart(pres.ChartType.bar, [
+      { name: "Prospecting", labels, values: tim.map((r: any) => num(r.prospecting)) },
+      { name: "Follow-Up", labels, values: tim.map((r: any) => num(r.followUp ?? r.followup)) },
+      { name: "Meeting", labels, values: tim.map((r: any) => num(r.meeting)) },
+      { name: "Closing", labels, values: tim.map((r: any) => num(r.closing)) },
+    ], {
+      x: 0.3, y: 2.35, w: 6.2, h: 3.0,
+      barDir: "col", barGrouping: "clustered",
+      chartColors: [C.blue, C.blueLight, C.blueLighter, C.blueLightest],
+      showLegend: true, legendPos: "b",
+    });
+
+    // Top performer card (green border)
+    s.addShape("roundRect", {
+      x: 6.7, y: 2.35, w: 3.0, h: 1.4,
+      fill: { color: C.white }, line: { color: C.green, width: 2 }, rectRadius: 0.08,
+    });
+    s.addText("Top Performer", { x: 6.85, y: 2.4, w: 2.7, h: 0.3, fontSize: 10, bold: true, color: C.green, fontFace: "Calibri" });
+    s.addText(String(ai.top_performer ?? "-"), {
+      x: 6.85, y: 2.7, w: 2.7, h: 1.0, fontSize: 10, color: C.text, fontFace: "Calibri",
+    });
+
+    s.addShape("roundRect", {
+      x: 6.7, y: 3.85, w: 3.0, h: 1.5,
+      fill: { color: C.white }, line: { color: C.red, width: 2 }, rectRadius: 0.08,
+    });
+    s.addText("Perlu Perhatian", { x: 6.85, y: 3.9, w: 2.7, h: 0.3, fontSize: 10, bold: true, color: C.red, fontFace: "Calibri" });
+    s.addText(String(ai.perlu_perhatian ?? "-"), {
+      x: 6.85, y: 4.2, w: 2.7, h: 1.1, fontSize: 10, color: C.text, fontFace: "Calibri",
+    });
+  }
+
+  // ===== SLIDE 4 — PIPELINE =====
+  {
+    const s = pres.addSlide();
+    s.background = { color: C.white };
+    addHeader(s, "PIPELINE DAN PELACAKAN PROGRES");
+
+    const stageLabels = ["Kontak", "Meeting", "Prospek", "Closing"];
+    const stageVals = perStage.length
+      ? perStage.slice(0, 4).map((x: any) => num(x.count ?? x.value))
+      : [0, 0, 0, 0];
+
+    s.addChart(pres.ChartType.bar, [
+      { name: "Lead", labels: stageLabels, values: stageVals },
+    ], {
+      x: 0.3, y: 0.7, w: 5.8, h: 3.5,
+      barDir: "bar",
+      chartColors: [C.navy],
+      showValue: true, dataLabelPosition: "inEnd",
+      showTitle: true, title: "Lead per Tahap Pipeline", titleFontSize: 12, titleColor: C.navy,
+      showLegend: false,
+    });
+
+    s.addChart(pres.ChartType.doughnut, [{
+      name: "Temperatur",
+      labels: ["Hot", "Warm", "Cold"],
+      values: [num(dist.hot), num(dist.warm), num(dist.cold)],
+    }], {
+      x: 6.2, y: 0.7, w: 3.5, h: 3.2,
+      chartColors: [C.red, C.yellow, C.blue],
+      showPercent: true, holeSize: 50,
+      showTitle: true, title: "Distribusi Temperatur Lead", titleFontSize: 12, titleColor: C.navy,
+      showLegend: true, legendPos: "b",
+    });
+
+    s.addShape("roundRect", {
+      x: 0.3, y: 4.4, w: 9.4, h: 1.0,
+      fill: { color: C.white }, line: { color: C.red, width: 2 }, rectRadius: 0.08,
+    });
+    s.addText("Follow-Up Jatuh Tempo", { x: 0.45, y: 4.45, w: 9.0, h: 0.3, fontSize: 11, bold: true, color: C.red, fontFace: "Calibri" });
+    s.addText(String(ai.narasi_pipeline ?? "-"), {
+      x: 0.45, y: 4.75, w: 9.0, h: 0.6, fontSize: 10, color: C.text, fontFace: "Calibri",
+    });
+  }
+
+  // ===== SLIDE 5 — EFEKTIVITAS =====
+  {
+    const s = pres.addSlide();
+    s.background = { color: C.white };
+    addHeader(s, "EFEKTIVITAS MANAJEMEN AKTIVITAS");
+
+    const donut = (x: number, val: number, target: number, label: string) => {
+      const color = val < target ? C.red : C.green;
+      s.addChart(pres.ChartType.doughnut, [{
+        name: label, labels: [label, "Sisa"], values: [val, Math.max(0, 100 - val)],
+      }], {
+        x, y: 0.65, w: 3.1, h: 2.3,
+        chartColors: [color, C.gray], holeSize: 65,
+        showTitle: true, title: `${label}: ${val}% (target ${target}%)`,
+        titleFontSize: 10, titleColor: C.navy, showLegend: false,
+      });
+      s.addText(`${val}%`, {
+        x: x + 0.55, y: 1.3, w: 2.0, h: 0.6,
+        fontSize: 18, bold: true, color: C.navy, align: "center", valign: "middle", fontFace: "Calibri",
+      });
+    };
+    donut(0.2, effProsp, 80, "Prospecting");
+    donut(3.45, effFu, 75, "Follow-Up");
+    donut(6.7, effAppt, 70, "Appointment");
+
+    s.addShape("roundRect", {
+      x: 0.2, y: 3.05, w: 9.6, h: 0.8,
+      fill: { color: C.navy }, line: { color: C.navy }, rectRadius: 0.05,
+    });
+    s.addText(`Skor Efektivitas Keseluruhan: ${effOverall}% — Tren: ${ai.narasi_aktivitas ?? "stabil"}`, {
+      x: 0.4, y: 3.05, w: 9.2, h: 0.8,
+      fontSize: 13, bold: true, color: C.white, valign: "middle", fontFace: "Calibri",
+    });
+
+    const labels = ["M-4", "M-3", "M-2", "M-1", "Ini"];
+    const back = (cur: number) => [Math.max(0, cur - 8), Math.max(0, cur - 6), Math.max(0, cur - 4), Math.max(0, cur - 2), cur];
+    s.addChart(pres.ChartType.line, [
+      { name: "Prospecting", labels, values: back(effProsp) },
+      { name: "Follow-Up", labels, values: back(effFu) },
+      { name: "Appointment", labels, values: back(effAppt) },
+    ], {
+      x: 0.2, y: 3.95, w: 9.6, h: 1.55,
+      chartColors: [C.blue, C.yellow, C.red],
+      lineSmooth: true, showLegend: true, legendPos: "r",
+      valAxisMinVal: 50, valAxisMaxVal: 100,
+    });
+  }
+
+  // ===== SLIDE 6 — EARLY WARNING =====
+  {
+    const s = pres.addSlide();
+    s.background = { color: C.white };
+    addHeader(s, "SISTEM PERINGATAN DINI & COACHING");
+
+    const ew = Array.isArray(dashboard.earlyWarning) ? dashboard.earlyWarning : [];
+    const radarLabels = ["Prospecting", "Follow-Up", "Meeting", "Closing", "Disiplin"];
+    const radarSeries = tim.slice(0, 3).map((r: any) => ({
+      name: String(r.pic ?? r.name ?? "RM"),
+      labels: radarLabels,
+      values: [
+        Math.min(100, num(r.prospecting) * 10),
+        Math.min(100, num(r.followUp ?? r.followup) * 10),
+        Math.min(100, num(r.meeting) * 10),
+        Math.min(100, num(r.closing) * 10),
+        80,
+      ],
+    }));
+    if (radarSeries.length) {
+      s.addChart(pres.ChartType.radar, radarSeries, {
+        x: 0.2, y: 0.65, w: 5.0, h: 4.7,
+        chartColors: [C.blue, C.red, C.green],
+        radarStyle: "filled", showLegend: true, legendPos: "b",
+        showTitle: true, title: "Skor Dimensi Aktivitas per RM",
+        titleFontSize: 11, titleColor: C.navy,
+      });
+    }
+
+    const ewText = (i: number) => {
+      const a = ew[i];
+      if (!a) return "";
+      return typeof a === "string" ? a : (a.message ?? a.text ?? a.title ?? "");
+    };
+
+    s.addShape("roundRect", {
+      x: 5.4, y: 0.7, w: 4.4, h: 1.5,
+      fill: { color: C.white }, line: { color: C.red, width: 2 }, rectRadius: 0.08,
+    });
+    s.addText("Peringatan 1", { x: 5.55, y: 0.75, w: 4.1, h: 0.3, fontSize: 11, bold: true, color: C.red, fontFace: "Calibri" });
+    s.addText(`${ewText(0)}\n${ewText(1)}`, {
+      x: 5.55, y: 1.05, w: 4.1, h: 1.1, fontSize: 10, color: C.text, fontFace: "Calibri",
+    });
+
+    s.addShape("roundRect", {
+      x: 5.4, y: 2.3, w: 4.4, h: 1.5,
+      fill: { color: C.white }, line: { color: C.red, width: 2 }, rectRadius: 0.08,
+    });
+    s.addText("Peringatan 2", { x: 5.55, y: 2.35, w: 4.1, h: 0.3, fontSize: 11, bold: true, color: C.red, fontFace: "Calibri" });
+    s.addText(`${ewText(2)}\n${ewText(3)}`, {
+      x: 5.55, y: 2.65, w: 4.1, h: 1.1, fontSize: 10, color: C.text, fontFace: "Calibri",
+    });
+
+    s.addShape("roundRect", {
+      x: 5.4, y: 3.9, w: 4.4, h: 1.45,
+      fill: { color: C.white }, line: { color: C.blue, width: 2 }, rectRadius: 0.08,
+    });
+    s.addText("Coaching", { x: 5.55, y: 3.95, w: 4.1, h: 0.3, fontSize: 11, bold: true, color: C.blue, fontFace: "Calibri" });
+    s.addText(`${ai.perlu_perhatian ?? ""}\n${ai.rekomendasi_leader ?? ""}`, {
+      x: 5.55, y: 4.25, w: 4.1, h: 1.05, fontSize: 10, color: C.text, fontFace: "Calibri",
+    });
+  }
+
+  // ===== SLIDE 7 — ACTION PLAN =====
+  {
+    const s = pres.addSlide();
+    s.background = { color: C.white };
+    addHeader(s, "RENCANA AKSI MINGGU DEPAN");
+
+    const plans = ai.action_plan ?? [];
+    const cards: Array<[string, string, string]> = [
+      ["Prioritas 1 — TINGGI", String(plans[0] ?? ""), C.red],
+      ["Prioritas 2 — SEDANG", String(plans[1] ?? ""), C.yellow],
+      ["Prioritas 3 — RUTIN", String(plans[2] ?? ""), C.blue],
+    ];
+    cards.forEach(([label, txt, color], i) => {
+      const y = 0.75 + i * 1.45;
+      s.addShape("roundRect", {
+        x: 0.3, y, w: 6.2, h: 1.3,
+        fill: { color: C.white }, line: { color, width: 2 }, rectRadius: 0.08,
+      });
+      s.addText(label, { x: 0.45, y: y + 0.05, w: 5.9, h: 0.3, fontSize: 11, bold: true, color, fontFace: "Calibri" });
+      s.addText(txt, { x: 0.45, y: y + 0.35, w: 5.9, h: 0.6, fontSize: 10, color: C.text, fontFace: "Calibri" });
+      s.addText(`PIC: ${leaderName}   ·   Tenggat: ${i === 0 ? "Minggu depan" : i === 1 ? "Minggu depan" : "Rutin"}`, {
+        x: 0.45, y: y + 0.95, w: 5.9, h: 0.3, fontSize: 9, italic: true, color: C.textMuted, fontFace: "Calibri",
+      });
+    });
+
+    s.addChart(pres.ChartType.bar, [
+      { name: "Hari", labels: ["Aksi 1", "Aksi 2", "Aksi 3"], values: [2, 3, 5] },
+    ], {
+      x: 6.7, y: 0.75, w: 3.1, h: 4.3,
+      barDir: "bar", chartColors: [C.red],
+      showValue: true,
+      showTitle: true, title: "Timeline (Hari ke-)", titleFontSize: 11, titleColor: C.navy,
+      showLegend: false,
+    });
+
+    s.addShape("roundRect", {
+      x: 0.3, y: 5.15, w: 9.4, h: 0.35,
+      fill: { color: C.gray }, line: { color: C.gray }, rectRadius: 0.05,
+    });
+    s.addText(`Review berikutnya: ${today}`, {
+      x: 0.3, y: 5.15, w: 9.4, h: 0.35,
+      fontSize: 10, color: C.text, align: "center", valign: "middle", fontFace: "Calibri",
+    });
+  }
+
+  // ===== SLIDE 8 — AREA HASIL =====
+  {
+    const s = pres.addSlide();
+    s.background = { color: C.white };
+    addHeader(s, "AREA HASIL — KERANGKA A.C.T");
+
+    const area = Array.isArray(dashboard.areaHasil) ? dashboard.areaHasil : [];
+    const a = (i: number) => area[i] || {};
+    const actual = num(dashboard.kpi?.actual);
+    const target = num(dashboard.kpi?.target);
+
+    const cardA = (x: number, label: string, value: string, sub: string) => {
+      s.addShape("roundRect", {
+        x, y: 0.7, w: 2.2, h: 1.4,
+        fill: { color: C.white }, line: { color: C.gray, width: 1 }, rectRadius: 0.08,
+      });
+      s.addText(label, { x: x + 0.1, y: 0.78, w: 2.0, h: 0.3, fontSize: 10, color: C.textMuted, fontFace: "Calibri" });
+      s.addText(value, { x: x + 0.1, y: 1.05, w: 2.0, h: 0.55, fontSize: 18, bold: true, color: C.navy, fontFace: "Calibri" });
+      s.addText(sub, { x: x + 0.1, y: 1.6, w: 2.0, h: 0.45, fontSize: 9, color: C.textMuted, fontFace: "Calibri" });
+    };
+    cardA(0.25, "Revenue", `Rp ${actual} M`, `vs Target Rp ${target} M`);
+    cardA(2.67, "Engagement", String(a(1).value ?? "-"), String(a(1).label ?? ""));
+    cardA(5.09, "Pertumbuhan", String(a(2).value ?? "-"), String(a(2).label ?? ""));
+    cardA(7.51, "Leadership", String(a(3).value ?? "-"), `${tim.length}/${tim.length} RM di-review`);
+
+    const labels = ["Jan", "Feb", "Mar", "Apr", "Mei"];
+    const revSeries = [Math.max(0, actual - 8), Math.max(0, actual - 6), Math.max(0, actual - 3), Math.max(0, actual - 1), actual];
+    const tgtSeries = [Math.max(0, target - 4), Math.max(0, target - 3), Math.max(0, target - 2), Math.max(0, target - 1), target];
+
+    s.addChart(pres.ChartType.area, [
+      { name: "Revenue Aktual", labels, values: revSeries },
+      { name: "Target", labels, values: tgtSeries },
+    ], {
+      x: 0.25, y: 2.3, w: 9.5, h: 3.1,
+      chartColors: [C.blue, C.gray],
+      lineSmooth: true, showLegend: true, legendPos: "b",
+      showTitle: true, title: "Tren Revenue Bulanan (Rp Miliar)",
+      titleFontSize: 12, titleColor: C.navy,
+    });
+  }
+
+  // ===== SLIDE 9 — RINGKASAN & TERIMA KASIH =====
+  {
+    const s = pres.addSlide();
+    s.background = { color: C.white };
+    addHeader(s, "RINGKASAN EKSEKUTIF");
+
+    const insights = ai.insight_utama ?? [];
+    [0, 1, 2].forEach((i) => {
+      const y = 0.75 + i * 0.85;
+      s.addShape("roundRect", {
+        x: 0.3, y, w: 5.6, h: 0.75,
+        fill: { color: C.white }, line: { color: C.gray, width: 1 }, rectRadius: 0.08,
+      });
+      s.addShape("ellipse", {
+        x: 0.42, y: y + 0.12, w: 0.5, h: 0.5,
+        fill: { color: C.blue }, line: { color: C.blue },
+      });
+      s.addText(String(i + 1), {
+        x: 0.42, y: y + 0.12, w: 0.5, h: 0.5,
+        fontSize: 14, bold: true, color: C.white, align: "center", valign: "middle", fontFace: "Calibri",
+      });
+      s.addText(String(insights[i] ?? "-"), {
+        x: 1.05, y: y + 0.05, w: 4.75, h: 0.65,
+        fontSize: 10, color: C.text, valign: "middle", fontFace: "Calibri",
+      });
+    });
+
+    s.addShape("roundRect", {
+      x: 0.3, y: 3.4, w: 5.6, h: 0.85,
+      fill: { color: C.white }, line: { color: C.green, width: 2 }, rectRadius: 0.08,
+    });
+    s.addText("Pencapaian Terbaik", { x: 0.45, y: 3.45, w: 5.3, h: 0.3, fontSize: 11, bold: true, color: C.green, fontFace: "Calibri" });
+    s.addText(String(ai.top_performer ?? "-"), { x: 0.45, y: 3.75, w: 5.3, h: 0.45, fontSize: 10, color: C.text, fontFace: "Calibri" });
+
+    s.addShape("roundRect", {
+      x: 0.3, y: 4.35, w: 5.6, h: 0.95,
+      fill: { color: C.white }, line: { color: C.red, width: 2 }, rectRadius: 0.08,
+    });
+    s.addText("Area Fokus", { x: 0.45, y: 4.4, w: 5.3, h: 0.3, fontSize: 11, bold: true, color: C.red, fontFace: "Calibri" });
+    s.addText(String(ai.perlu_perhatian ?? "-"), { x: 0.45, y: 4.7, w: 5.3, h: 0.55, fontSize: 10, color: C.text, fontFace: "Calibri" });
+
+    s.addShape("rect", {
+      x: 6.1, y: 0.7, w: 3.7, h: 4.7,
+      fill: { color: C.navy }, line: { color: C.navy },
+    });
+    s.addText("Terima Kasih", {
+      x: 6.2, y: 1.4, w: 3.5, h: 0.6,
+      fontSize: 24, bold: true, color: C.white, fontFace: "Calibri",
+    });
+    s.addText("Terima kasih atas dedikasi dan kerja keras seluruh tim", {
+      x: 6.2, y: 2.0, w: 3.5, h: 0.9,
+      fontSize: 12, color: C.white, fontFace: "Calibri",
+    });
+    s.addText("BTN", {
+      x: 6.2, y: 3.3, w: 3.5, h: 0.5,
+      fontSize: 20, bold: true, color: C.white, fontFace: "Calibri",
+    });
+    s.addText("A.C.T Sales CRM", {
+      x: 6.2, y: 3.8, w: 3.5, h: 0.3,
+      fontSize: 11, color: C.gray, fontFace: "Calibri",
+    });
+    s.addText(`Dibuat otomatis — ${today}`, {
+      x: 6.2, y: 4.95, w: 3.5, h: 0.3,
+      fontSize: 9, italic: true, color: C.gray, fontFace: "Calibri",
+    });
+  }
 }
 
 Deno.serve(async (req) => {
@@ -178,120 +601,23 @@ Deno.serve(async (req) => {
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
     if (!GEMINI_API_KEY) return json({ error: "Missing GEMINI_API_KEY" }, 500);
 
-    const { dashboard, leaderName, periode, jenisLaporan } = await req.json();
+    const { dashboard, leaderName, periode, jenisLaporan: _jenis } = await req.json();
     if (!dashboard) return json({ error: "Missing dashboard data" }, 400);
 
     const ai = await callGemini(GEMINI_API_KEY, dashboard);
-
     const today = new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" });
-    const tim = Array.isArray(dashboard.tim) ? dashboard.tim : [];
-    const rm = (i: number) => tim[i] || {};
-    const eff = dashboard.efektivitas?.detail || [];
-    const findEff = (kw: string) => {
-      const f = eff.find((e: any) => String(e?.label ?? e?.name ?? "").toLowerCase().includes(kw));
-      return f?.value ?? "";
-    };
-    const dist = dashboard.pipeline?.distribusi || {};
-    const totalPipe = (Number(dist.hot) || 0) + (Number(dist.warm) || 0) + (Number(dist.cold) || 0);
-    const area = dashboard.areaHasil || {};
-    const ew = Array.isArray(dashboard.earlyWarning) ? dashboard.earlyWarning : [];
-    const followupDue = Array.isArray(dashboard.leads)
-      ? dashboard.leads.filter((l: any) => /follow/i.test(l?.stage ?? "")).length
-      : (dashboard.pipeline?.followupDue ?? "");
 
-    const splitName = (s: string) => (s ?? "").split(/[:\-—]/)[0]?.trim() ?? "";
+    const pres = new pptxgen();
+    pres.author = "A.C.T Sales CRM";
+    pres.company = "Bank BTN";
+    pres.title = `Laporan ${leaderName} — ${periode}`;
 
-    const vars: Record<string, string> = {
-      // Cover
-      NAMA_SALES_LEADER: leaderName ?? "",
-      NAMA_LEADER: leaderName ?? "",
-      PERIODE_LAPORAN: periode ?? "",
-      PERIODE: periode ?? "",
-      TANGGAL_GENERATE: today,
-      TANGGAL: today,
-      JENIS_LAPORAN: jenisLaporan ?? "Laporan Mingguan Tim",
+    buildSlides(pres, dashboard, ai, leaderName ?? "-", periode ?? "-", today);
 
-      // KPI
-      TOTAL_LEAD: String(dashboard.kpi?.totalLeads ?? ""),
-      CONVERSION_RATE: String(dashboard.kpi?.conversionRate ?? ""),
-      GAP_TARGET: String(dashboard.kpi?.gapToTarget ?? ""),
-      LEAD_PRIORITAS: String(dashboard.kpi?.leadPrioritasHigh ?? ""),
-      STATUS_KPI: String(dashboard.kpi?.status ?? (Number(dashboard.kpi?.gapToTarget) >= 0 ? "On Track" : "Perlu Perhatian")),
-
-      // Tim
-      RM1_NAMA: String(rm(0).name ?? ""),
-      RM1_PROSPECTING: String(rm(0).prospecting ?? rm(0).target ?? ""),
-      RM1_FOLLOWUP: String(rm(0).followup ?? ""),
-      RM1_MEETING: String(rm(0).meeting ?? ""),
-      RM1_CLOSING: String(rm(0).closing ?? ""),
-      RM1_STATUS: String(rm(0).status ?? "On Track"),
-      RM2_NAMA: String(rm(1).name ?? ""),
-      RM2_PROSPECTING: String(rm(1).prospecting ?? rm(1).target ?? ""),
-      RM2_FOLLOWUP: String(rm(1).followup ?? ""),
-      RM2_MEETING: String(rm(1).meeting ?? ""),
-      RM2_CLOSING: String(rm(1).closing ?? ""),
-      RM2_STATUS: String(rm(1).status ?? "On Track"),
-      RM3_NAMA: String(rm(2).name ?? ""),
-      RM3_PROSPECTING: String(rm(2).prospecting ?? rm(2).target ?? ""),
-      RM3_FOLLOWUP: String(rm(2).followup ?? ""),
-      RM3_MEETING: String(rm(2).meeting ?? ""),
-      RM3_CLOSING: String(rm(2).closing ?? ""),
-      RM3_STATUS: String(rm(2).status ?? "On Track"),
-      TOP_PERFORMER_NAMA: splitName(ai.top_performer),
-      TOP_PERFORMER_DESC: ai.top_performer ?? "",
-      NEED_ATTENTION_NAMA: splitName(ai.perlu_perhatian),
-      NEED_ATTENTION_DESC: ai.perlu_perhatian ?? "",
-
-      // Pipeline
-      JUMLAH_FOLLOWUP_DUE: String(followupDue ?? ""),
-
-      // Efektivitas
-      TREN_EFEKTIVITAS: ai.narasi_aktivitas ?? "",
-      EFEKTIVITAS_PROSPECTING: String(findEff("prospect")),
-      EFEKTIVITAS_FOLLOWUP: String(findEff("follow")),
-      EFEKTIVITAS_MEETING: String(findEff("meeting") || findEff("appoint")),
-
-      // Early warning
-      PERINGATAN_1_DESC: ew[0]?.message ?? ew[0]?.text ?? ai.early_warning ?? "",
-      PERINGATAN_2_DESC: ew[1]?.message ?? ew[1]?.text ?? "",
-      REMEDIAL_NAMA: splitName(ai.perlu_perhatian),
-      REMEDIAL_TOPIK: "Follow-up & closing discipline",
-      COACHING_FOKUS: ai.rekomendasi_leader ?? "",
-      GAP_ALIGNMENT: String(dashboard.kpi?.gapToTarget ?? ""),
-
-      // Action plan
-      AKSI_1: ai.action_plan?.[0] ?? "",
-      AKSI_2: ai.action_plan?.[1] ?? "",
-      AKSI_3: ai.action_plan?.[2] ?? "",
-      PIC_1: leaderName ?? "",
-      PIC_2: leaderName ?? "",
-      PIC_3: leaderName ?? "",
-      DEADLINE_1: "Minggu depan",
-      DEADLINE_2: "Minggu depan",
-      DEADLINE_3: "Rutin",
-      TANGGAL_REVIEW: today,
-
-      // Area Hasil
-      REVENUE_AKTUAL: String(area.revenueActual ?? dashboard.kpi?.actual ?? ""),
-      REVENUE_TARGET: String(area.revenueTarget ?? dashboard.kpi?.target ?? ""),
-      ENGAGEMENT_PERSEN: String(area.engagement ?? ""),
-      GROWTH_PERSEN: String(area.growth ?? ""),
-      LEADERSHIP_STATUS: String(area.leadershipStatus ?? "On Track"),
-      COACHING_TERPENUHI: String(area.coachingDone ?? tim.length),
-      TOTAL_RM: String(tim.length),
-
-      // Ringkasan
-      RINGKASAN_1: ai.insight_utama?.[0] ?? ai.ringkasan_eksekutif ?? "",
-      RINGKASAN_2: ai.insight_utama?.[1] ?? "",
-      RINGKASAN_3: ai.insight_utama?.[2] ?? "",
-      HIGHLIGHT_POSITIF: ai.top_performer ?? "",
-      AREA_FOKUS: ai.rekomendasi_leader ?? "",
-    };
-
-    const pptx = await fillTemplate(vars);
-
+    const buf = await pres.write({ outputType: "nodebuffer" }) as Uint8Array;
     const filename = `Laporan_${safeFile(leaderName)}_${safeFile(periode)}.pptx`;
-    return new Response(pptx, {
+
+    return new Response(buf, {
       status: 200,
       headers: {
         ...corsHeaders,
