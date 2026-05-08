@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, ReactNode } from "react";
 import { leaders } from "@/lib/dummy-data";
 
-export type Role = "leader" | "rm";
+export type Role = "leader" | "rm" | "management";
 
 export interface SessionUser {
   role: Role;
@@ -36,7 +36,9 @@ export function useAuth() {
 
 /** Daftar akun dummy untuk login picker. */
 export function listAccounts(): SessionUser[] {
-  const accounts: SessionUser[] = [];
+  const accounts: SessionUser[] = [
+    { role: "management", name: "Direktur Operasional" },
+  ];
   for (const l of leaders) {
     accounts.push({ role: "leader", name: l.name });
     for (const rm of l.rms) {
