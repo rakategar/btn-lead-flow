@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FileText, Loader2, CheckCircle2, Download, RefreshCw, Sparkles, AlertCircle, ExternalLink } from "lucide-react";
+import { FileText, Loader2, CheckCircle2, Download, RefreshCw, Sparkles, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
