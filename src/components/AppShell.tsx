@@ -1,14 +1,18 @@
 import { useState } from "react";
-import { LayoutGrid, Gauge, Workflow, ClipboardCheck, BellRing, LineChart, Search, Plus, Menu, ListChecks, ShieldCheck, LogOut, Crown, UserRound, FileText } from "lucide-react";
+import { LayoutGrid, Gauge, Workflow, ClipboardCheck, BellRing, LineChart, Search, Plus, Menu, ListChecks, ShieldCheck, LogOut, Crown, UserRound, FileText, Building2, Target, Brain, AlertOctagon, Users2, Settings, History } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ActLogo } from "@/components/ActLogo";
 import type { SessionUser } from "@/lib/auth";
 
-export type PageKey = "overview" | "command" | "pipeline" | "activity" | "followup" | "kpi" | "laporan";
+export type PageKey =
+  | "overview" | "command" | "pipeline" | "activity" | "followup" | "kpi" | "laporan"
+  | "mgmt-overview" | "mgmt-command" | "mgmt-branch" | "mgmt-kpi" | "mgmt-pipeline"
+  | "mgmt-alerts" | "mgmt-ai" | "mgmt-users" | "mgmt-config" | "mgmt-audit";
 
-const menu: { key: PageKey; label: string; icon: React.ComponentType<any>; group: string; leaderOnly?: boolean }[] = [
+const menu: { key: PageKey; label: string; icon: React.ComponentType<any>; group: string; leaderOnly?: boolean; managementOnly?: boolean }[] = [
+  // Sales Leader & RM
   { key: "overview", label: "Overview", icon: LayoutGrid, group: "Ringkasan" },
   { key: "command", label: "A.C.T Command Center", icon: Gauge, group: "Ringkasan" },
   { key: "pipeline", label: "Pipeline & Leads", icon: Workflow, group: "Operasional" },
@@ -16,6 +20,17 @@ const menu: { key: PageKey; label: string; icon: React.ComponentType<any>; group
   { key: "followup", label: "Follow-Up & Status", icon: BellRing, group: "Operasional" },
   { key: "kpi", label: "KPI & Review", icon: LineChart, group: "Manajemen" },
   { key: "laporan", label: "Generate Laporan", icon: FileText, group: "Manajemen", leaderOnly: true },
+  // Management (superuser)
+  { key: "mgmt-overview", label: "Executive Overview",  icon: LayoutGrid,    group: "Executive",  managementOnly: true },
+  { key: "mgmt-command",  label: "A.C.T Command Center", icon: Gauge,         group: "Executive",  managementOnly: true },
+  { key: "mgmt-branch",   label: "Branch Performance",  icon: Building2,     group: "Analitik",   managementOnly: true },
+  { key: "mgmt-kpi",      label: "KPI & Target Tracker", icon: Target,        group: "Analitik",   managementOnly: true },
+  { key: "mgmt-pipeline", label: "Pipeline Intelligence", icon: Workflow,     group: "Analitik",   managementOnly: true },
+  { key: "mgmt-alerts",   label: "Early Warning System", icon: AlertOctagon,  group: "Analitik",   managementOnly: true },
+  { key: "mgmt-ai",       label: "AI Insight Center",   icon: Brain,         group: "Analitik",   managementOnly: true },
+  { key: "mgmt-users",    label: "User & Role Mgmt",    icon: Users2,        group: "Sistem",     managementOnly: true },
+  { key: "mgmt-config",   label: "System Configuration", icon: Settings,      group: "Sistem",     managementOnly: true },
+  { key: "mgmt-audit",    label: "Audit & Governance",  icon: History,       group: "Sistem",     managementOnly: true },
 ];
 
 interface Props {
@@ -33,10 +48,16 @@ interface Props {
 
 export function AppShell({ current, onChange, onAddActivity, search, onSearch, children, pageTitle, pageSubtitle, user, onLogout }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const visibleMenu = menu.filter((m) => !m.leaderOnly || user.role === "leader");
+  const isMgmt = user.role === "management";
+  const visibleMenu = menu.filter((m) => {
+    if (m.managementOnly) return isMgmt;
+    if (isMgmt) return false;
+    if (m.leaderOnly) return user.role === "leader";
+    return true;
+  });
   const groups = Array.from(new Set(visibleMenu.map((m) => m.group)));
-  const RoleIcon = user.role === "leader" ? Crown : UserRound;
-  const roleLabel = user.role === "leader" ? "Sales Leader" : "Sales Team (RM)";
+  const RoleIcon = isMgmt ? ShieldCheck : user.role === "leader" ? Crown : UserRound;
+  const roleLabel = isMgmt ? "Management (Superuser)" : user.role === "leader" ? "Sales Leader" : "Sales Team (RM)";
 
   return (
     <div className="min-h-screen bg-background">
@@ -119,16 +140,20 @@ export function AppShell({ current, onChange, onAddActivity, search, onSearch, c
                   className="h-9 w-full rounded-lg border border-input bg-background pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/40"
                 />
               </div>
-              <Button variant="outline" size="sm" className="hidden md:inline-flex" onClick={() => onChange("pipeline")}>
-                <ListChecks className="h-4 w-4 mr-1.5" /> Lihat Pipeline
-              </Button>
-              <Button
-                size="sm"
-                onClick={onAddActivity}
-                className="bg-[hsl(var(--gold))] text-navy hover:bg-[hsl(var(--gold))]/90 shadow-sm font-semibold"
-              >
-                <Plus className="h-4 w-4 mr-1.5" /> Tambah Aktivitas Dummy
-              </Button>
+              {!isMgmt && (
+                <Button variant="outline" size="sm" className="hidden md:inline-flex" onClick={() => onChange("pipeline")}>
+                  <ListChecks className="h-4 w-4 mr-1.5" /> Lihat Pipeline
+                </Button>
+              )}
+              {!isMgmt && (
+                <Button
+                  size="sm"
+                  onClick={onAddActivity}
+                  className="bg-[hsl(var(--gold))] text-navy hover:bg-[hsl(var(--gold))]/90 shadow-sm font-semibold"
+                >
+                  <Plus className="h-4 w-4 mr-1.5" /> Tambah Aktivitas Dummy
+                </Button>
+              )}
               <div className="hidden md:flex items-center gap-2 pl-2 ml-1 border-l border-border">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-navy text-gold">
                   <RoleIcon className="h-4 w-4" />
