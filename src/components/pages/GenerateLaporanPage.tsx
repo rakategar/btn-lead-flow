@@ -17,6 +17,7 @@ import {
   earlyWarnings,
   resultArea,
   mtdKpi,
+  dailyRevenue,
 } from "@/lib/dummy-data";
 
 interface Props {
@@ -61,6 +62,7 @@ function buildDashboard(user: SessionUser, leads: Lead[]) {
     },
     earlyWarning: earlyWarnings,
     areaHasil: resultArea,
+    revenueHistory: dailyRevenue,
     leads: leads.map((l) => ({
       nama: l.nama, pic: l.pic, stage: l.stage, priority: l.priority, status: l.status,
     })),

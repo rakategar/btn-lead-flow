@@ -31,6 +31,18 @@ const C = {
   white: "FFFFFF",
 };
 
+// Load logo once at module level
+async function loadLogo(): Promise<string> {
+  try {
+    const bytes = await Deno.readFile(new URL("./btn-logo.png", import.meta.url));
+    let binary = "";
+    for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+    return btoa(binary);
+  } catch {
+    return "";
+  }
+}
+
 function buildFallbackInsight(dashboard: any) {
   const team = Array.isArray(dashboard?.tim) ? dashboard.tim : [];
   const top = [...team].sort((a, b) => Number(b?.closing ?? 0) - Number(a?.closing ?? 0))[0];
@@ -61,7 +73,7 @@ function buildFallbackInsight(dashboard: any) {
   };
 }
 
-async function callGemini(_apiKey: string, dashboard: any) {
+async function callGemini(dashboard: any) {
   const prompt = `Anda analis sales senior. Berdasarkan data dashboard A.C.T Sales CRM berikut, buat laporan mingguan profesional Bahasa Indonesia.
 
 DATA: ${JSON.stringify(dashboard, null, 2)}
@@ -83,7 +95,7 @@ Kembalikan HANYA JSON valid:
   if (!LOVABLE_API_KEY) {
     return { ...buildFallbackInsight(dashboard), _warning: "LOVABLE_API_KEY tidak tersedia. Memakai fallback." };
   }
-  const model = Deno.env.get("GEMINI_MODEL") || "google/gemini-3-flash-preview";
+  const model = Deno.env.get("GEMINI_MODEL") || "google/gemini-2.0-flash-001";
   const maxRetries = 3;
   let delay = 1500;
   let lastStatus = 0;
@@ -155,12 +167,18 @@ function num(v: any, d = 0) {
 }
 
 // ---------- Slide helpers ----------
-function addHeader(slide: any, title: string) {
+function addHeader(slide: any, title: string, logoB64: string) {
   slide.addShape("rect", { x: 0, y: 0, w: 10, h: 0.55, fill: { color: C.navy } });
   slide.addText(title, {
-    x: 0.3, y: 0, w: 9.4, h: 0.55,
+    x: 0.3, y: 0, w: logoB64 ? 7.5 : 9.4, h: 0.55,
     fontFace: "Calibri", fontSize: 18, bold: true, color: C.white, valign: "middle",
   });
+  if (logoB64) {
+    slide.addImage({
+      data: `image/png;base64,${logoB64}`,
+      x: 8.0, y: 0.04, w: 1.8, h: 0.47,
+    });
+  }
 }
 
 function kpiCard(slide: any, x: number, y: number, w: number, h: number, label: string, value: string) {
@@ -178,7 +196,26 @@ function kpiCard(slide: any, x: number, y: number, w: number, h: number, label: 
   });
 }
 
-function buildSlides(pres: any, dashboard: any, ai: any, leaderName: string, periode: string, today: string) {
+// ---------- Revenue history aggregation (30 days → 5 periods) ----------
+function aggregateRevenue(revHist: any[]): { labels: string[]; actual: number[]; target: number[] } {
+  if (!revHist || revHist.length < 20) {
+    return { labels: [], actual: [], target: [] };
+  }
+  const periodSize = Math.floor(revHist.length / 5);
+  const labels = ["Pekan 1", "Pekan 2", "Pekan 3", "Pekan 4", "Pekan 5"];
+  const actual: number[] = [];
+  const target: number[] = [];
+  for (let p = 0; p < 5; p++) {
+    const chunk = revHist.slice(p * periodSize, (p + 1) * periodSize);
+    const avgA = Math.round(chunk.reduce((s: number, d: any) => s + num(d.actual), 0) / chunk.length);
+    const avgT = Math.round(chunk.reduce((s: number, d: any) => s + num(d.target), 0) / chunk.length);
+    actual.push(avgA);
+    target.push(avgT);
+  }
+  return { labels, actual, target };
+}
+
+function buildSlides(pres: any, dashboard: any, ai: any, leaderName: string, periode: string, today: string, logoB64: string) {
   pres.defineLayout({ name: "ACT_10x5_625", width: 10, height: 5.625 });
   pres.layout = "ACT_10x5_625";
 
@@ -188,12 +225,22 @@ function buildSlides(pres: any, dashboard: any, ai: any, leaderName: string, per
     const f = eff.find((e: any) => String(e?.label ?? e?.name ?? "").toLowerCase().includes(kw));
     return num(f?.value, 0);
   };
+  const findTarget = (kw: string) => {
+    const f = eff.find((e: any) => String(e?.label ?? e?.name ?? "").toLowerCase().includes(kw));
+    return num(f?.target, 80);
+  };
   const effProsp = findEff("prospect");
   const effFu = findEff("follow");
   const effAppt = findEff("meeting") || findEff("appoint");
+  const tgtProsp = findTarget("prospect");
+  const tgtFu = findTarget("follow");
+  const tgtAppt = findTarget("meeting") || findTarget("appoint");
   const effOverall = num(dashboard.efektivitas?.keseluruhan, Math.round((effProsp + effFu + effAppt) / 3));
 
   const dist = dashboard.pipeline?.distribusi || {};
+  const hotCount = num(dist.hot);
+  const warmCount = num(dist.warm);
+  const coldCount = num(dist.cold);
   const perStage = Array.isArray(dashboard.pipeline?.perStage) ? dashboard.pipeline.perStage : [];
 
   // ===== SLIDE 1 — COVER =====
@@ -202,17 +249,26 @@ function buildSlides(pres: any, dashboard: any, ai: any, leaderName: string, per
     s.background = { color: C.white };
     s.addShape("rect", { x: 0, y: 0, w: 0.18, h: 5.625, fill: { color: C.blue }, line: { color: C.blue } });
     s.addShape("rect", { x: 9.2, y: 0, w: 0.8, h: 0.18, fill: { color: C.red }, line: { color: C.red } });
-    s.addShape("rect", { x: 0.4, y: 0.25, w: 1.4, h: 0.5, fill: { color: C.blue }, line: { color: C.blue } });
-    s.addText("BTN", {
-      x: 0.4, y: 0.25, w: 1.4, h: 0.5,
-      fontSize: 22, bold: true, color: C.white, align: "center", valign: "middle", fontFace: "Calibri",
-    });
+
+    // BTN Logo (real image)
+    if (logoB64) {
+      s.addImage({ data: `image/png;base64,${logoB64}`, x: 0.4, y: 0.18, w: 1.8, h: 1.08 });
+    } else {
+      s.addShape("roundRect", {
+        x: 0.4, y: 0.2, w: 1.4, h: 0.5, fill: { color: C.blue }, line: { color: C.blue },
+      });
+      s.addText("BTN", {
+        x: 0.4, y: 0.2, w: 1.4, h: 0.5,
+        fontSize: 22, bold: true, color: C.white, align: "center", valign: "middle", fontFace: "Calibri",
+      });
+    }
+
     s.addText("Laporan Performa\nPenjualan Mingguan", {
-      x: 0.6, y: 1.3, w: 8.5, h: 1.6,
+      x: 0.6, y: 1.4, w: 8.5, h: 1.6,
       fontSize: 40, bold: true, color: C.navy, fontFace: "Calibri",
     });
     s.addText("Banking Sales Command Center", {
-      x: 0.6, y: 2.95, w: 8.5, h: 0.4,
+      x: 0.6, y: 3.0, w: 8.5, h: 0.4,
       fontSize: 16, color: C.textMuted, fontFace: "Calibri",
     });
     s.addShape("roundRect", {
@@ -240,7 +296,7 @@ function buildSlides(pres: any, dashboard: any, ai: any, leaderName: string, per
   {
     const s = pres.addSlide();
     s.background = { color: C.white };
-    addHeader(s, "INDIKATOR KINERJA UTAMA (KPI)");
+    addHeader(s, "INDIKATOR KINERJA UTAMA (KPI)", logoB64);
     kpiCard(s, 0.3, 0.7, 2.2, 1.5, "Total Lead Tim", String(dashboard.kpi?.totalLeads ?? "-"));
     kpiCard(s, 2.68, 0.7, 2.2, 1.5, "Conversion Rate", String(dashboard.kpi?.conversionRate ?? "-"));
     kpiCard(s, 5.06, 0.7, 2.2, 1.5, "Gap ke Target", String(dashboard.kpi?.gapToTarget ?? "-"));
@@ -274,9 +330,9 @@ function buildSlides(pres: any, dashboard: any, ai: any, leaderName: string, per
   {
     const s = pres.addSlide();
     s.background = { color: C.white };
-    addHeader(s, "PERFORMA AKTIVITAS HARIAN PER RM");
+    addHeader(s, "PERFORMA AKTIVITAS HARIAN PER RM", logoB64);
 
-    const headerRow = ["Nama RM", "Prospecting", "Follow-Up", "Meeting", "Closing", "Status"].map((t) => ({
+    const headerRow = ["Nama RM", "Prospecting", "Follow-Up", "Meeting", "Closing", "Disiplin"].map((t) => ({
       text: t, options: { bold: true, color: C.white, fill: { color: C.blue }, align: "center" },
     }));
     const bodyRows = tim.map((r: any) => [
@@ -285,7 +341,7 @@ function buildSlides(pres: any, dashboard: any, ai: any, leaderName: string, per
       { text: String(r.followUp ?? r.followup ?? "-"), options: { align: "center", color: C.text } },
       { text: String(r.meeting ?? "-"), options: { align: "center", color: C.text } },
       { text: String(r.closing ?? "-"), options: { align: "center", color: C.text } },
-      { text: String(r.status ?? "On Track"), options: { align: "center", color: C.text } },
+      { text: String(r.disiplin ?? r.status ?? "Baik"), options: { align: "center", color: C.text } },
     ]);
     s.addTable([headerRow, ...bodyRows], {
       x: 0.3, y: 0.7, w: 9.4, colW: [2.2, 1.6, 1.6, 1.5, 1.5, 1.0],
@@ -330,15 +386,13 @@ function buildSlides(pres: any, dashboard: any, ai: any, leaderName: string, per
   {
     const s = pres.addSlide();
     s.background = { color: C.white };
-    addHeader(s, "PIPELINE DAN PELACAKAN PROGRES");
+    addHeader(s, "PIPELINE DAN PELACAKAN PROGRES", logoB64);
 
-    const stageLabels = ["Kontak", "Meeting", "Prospek", "Closing"];
-    const stageVals = perStage.length
-      ? perStage.slice(0, 4).map((x: any) => num(x.count ?? x.value))
-      : [0, 0, 0, 0];
+    const stageLabels = perStage.slice(0, 4).map((x: any) => String(x.stage ?? x.name ?? "-"));
+    const stageVals = perStage.slice(0, 4).map((x: any) => num(x.count ?? x.value));
 
     s.addChart(pres.ChartType.bar, [
-      { name: "Lead", labels: stageLabels, values: stageVals },
+      { name: "Lead", labels: stageLabels.length ? stageLabels : ["Kontak", "Meeting", "Prospek", "Closing"], values: stageVals.length ? stageVals : [0, 0, 0, 0] },
     ], {
       x: 0.3, y: 0.7, w: 5.8, h: 3.5,
       barDir: "bar",
@@ -350,13 +404,13 @@ function buildSlides(pres: any, dashboard: any, ai: any, leaderName: string, per
 
     s.addChart(pres.ChartType.doughnut, [{
       name: "Temperatur",
-      labels: ["Hot", "Warm", "Cold"],
-      values: [num(dist.hot), num(dist.warm), num(dist.cold)],
+      labels: ["High Priority", "Medium Priority", "Low Priority"],
+      values: [hotCount, warmCount, coldCount],
     }], {
       x: 6.2, y: 0.7, w: 3.5, h: 3.2,
       chartColors: [C.red, C.yellow, C.blue],
       showPercent: true, holeSize: 50,
-      showTitle: true, title: "Distribusi Temperatur Lead", titleFontSize: 12, titleColor: C.navy,
+      showTitle: true, title: "Distribusi Prioritas Lead", titleFontSize: 12, titleColor: C.navy,
       showLegend: true, legendPos: "b",
     });
 
@@ -374,8 +428,9 @@ function buildSlides(pres: any, dashboard: any, ai: any, leaderName: string, per
   {
     const s = pres.addSlide();
     s.background = { color: C.white };
-    addHeader(s, "EFEKTIVITAS MANAJEMEN AKTIVITAS");
+    addHeader(s, "EFEKTIVITAS MANAJEMEN AKTIVITAS", logoB64);
 
+    // Donut per activity type
     const donut = (x: number, val: number, target: number, label: string) => {
       const color = val < target ? C.red : C.green;
       s.addChart(pres.ChartType.doughnut, [{
@@ -391,10 +446,11 @@ function buildSlides(pres: any, dashboard: any, ai: any, leaderName: string, per
         fontSize: 18, bold: true, color: C.navy, align: "center", valign: "middle", fontFace: "Calibri",
       });
     };
-    donut(0.2, effProsp, 80, "Prospecting");
-    donut(3.45, effFu, 75, "Follow-Up");
-    donut(6.7, effAppt, 70, "Appointment");
+    donut(0.2, effProsp, tgtProsp, "Prospecting");
+    donut(3.45, effFu, tgtFu, "Follow-Up");
+    donut(6.7, effAppt, tgtAppt, "Appointment");
 
+    // Overall effectiveness banner
     s.addShape("roundRect", {
       x: 0.2, y: 3.05, w: 9.6, h: 0.8,
       fill: { color: C.navy }, line: { color: C.navy }, rectRadius: 0.05,
@@ -404,28 +460,40 @@ function buildSlides(pres: any, dashboard: any, ai: any, leaderName: string, per
       fontSize: 13, bold: true, color: C.white, valign: "middle", fontFace: "Calibri",
     });
 
-    const labels = ["M-4", "M-3", "M-2", "M-1", "Ini"];
-    const back = (cur: number) => [Math.max(0, cur - 8), Math.max(0, cur - 6), Math.max(0, cur - 4), Math.max(0, cur - 2), cur];
-    s.addChart(pres.ChartType.line, [
-      { name: "Prospecting", labels, values: back(effProsp) },
-      { name: "Follow-Up", labels, values: back(effFu) },
-      { name: "Appointment", labels, values: back(effAppt) },
-    ], {
-      x: 0.2, y: 3.95, w: 9.6, h: 1.55,
-      chartColors: [C.blue, C.yellow, C.red],
-      lineSmooth: true, showLegend: true, legendPos: "r",
-      valAxisMinVal: 50, valAxisMaxVal: 100,
-    });
+    // Actual vs Target grouped bar chart (real data, replaces fake weekly trend)
+    const actLabels = eff.map((e: any) => String(e?.name ?? e?.label ?? ""));
+    const actActual = eff.map((e: any) => num(e?.value));
+    const actTarget = eff.map((e: any) => num(e?.target));
+    if (actLabels.length) {
+      s.addChart(pres.ChartType.bar, [
+        { name: "Aktual (%)", labels: actLabels, values: actActual },
+        { name: "Target (%)", labels: actLabels, values: actTarget },
+      ], {
+        x: 0.2, y: 3.95, w: 9.6, h: 1.55,
+        barDir: "col", barGrouping: "clustered",
+        chartColors: [C.blue, C.gray],
+        showValue: true, showLegend: true, legendPos: "r",
+        valAxisMinVal: 0, valAxisMaxVal: 100,
+      });
+    }
   }
 
   // ===== SLIDE 6 — EARLY WARNING =====
   {
     const s = pres.addSlide();
     s.background = { color: C.white };
-    addHeader(s, "SISTEM PERINGATAN DINI & COACHING");
+    addHeader(s, "SISTEM PERINGATAN DINI & COACHING", logoB64);
 
     const ew = Array.isArray(dashboard.earlyWarning) ? dashboard.earlyWarning : [];
+
+    // Radar chart using real disiplin scores per RM
     const radarLabels = ["Prospecting", "Follow-Up", "Meeting", "Closing", "Disiplin"];
+    const disiplinScore = (r: any) => {
+      const d = String(r.disiplin ?? r.status ?? "").toLowerCase();
+      if (d.includes("sangat") || d.includes("excellent") || d.includes("on track")) return 95;
+      if (d.includes("baik") || d.includes("good")) return 75;
+      return 55;
+    };
     const radarSeries = tim.slice(0, 3).map((r: any) => ({
       name: String(r.pic ?? r.name ?? "RM"),
       labels: radarLabels,
@@ -434,7 +502,7 @@ function buildSlides(pres: any, dashboard: any, ai: any, leaderName: string, per
         Math.min(100, num(r.followUp ?? r.followup) * 10),
         Math.min(100, num(r.meeting) * 10),
         Math.min(100, num(r.closing) * 10),
-        80,
+        disiplinScore(r),
       ],
     }));
     if (radarSeries.length) {
@@ -485,7 +553,7 @@ function buildSlides(pres: any, dashboard: any, ai: any, leaderName: string, per
   {
     const s = pres.addSlide();
     s.background = { color: C.white };
-    addHeader(s, "RENCANA AKSI MINGGU DEPAN");
+    addHeader(s, "RENCANA AKSI MINGGU DEPAN", logoB64);
 
     const plans = ai.action_plan ?? [];
     const cards: Array<[string, string, string]> = [
@@ -506,13 +574,14 @@ function buildSlides(pres: any, dashboard: any, ai: any, leaderName: string, per
       });
     });
 
+    // Lead distribution chart (real data: hot/warm/cold counts)
     s.addChart(pres.ChartType.bar, [
-      { name: "Hari", labels: ["Aksi 1", "Aksi 2", "Aksi 3"], values: [2, 3, 5] },
+      { name: "Jumlah Lead", labels: ["High Priority", "Medium Priority", "Low Priority"], values: [hotCount, warmCount, coldCount] },
     ], {
       x: 6.7, y: 0.75, w: 3.1, h: 4.3,
       barDir: "bar", chartColors: [C.red],
       showValue: true,
-      showTitle: true, title: "Timeline (Hari ke-)", titleFontSize: 11, titleColor: C.navy,
+      showTitle: true, title: "Distribusi Lead Aktif", titleFontSize: 11, titleColor: C.navy,
       showLegend: false,
     });
 
@@ -530,7 +599,7 @@ function buildSlides(pres: any, dashboard: any, ai: any, leaderName: string, per
   {
     const s = pres.addSlide();
     s.background = { color: C.white };
-    addHeader(s, "AREA HASIL — KERANGKA A.C.T");
+    addHeader(s, "AREA HASIL — KERANGKA A.C.T", logoB64);
 
     const area = Array.isArray(dashboard.areaHasil) ? dashboard.areaHasil : [];
     const a = (i: number) => area[i] || {};
@@ -546,23 +615,22 @@ function buildSlides(pres: any, dashboard: any, ai: any, leaderName: string, per
       s.addText(value, { x: x + 0.1, y: 1.05, w: 2.0, h: 0.55, fontSize: 18, bold: true, color: C.navy, fontFace: "Calibri" });
       s.addText(sub, { x: x + 0.1, y: 1.6, w: 2.0, h: 0.45, fontSize: 9, color: C.textMuted, fontFace: "Calibri" });
     };
-    cardA(0.25, "Revenue", `Rp ${actual} M`, `vs Target Rp ${target} M`);
-    cardA(2.67, "Engagement", String(a(1).value ?? "-"), String(a(1).label ?? ""));
-    cardA(5.09, "Pertumbuhan", String(a(2).value ?? "-"), String(a(2).label ?? ""));
+    cardA(0.25, "Revenue", String(a(0).value ?? `Rp ${actual} M`), String(a(0).caption ?? `vs Target Rp ${target} M`));
+    cardA(2.67, "Engagement", String(a(1).value ?? "-"), String(a(1).caption ?? "Aktivitas vs ekspektasi"));
+    cardA(5.09, "Pertumbuhan", String(a(2).value ?? "-"), String(a(2).caption ?? "vs periode sebelumnya"));
     cardA(7.51, "Leadership", String(a(3).value ?? "-"), `${tim.length}/${tim.length} RM di-review`);
 
-    const labels = ["Jan", "Feb", "Mar", "Apr", "Mei"];
-    const revSeries = [Math.max(0, actual - 8), Math.max(0, actual - 6), Math.max(0, actual - 3), Math.max(0, actual - 1), actual];
-    const tgtSeries = [Math.max(0, target - 4), Math.max(0, target - 3), Math.max(0, target - 2), Math.max(0, target - 1), target];
-
+    // Revenue trend from real daily history data
+    const revAgg = aggregateRevenue(dashboard.revenueHistory);
+    const hasHistory = revAgg.labels.length === 5;
     s.addChart(pres.ChartType.area, [
-      { name: "Revenue Aktual", labels, values: revSeries },
-      { name: "Target", labels, values: tgtSeries },
+      { name: "Revenue Aktual", labels: hasHistory ? revAgg.labels : ["Jan", "Feb", "Mar", "Apr", "Mei"], values: hasHistory ? revAgg.actual : [Math.max(0, actual - 8), Math.max(0, actual - 6), Math.max(0, actual - 3), Math.max(0, actual - 1), actual] },
+      { name: "Target", labels: hasHistory ? revAgg.labels : ["Jan", "Feb", "Mar", "Apr", "Mei"], values: hasHistory ? revAgg.target : [Math.max(0, target - 4), Math.max(0, target - 3), Math.max(0, target - 2), Math.max(0, target - 1), target] },
     ], {
       x: 0.25, y: 2.3, w: 9.5, h: 3.1,
       chartColors: [C.blue, C.gray],
       lineSmooth: true, showLegend: true, legendPos: "b",
-      showTitle: true, title: "Tren Revenue Bulanan (Rp Miliar)",
+      showTitle: true, title: "Tren Revenue Harian — 5 Periode",
       titleFontSize: 12, titleColor: C.navy,
     });
   }
@@ -571,7 +639,7 @@ function buildSlides(pres: any, dashboard: any, ai: any, leaderName: string, per
   {
     const s = pres.addSlide();
     s.background = { color: C.white };
-    addHeader(s, "RINGKASAN EKSEKUTIF");
+    addHeader(s, "RINGKASAN EKSEKUTIF", logoB64);
 
     const insights = ai.insight_utama ?? [];
     [0, 1, 2].forEach((i) => {
@@ -612,17 +680,24 @@ function buildSlides(pres: any, dashboard: any, ai: any, leaderName: string, per
       x: 6.1, y: 0.7, w: 3.7, h: 4.7,
       fill: { color: C.navy }, line: { color: C.navy },
     });
+
+    // BTN logo on closing panel
+    if (logoB64) {
+      s.addImage({ data: `image/png;base64,${logoB64}`, x: 6.3, y: 0.85, w: 1.8, h: 1.08 });
+    } else {
+      s.addText("BTN", {
+        x: 6.2, y: 1.4, w: 3.5, h: 0.6,
+        fontSize: 24, bold: true, color: C.white, fontFace: "Calibri",
+      });
+    }
+
     s.addText("Terima Kasih", {
-      x: 6.2, y: 1.4, w: 3.5, h: 0.6,
-      fontSize: 24, bold: true, color: C.white, fontFace: "Calibri",
+      x: 6.2, y: 2.05, w: 3.5, h: 0.55,
+      fontSize: 22, bold: true, color: C.white, fontFace: "Calibri",
     });
     s.addText("Terima kasih atas dedikasi dan kerja keras seluruh tim", {
-      x: 6.2, y: 2.0, w: 3.5, h: 0.9,
+      x: 6.2, y: 2.6, w: 3.5, h: 0.9,
       fontSize: 12, color: C.white, fontFace: "Calibri",
-    });
-    s.addText("BTN", {
-      x: 6.2, y: 3.3, w: 3.5, h: 0.5,
-      fontSize: 20, bold: true, color: C.white, fontFace: "Calibri",
     });
     s.addText("A.C.T Sales CRM", {
       x: 6.2, y: 3.8, w: 3.5, h: 0.3,
@@ -639,13 +714,14 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-    if (!GEMINI_API_KEY) return json({ error: "Missing GEMINI_API_KEY" }, 500);
-
     const { dashboard, leaderName, periode, jenisLaporan: _jenis } = await req.json();
     if (!dashboard) return json({ error: "Missing dashboard data" }, 400);
 
-    const ai = await callGemini(GEMINI_API_KEY, dashboard);
+    const [ai, logoB64] = await Promise.all([
+      callGemini(dashboard),
+      loadLogo(),
+    ]);
+
     const today = new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" });
 
     const pres = new pptxgen();
@@ -653,7 +729,7 @@ Deno.serve(async (req) => {
     pres.company = "Bank BTN";
     pres.title = `Laporan ${leaderName} — ${periode}`;
 
-    buildSlides(pres, dashboard, ai, leaderName ?? "-", periode ?? "-", today);
+    buildSlides(pres, dashboard, ai, leaderName ?? "-", periode ?? "-", today, logoB64);
 
     const buf = await pres.write({ outputType: "nodebuffer" }) as Uint8Array;
     const filename = `Laporan_${safeFile(leaderName)}_${safeFile(periode)}.pptx`;
