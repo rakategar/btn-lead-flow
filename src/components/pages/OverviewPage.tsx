@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { pipelineSummary, priorityAlerts, picActivities, leaders, type Lead } from "@/lib/dummy-data";
 import type { PageKey } from "@/components/AppShell";
 import type { SessionUser } from "@/lib/auth";
+import { AiPriorityToday, AiEarlyWarningPanel } from "@/components/ai/AiPanels";
 
 const actPillars = [
   { letter: "A", title: "Action Daily", desc: "Aktivitas nyata harian: prospecting, kunjungan, follow-up, appointment.", tone: "blue" as const },
