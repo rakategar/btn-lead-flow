@@ -158,7 +158,27 @@ export function PipelinePage({ leads, setLeads, globalSearch }: Props) {
                 <div className="text-xs text-muted-foreground mb-1">Ringkasan kebutuhan</div>
                 <div className="rounded-lg bg-muted/50 p-3 text-navy">{open.ringkasan}</div>
               </div>
+
+              {/* AI Data Quality Check */}
+              {(() => {
+                const qIssues = checkLeadQuality(open);
+                if (qIssues.length === 0) return null;
+                return (
+                  <div className="rounded-lg border border-accent/40 bg-accent-light/40 p-3 space-y-1.5">
+                    <div className="flex items-center gap-1.5 text-accent font-semibold text-xs">
+                      <AlertTriangle className="h-3.5 w-3.5" /> AI Data Quality · perlu review
+                    </div>
+                    <ul className="text-xs text-navy space-y-1">
+                      {qIssues.map((i, idx) => (
+                        <li key={idx}><span className="font-mono text-[10px] uppercase text-muted-foreground">{i.field}</span> — {i.message}</li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })()}
+
               <div className="flex flex-col gap-2 pt-2">
+                <Button onClick={() => setAiLead(open)} className="bg-[hsl(var(--gold))] text-navy hover:bg-[hsl(var(--gold))]/90"><Sparkles className="h-4 w-4 mr-1.5" />Generate Draft FU dengan AI</Button>
                 <Button onClick={() => updateStatus(open.id, "In Progress")} className="bg-primary"><RefreshCw className="h-4 w-4 mr-1.5" />Update Status: In Progress</Button>
                 <Button onClick={() => updateStage(open.id, "Meet")} className="bg-navy hover:bg-navy/90 text-navy-foreground"><Users className="h-4 w-4 mr-1.5" />Tandai Meeting</Button>
                 <Button onClick={() => updateStatus(open.id, "Close")} className="bg-success hover:bg-success/90 text-success-foreground">Tandai Close</Button>
@@ -169,6 +189,8 @@ export function PipelinePage({ leads, setLeads, globalSearch }: Props) {
           </aside>
         </div>
       )}
+
+      {aiLead && <AiFollowUpDraftModal lead={aiLead} onClose={() => setAiLead(null)} />}
     </div>
   );
 }
