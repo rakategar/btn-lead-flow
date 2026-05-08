@@ -52,9 +52,16 @@ const IndexInner = () => {
   const [leads, setLeads] = useState<Lead[]>(initialLeads);
   const [search, setSearch] = useState("");
 
+  // Set landing page sesuai role saat login
+  useEffect(() => {
+    if (user?.role === "management") setPage("mgmt-overview");
+    else if (user) setPage("overview");
+  }, [user]);
+
   // Scope leads by role (dihitung selalu agar urutan hooks stabil)
   const scopedLeads = useMemo(() => {
     if (!user) return [] as Lead[];
+    if (user.role === "management") return leads;
     return leads.filter((l) =>
       user.role === "leader" ? l.leader === user.name : l.pic === user.name
     );
