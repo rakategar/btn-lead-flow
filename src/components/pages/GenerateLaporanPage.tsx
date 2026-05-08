@@ -263,40 +263,22 @@ export function GenerateLaporanPage({ user, leads }: Props) {
             </div>
           )}
 
-          {result.ai?.ringkasan_eksekutif && (
-            <p className="text-sm text-navy/80 leading-relaxed bg-muted/40 rounded-md p-3 border border-border">
-              {result.ai.ringkasan_eksekutif}
-            </p>
-          )}
-
-          <div className="grid sm:grid-cols-2 gap-3">
-            {insights.slice(0, 4).map((it, i) => (
-              <div key={i} className="rounded-lg border border-border p-3 bg-card">
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-                  Insight {i + 1}
-                </div>
-                <div className="text-sm text-navy">{it}</div>
-              </div>
-            ))}
-          </div>
+          <p className="text-sm text-navy/80 leading-relaxed bg-muted/40 rounded-md p-3 border border-border">
+            File <span className="font-mono text-xs">{result.filename}</span> berhasil dibuat.
+            Download akan otomatis dimulai. Jika tidak, klik tombol di bawah.
+          </p>
 
           <div className="flex gap-2 pt-2 flex-wrap">
             <Button asChild className="bg-primary text-primary-foreground hover:bg-primary/90">
-              <a href={result.slides?.exportUrl} target="_blank" rel="noreferrer">
+              <a href={result.url} download={result.filename}>
                 <Download className="h-4 w-4 mr-2" /> Download Laporan (.pptx)
               </a>
             </Button>
-            {result.slides?.viewUrl && (
-              <Button asChild variant="outline">
-                <a href={result.slides.viewUrl} target="_blank" rel="noreferrer">
-                  <ExternalLink className="h-4 w-4 mr-2" /> Buka di Google Slides
-                </a>
-              </Button>
-            )}
             <Button variant="outline" onClick={handleGenerate} disabled={running}>
               <RefreshCw className="h-4 w-4 mr-2" /> Generate Ulang
             </Button>
           </div>
+
         </Card>
       )}
     </div>
