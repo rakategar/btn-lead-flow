@@ -61,7 +61,7 @@ function buildFallbackInsight(dashboard: any) {
   };
 }
 
-async function callGemini(apiKey: string, dashboard: any) {
+async function callGemini(_apiKey: string, dashboard: any) {
   const prompt = `Anda analis sales senior. Berdasarkan data dashboard A.C.T Sales CRM berikut, buat laporan mingguan profesional Bahasa Indonesia.
 
 DATA: ${JSON.stringify(dashboard, null, 2)}
@@ -79,28 +79,70 @@ Kembalikan HANYA JSON valid:
   "action_plan": ["1","2","3"],
   "rekomendasi_leader": "..."
 }`;
-  const model = Deno.env.get("GEMINI_MODEL") || "gemini-2.5-flash-lite";
-  try {
-    const r = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { responseMimeType: "application/json" },
-        }),
-      },
-    );
-    const data = await r.json();
-    if (!r.ok) {
-      return { ...buildFallbackInsight(dashboard), _warning: `Gemini error (${r.status}). Memakai analisis berbasis data.` };
-    }
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "{}";
-    return JSON.parse(text);
-  } catch (e: any) {
-    return { ...buildFallbackInsight(dashboard), _warning: `Gemini gagal: ${e?.message}. Memakai fallback.` };
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  if (!LOVABLE_API_KEY) {
+    return { ...buildFallbackInsight(dashboard), _warning: "LOVABLE_API_KEY tidak tersedia. Memakai fallback." };
   }
+  const model = Deno.env.get("GEMINI_MODEL") || "google/gemini-3-flash-preview";
+  const maxRetries = 3;
+  let delay = 1500;
+  let lastStatus = 0;
+  let lastErr = "";
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: "system", content: "Kamu menjawab HANYA JSON valid tanpa markdown." },
+            { role: "user", content: prompt },
+          ],
+          response_format: { type: "json_object" },
+        }),
+      });
+
+      if (r.status === 429 || r.status === 503) {
+        lastStatus = r.status;
+        await r.text().catch(() => "");
+        if (attempt < maxRetries) {
+          await new Promise((res) => setTimeout(res, delay));
+          delay *= 2;
+          continue;
+        }
+        return { ...buildFallbackInsight(dashboard), _warning: `AI sibuk (${r.status}). Memakai analisis berbasis data.` };
+      }
+
+      if (r.status === 402) {
+        return { ...buildFallbackInsight(dashboard), _warning: "Kredit AI habis. Memakai analisis berbasis data." };
+      }
+
+      const data = await r.json();
+      if (!r.ok) {
+        return { ...buildFallbackInsight(dashboard), _warning: `AI error (${r.status}). Memakai analisis berbasis data.` };
+      }
+      const text = data?.choices?.[0]?.message?.content ?? "{}";
+      try {
+        return JSON.parse(text);
+      } catch {
+        const m = text.match(/\{[\s\S]*\}/);
+        return m ? JSON.parse(m[0]) : { ...buildFallbackInsight(dashboard), _warning: "Output AI tidak valid. Memakai fallback." };
+      }
+    } catch (e: any) {
+      lastErr = e?.message ?? String(e);
+      if (attempt < maxRetries) {
+        await new Promise((res) => setTimeout(res, delay));
+        delay *= 2;
+        continue;
+      }
+    }
+  }
+  return { ...buildFallbackInsight(dashboard), _warning: `AI gagal (${lastStatus || lastErr}). Memakai fallback.` };
 }
 
 function safeFile(s: string) {
