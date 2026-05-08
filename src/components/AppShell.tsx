@@ -48,10 +48,16 @@ interface Props {
 
 export function AppShell({ current, onChange, onAddActivity, search, onSearch, children, pageTitle, pageSubtitle, user, onLogout }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const visibleMenu = menu.filter((m) => !m.leaderOnly || user.role === "leader");
+  const isMgmt = user.role === "management";
+  const visibleMenu = menu.filter((m) => {
+    if (m.managementOnly) return isMgmt;
+    if (isMgmt) return false;
+    if (m.leaderOnly) return user.role === "leader";
+    return true;
+  });
   const groups = Array.from(new Set(visibleMenu.map((m) => m.group)));
-  const RoleIcon = user.role === "leader" ? Crown : UserRound;
-  const roleLabel = user.role === "leader" ? "Sales Leader" : "Sales Team (RM)";
+  const RoleIcon = isMgmt ? ShieldCheck : user.role === "leader" ? Crown : UserRound;
+  const roleLabel = isMgmt ? "Management (Superuser)" : user.role === "leader" ? "Sales Leader" : "Sales Team (RM)";
 
   return (
     <div className="min-h-screen bg-background">
