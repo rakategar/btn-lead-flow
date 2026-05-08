@@ -142,6 +142,21 @@ export function AppShell({ current, onChange, onAddActivity, search, onSearch, c
                 />
               </div>
               {!isMgmt && (
+                <button
+                  onClick={() => onChange("overview")}
+                  className="relative p-2 rounded-md hover:bg-muted text-muted-foreground hover:text-navy"
+                  title="AI Early Warning"
+                  aria-label="AI Early Warning"
+                >
+                  <BellRing className="h-5 w-5" />
+                  {warningCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-danger text-white text-[10px] font-bold flex items-center justify-center">
+                      {warningCount > 99 ? "99+" : warningCount}
+                    </span>
+                  )}
+                </button>
+              )}
+              {!isMgmt && (
                 <Button variant="outline" size="sm" className="hidden md:inline-flex" onClick={() => onChange("pipeline")}>
                   <ListChecks className="h-4 w-4 mr-1.5" /> Lihat Pipeline
                 </Button>
