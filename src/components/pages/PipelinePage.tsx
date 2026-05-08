@@ -25,6 +25,7 @@ export function PipelinePage({ leads, setLeads, globalSearch }: Props) {
   const [progress, setProgress] = useState<typeof progressFilters[number]>("Semua");
   const [q, setQ] = useState("");
   const [open, setOpen] = useState<Lead | null>(null);
+  const [aiLead, setAiLead] = useState<Lead | null>(null);
 
   const search = (q || globalSearch).toLowerCase();
   const filtered = leads.filter((l) =>
