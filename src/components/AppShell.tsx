@@ -1,14 +1,18 @@
 import { useState } from "react";
-import { LayoutGrid, Gauge, Workflow, ClipboardCheck, BellRing, LineChart, Search, Plus, Menu, ListChecks, ShieldCheck, LogOut, Crown, UserRound, FileText } from "lucide-react";
+import { LayoutGrid, Gauge, Workflow, ClipboardCheck, BellRing, LineChart, Search, Plus, Menu, ListChecks, ShieldCheck, LogOut, Crown, UserRound, FileText, Building2, Target, Brain, AlertOctagon, Users2, Settings, History } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ActLogo } from "@/components/ActLogo";
 import type { SessionUser } from "@/lib/auth";
 
-export type PageKey = "overview" | "command" | "pipeline" | "activity" | "followup" | "kpi" | "laporan";
+export type PageKey =
+  | "overview" | "command" | "pipeline" | "activity" | "followup" | "kpi" | "laporan"
+  | "mgmt-overview" | "mgmt-command" | "mgmt-branch" | "mgmt-kpi" | "mgmt-pipeline"
+  | "mgmt-alerts" | "mgmt-ai" | "mgmt-users" | "mgmt-config" | "mgmt-audit";
 
-const menu: { key: PageKey; label: string; icon: React.ComponentType<any>; group: string; leaderOnly?: boolean }[] = [
+const menu: { key: PageKey; label: string; icon: React.ComponentType<any>; group: string; leaderOnly?: boolean; managementOnly?: boolean }[] = [
+  // Sales Leader & RM
   { key: "overview", label: "Overview", icon: LayoutGrid, group: "Ringkasan" },
   { key: "command", label: "A.C.T Command Center", icon: Gauge, group: "Ringkasan" },
   { key: "pipeline", label: "Pipeline & Leads", icon: Workflow, group: "Operasional" },
@@ -16,6 +20,17 @@ const menu: { key: PageKey; label: string; icon: React.ComponentType<any>; group
   { key: "followup", label: "Follow-Up & Status", icon: BellRing, group: "Operasional" },
   { key: "kpi", label: "KPI & Review", icon: LineChart, group: "Manajemen" },
   { key: "laporan", label: "Generate Laporan", icon: FileText, group: "Manajemen", leaderOnly: true },
+  // Management (superuser)
+  { key: "mgmt-overview", label: "Executive Overview",  icon: LayoutGrid,    group: "Executive",  managementOnly: true },
+  { key: "mgmt-command",  label: "A.C.T Command Center", icon: Gauge,         group: "Executive",  managementOnly: true },
+  { key: "mgmt-branch",   label: "Branch Performance",  icon: Building2,     group: "Analitik",   managementOnly: true },
+  { key: "mgmt-kpi",      label: "KPI & Target Tracker", icon: Target,        group: "Analitik",   managementOnly: true },
+  { key: "mgmt-pipeline", label: "Pipeline Intelligence", icon: Workflow,     group: "Analitik",   managementOnly: true },
+  { key: "mgmt-alerts",   label: "Early Warning System", icon: AlertOctagon,  group: "Analitik",   managementOnly: true },
+  { key: "mgmt-ai",       label: "AI Insight Center",   icon: Brain,         group: "Analitik",   managementOnly: true },
+  { key: "mgmt-users",    label: "User & Role Mgmt",    icon: Users2,        group: "Sistem",     managementOnly: true },
+  { key: "mgmt-config",   label: "System Configuration", icon: Settings,      group: "Sistem",     managementOnly: true },
+  { key: "mgmt-audit",    label: "Audit & Governance",  icon: History,       group: "Sistem",     managementOnly: true },
 ];
 
 interface Props {
