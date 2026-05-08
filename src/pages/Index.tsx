@@ -110,8 +110,18 @@ const IndexInner = () => {
       case "followup": return <FollowUpPage />;
       case "kpi": return <KpiReviewPage />;
       case "laporan": return <GenerateLaporanPage user={user!} leads={scopedLeads} />;
+      case "mgmt-overview": return <ExecutiveOverviewPage user={user!} onNavigate={setPage} />;
+      case "mgmt-command":  return <MgmtCommandCenterPage leads={scopedLeads} />;
+      case "mgmt-branch":   return <BranchPerformancePage />;
+      case "mgmt-kpi":      return <KpiTrackerPage />;
+      case "mgmt-pipeline": return <PipelineIntelligencePage leads={scopedLeads} />;
+      case "mgmt-alerts":   return <EarlyWarningPage />;
+      case "mgmt-ai":       return <AiInsightCenterPage />;
+      case "mgmt-users":    return <UserManagementPage />;
+      case "mgmt-config":   return <SystemConfigPage />;
+      case "mgmt-audit":    return <AuditGovernancePage />;
     }
-  }, [page, scopedLeads, search]);
+  }, [page, scopedLeads, search, user]);
 
   if (!user) return <LoginScreen />;
 
