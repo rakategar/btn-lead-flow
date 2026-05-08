@@ -124,12 +124,12 @@ const IndexInner = () => {
     }
   }, [page, scopedLeads, search, user]);
 
-  if (!user) return <LoginScreen />;
-
   const warningCount = useMemo(
     () => (user && user.role !== "management" ? personalWarnings(scopedLeads).length : 0),
     [scopedLeads, user]
   );
+
+  if (!user) return <LoginScreen />;
 
   return (
     <AppShell
