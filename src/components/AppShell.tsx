@@ -44,6 +44,7 @@ interface Props {
   pageSubtitle: string;
   user: SessionUser;
   onLogout: () => void;
+  warningCount?: number;
 }
 
 export function AppShell({ current, onChange, onAddActivity, search, onSearch, children, pageTitle, pageSubtitle, user, onLogout }: Props) {
