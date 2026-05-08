@@ -126,6 +126,11 @@ const IndexInner = () => {
 
   if (!user) return <LoginScreen />;
 
+  const warningCount = useMemo(
+    () => (user && user.role !== "management" ? personalWarnings(scopedLeads).length : 0),
+    [scopedLeads, user]
+  );
+
   return (
     <AppShell
       current={page}
@@ -137,6 +142,7 @@ const IndexInner = () => {
       pageSubtitle={meta.subtitle}
       user={user}
       onLogout={logout}
+      warningCount={warningCount}
     >
       {content}
     </AppShell>
