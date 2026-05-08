@@ -137,9 +137,8 @@ function kpiCard(slide: any, x: number, y: number, w: number, h: number, label: 
 }
 
 function buildSlides(pres: any, dashboard: any, ai: any, leaderName: string, periode: string, today: string) {
-  pres.layout = "LAYOUT_WIDE_16x9";
-  pres.defineLayout({ name: "LAYOUT_10x5_625", width: 10, height: 5.625 });
-  pres.layout = "LAYOUT_10x5_625";
+  pres.defineLayout({ name: "ACT_10x5_625", width: 10, height: 5.625 });
+  pres.layout = "ACT_10x5_625";
 
   const tim = Array.isArray(dashboard.tim) ? dashboard.tim : [];
   const eff = dashboard.efektivitas?.detail || [];
