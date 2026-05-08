@@ -47,7 +47,7 @@ interface Props {
   warningCount?: number;
 }
 
-export function AppShell({ current, onChange, onAddActivity, search, onSearch, children, pageTitle, pageSubtitle, user, onLogout }: Props) {
+export function AppShell({ current, onChange, onAddActivity, search, onSearch, children, pageTitle, pageSubtitle, user, onLogout, warningCount = 0 }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const isMgmt = user.role === "management";
   const visibleMenu = menu.filter((m) => {
