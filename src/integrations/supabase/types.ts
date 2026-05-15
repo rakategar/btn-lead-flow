@@ -74,6 +74,36 @@ export type Database = {
         }
         Relationships: []
       }
+      task_notes: {
+        Row: {
+          created_at: string
+          id: string
+          leader_name: string
+          message: string
+          read_at: string | null
+          read_by: string | null
+          rm_name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          leader_name: string
+          message: string
+          read_at?: string | null
+          read_by?: string | null
+          rm_name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          leader_name?: string
+          message?: string
+          read_at?: string | null
+          read_by?: string | null
+          rm_name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
