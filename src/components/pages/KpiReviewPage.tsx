@@ -11,8 +11,8 @@ type RhythmType = "weekly" | "monthly";
 interface Rhythm { id: string; type: RhythmType; label: string; position: number }
 
 const alignment = [
-  { label: "Sales Team Status", value: "On Track", tone: "green" as const },
-  { label: "Sales Leader Review", value: "Mingguan terjadwal", tone: "blue" as const },
+  { label: "RM Status", value: "On Track", tone: "green" as const },
+  { label: "Leader Review", value: "Mingguan terjadwal", tone: "blue" as const },
   { label: "Gap Alignment", value: "2 area perlu sinkronisasi", tone: "orange" as const },
   { label: "Next Coaching Focus", value: "Closing & objection handling", tone: "gold" as const },
 ];
@@ -100,7 +100,7 @@ export function KpiReviewPage() {
 
       {/* Alignment */}
       <section>
-        <Head title="Alignment Management" caption="Sinkronisasi antara Sales Team dan Sales Leader." />
+        <Head title="Alignment Management" caption="Sinkronisasi antara RM dan Leader." />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {alignment.map((a) => (
             <div key={a.label} className="panel p-4">

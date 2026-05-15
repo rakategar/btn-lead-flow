@@ -15,7 +15,7 @@ export function SystemConfigPage() {
 
   return (
     <div className="space-y-5">
-      <PageHero title="System Configuration" subtitle="Konfigurasi cabang, target, rules follow-up, dan AI." badge="Khusus Management · Superuser" />
+      <PageHero title="System Configuration" subtitle="Konfigurasi cabang, target, rules follow-up, dan AI." badge="Khusus Senior Leader" />
 
       <div className="flex flex-wrap items-center gap-2">
         <TabBtn active={tab === "branch"} onClick={() => setTab("branch")} icon={Building2}>Cabang & Area</TabBtn>

@@ -170,7 +170,7 @@ export const followUpDue = [
 ];
 
 // ============================================================================
-// MANAGEMENT (Superuser) — Dummy Data Lintas Cabang
+// SENIOR LEADER — Dummy Data Lintas Cabang
 // ============================================================================
 
 export type BranchStatus = "Healthy" | "Watchlist" | "At Risk";
@@ -344,7 +344,7 @@ export const remedialDashboard = [
 export interface MgmtUser {
   id: string;
   name: string;
-  role: "Management" | "Sales Leader" | "Sales Team";
+  role: "Management" | "Leader" | "RM";
   branch: string;
   status: "Aktif" | "Nonaktif";
   lastLogin: string;
@@ -353,17 +353,17 @@ export interface MgmtUser {
 
 export const mgmtUsers: MgmtUser[] = [
   { id: "U-001", name: "Direktur Operasional", role: "Management",   branch: "Head Office",     status: "Aktif",    lastLogin: "Hari ini, 08:12",  email: "direktur.ops@btn.demo" },
-  { id: "U-002", name: "Andre Wibowo",         role: "Sales Leader", branch: "KC Jakarta Pusat",   status: "Aktif",    lastLogin: "Hari ini, 07:45",  email: "andre.w@btn.demo" },
-  { id: "U-003", name: "Sari Trihandayani",    role: "Sales Leader", branch: "KC Jakarta Selatan", status: "Aktif",    lastLogin: "Kemarin, 17:30",   email: "sari.t@btn.demo" },
-  { id: "U-004", name: "Bayu Mahendra",        role: "Sales Leader", branch: "KC Tangerang",       status: "Aktif",    lastLogin: "2 hari lalu",      email: "bayu.m@btn.demo" },
-  { id: "U-005", name: "Dewi Anggraini",       role: "Sales Leader", branch: "KC Bandung",         status: "Aktif",    lastLogin: "Hari ini, 09:02",  email: "dewi.a@btn.demo" },
-  { id: "U-006", name: "Rizal Hakim",          role: "Sales Leader", branch: "KC Surabaya",        status: "Aktif",    lastLogin: "Hari ini, 06:50",  email: "rizal.h@btn.demo" },
-  { id: "U-007", name: "Rina A.",              role: "Sales Team",   branch: "KC Jakarta Pusat",   status: "Aktif",    lastLogin: "Hari ini, 08:20",  email: "rina.a@btn.demo" },
-  { id: "U-008", name: "Dimas R.",             role: "Sales Team",   branch: "KC Jakarta Pusat",   status: "Aktif",    lastLogin: "Hari ini, 08:25",  email: "dimas.r@btn.demo" },
-  { id: "U-009", name: "Maya P.",              role: "Sales Team",   branch: "KC Jakarta Selatan", status: "Aktif",    lastLogin: "Hari ini, 09:10",  email: "maya.p@btn.demo" },
-  { id: "U-010", name: "Fajar H.",             role: "Sales Team",   branch: "KC Bandung",         status: "Nonaktif", lastLogin: "32 hari lalu",     email: "fajar.h@btn.demo" },
-  { id: "U-011", name: "Lala N.",              role: "Sales Team",   branch: "KC Surabaya",        status: "Aktif",    lastLogin: "Hari ini, 07:55",  email: "lala.n@btn.demo" },
-  { id: "U-012", name: "Bagas S.",             role: "Sales Team",   branch: "KC Medan",           status: "Aktif",    lastLogin: "Kemarin, 18:40",   email: "bagas.s@btn.demo" },
+  { id: "U-002", name: "Andre Wibowo",         role: "Leader", branch: "KC Jakarta Pusat",   status: "Aktif",    lastLogin: "Hari ini, 07:45",  email: "andre.w@btn.demo" },
+  { id: "U-003", name: "Sari Trihandayani",    role: "Leader", branch: "KC Jakarta Selatan", status: "Aktif",    lastLogin: "Kemarin, 17:30",   email: "sari.t@btn.demo" },
+  { id: "U-004", name: "Bayu Mahendra",        role: "Leader", branch: "KC Tangerang",       status: "Aktif",    lastLogin: "2 hari lalu",      email: "bayu.m@btn.demo" },
+  { id: "U-005", name: "Dewi Anggraini",       role: "Leader", branch: "KC Bandung",         status: "Aktif",    lastLogin: "Hari ini, 09:02",  email: "dewi.a@btn.demo" },
+  { id: "U-006", name: "Rizal Hakim",          role: "Leader", branch: "KC Surabaya",        status: "Aktif",    lastLogin: "Hari ini, 06:50",  email: "rizal.h@btn.demo" },
+  { id: "U-007", name: "Rina A.",              role: "RM",   branch: "KC Jakarta Pusat",   status: "Aktif",    lastLogin: "Hari ini, 08:20",  email: "rina.a@btn.demo" },
+  { id: "U-008", name: "Dimas R.",             role: "RM",   branch: "KC Jakarta Pusat",   status: "Aktif",    lastLogin: "Hari ini, 08:25",  email: "dimas.r@btn.demo" },
+  { id: "U-009", name: "Maya P.",              role: "RM",   branch: "KC Jakarta Selatan", status: "Aktif",    lastLogin: "Hari ini, 09:10",  email: "maya.p@btn.demo" },
+  { id: "U-010", name: "Fajar H.",             role: "RM",   branch: "KC Bandung",         status: "Nonaktif", lastLogin: "32 hari lalu",     email: "fajar.h@btn.demo" },
+  { id: "U-011", name: "Lala N.",              role: "RM",   branch: "KC Surabaya",        status: "Aktif",    lastLogin: "Hari ini, 07:55",  email: "lala.n@btn.demo" },
+  { id: "U-012", name: "Bagas S.",             role: "RM",   branch: "KC Medan",           status: "Aktif",    lastLogin: "Kemarin, 18:40",   email: "bagas.s@btn.demo" },
 ];
 
 export const rolePermissions: { permission: string; management: boolean; leader: boolean; rm: boolean }[] = [

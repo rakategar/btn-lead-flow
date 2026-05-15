@@ -35,7 +35,7 @@ export function AuditGovernancePage() {
           <section className="panel p-5">
             <h3 className="font-bold text-navy">Rekomendasi Keamanan</h3>
             <ul className="mt-3 space-y-2 text-sm text-navy">
-              <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />Aktifkan MFA untuk seluruh user role Management dan Sales Leader.</li>
+              <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />Aktifkan MFA untuk seluruh user role Management dan Leader.</li>
               <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />Deaktivasi 4 akun idle yang tidak login &gt;30 hari.</li>
               <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />Audit izin akses cabang setelah rotasi struktur.</li>
             </ul>

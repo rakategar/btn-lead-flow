@@ -6,7 +6,7 @@ type Tone = "blue" | "orange" | "green" | "red" | "gray" | "purple" | "navy" | "
 export function PageHero({ title, subtitle, badge }: { title: string; subtitle: string; badge?: string }) {
   return (
     <div className="panel p-5 sm:p-6 bg-gradient-to-r from-primary-light/60 via-card to-card border-l-4 border-l-primary">
-      <div className="text-xs uppercase tracking-wider font-semibold text-primary">{badge ?? "Management · Superuser"}</div>
+      <div className="text-xs uppercase tracking-wider font-semibold text-primary">{badge ?? "Senior Leader"}</div>
       <h2 className="mt-1 text-xl sm:text-2xl font-bold text-navy">{title}</h2>
       <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
     </div>

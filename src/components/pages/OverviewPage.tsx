@@ -51,7 +51,7 @@ export function OverviewPage({ onNavigate, user, leads }: Props) {
   const greetingSub = isLeader
     ? "Pantau performa tim dan dorong closing lebih banyak hari ini."
     : "Fokus pada aktivitas hari ini untuk capai targetmu.";
-  const roleLabel = isLeader ? "Sales Leader" : "Sales Team";
+  const roleLabel = isLeader ? "Leader" : "RM";
   return (
     <div className="space-y-5">
       {/* Greeting */}

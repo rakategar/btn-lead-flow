@@ -27,7 +27,7 @@ const pageMeta: Record<PageKey, { title: string; subtitle: string }> = {
   overview: { title: "A.C.T Sales CRM Demo", subtitle: "Sales Performance Dashboard & CRM Concept — Primera Karya Sinergia." },
   command: { title: "A.C.T Command Center", subtitle: "Visibilitas penuh: pipeline, efektivitas aktivitas, dan KPI MTD." },
   pipeline: { title: "Pipeline & Leads", subtitle: "Manajemen lead berbasis status dan tahap pipeline." },
-  activity: { title: "Activity Daily", subtitle: "Action Daily — ritme harian Sales Team dan Sales Leader." },
+  activity: { title: "Activity Daily", subtitle: "Action Daily — ritme harian RM dan Leader." },
   followup: { title: "Follow-Up & Status", subtitle: "Skema eskalasi FU1 → FU3 dan status resolusi pipeline." },
   kpi: { title: "KPI & Review", subtitle: "Weekly & monthly rhythm, alignment, dan result area." },
   laporan: { title: "Generate Laporan", subtitle: "Buat laporan otomatis berdasarkan data dashboard saat ini." },
