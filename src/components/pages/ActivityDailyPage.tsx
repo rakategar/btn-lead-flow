@@ -182,7 +182,7 @@ export function ActivityDailyPage() {
               <p className="text-xs text-muted-foreground">
                 {loading ? "Memuat data dari Lovable Cloud…" : isLeader
                   ? "Buat task, lalu drag ke kolom RM untuk meng-assign. Pantau progress secara real-time."
-                  : "Task yang ditugaskan Sales Leader untuk Anda. Centang setiap task yang sudah dieksekusi."}
+                  : "Task yang ditugaskan Leader untuk Anda. Centang setiap task yang sudah dieksekusi."}
               </p>
             </div>
           </div>

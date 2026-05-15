@@ -87,7 +87,7 @@ export function GenerateLaporanPage({ user, leads }: Props) {
         <AlertCircle className="mx-auto h-10 w-10 text-danger mb-3" />
         <h2 className="font-display text-lg font-bold text-navy">Akses Terbatas</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Halaman ini hanya tersedia untuk Sales Leader.
+          Halaman ini hanya tersedia untuk Leader.
         </p>
       </Card>
     );
@@ -174,7 +174,7 @@ export function GenerateLaporanPage({ user, leads }: Props) {
               Buat laporan otomatis berdasarkan data dashboard saat ini.
             </p>
           </div>
-          <Badge className="bg-gold-light text-navy border border-gold/40">Sales Leader</Badge>
+          <Badge className="bg-gold-light text-navy border border-gold/40">Leader</Badge>
         </div>
       </div>
 
@@ -183,7 +183,7 @@ export function GenerateLaporanPage({ user, leads }: Props) {
         <h3 className="font-semibold text-navy text-sm">Konfigurasi Laporan</h3>
         <div className="grid sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <Label>Nama Sales Leader</Label>
+            <Label>Nama Leader</Label>
             <Input value={namaLeader} onChange={(e) => setNamaLeader(e.target.value)} />
           </div>
           <div className="space-y-1.5">

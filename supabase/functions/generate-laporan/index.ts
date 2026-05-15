@@ -224,7 +224,7 @@ function buildSlides(pres: any, dashboard: any, ai: any, leaderName: string, per
     // Info box
     s.addShape("roundRect", { x: 0.5, y: 3.95, w: 5.8, h: 1.3, fill: { color: C.gray }, line: { color: C.grayDark }, rectRadius: 0.08 });
     s.addText([
-      { text: "Sales Leader : ", options: { bold: true, color: C.navy } },
+      { text: "Leader : ", options: { bold: true, color: C.navy } },
       { text: `${leaderName}\n`, options: { color: C.text } },
       { text: "Periode         : ", options: { bold: true, color: C.navy } },
       { text: `${periode}\n`, options: { color: C.text } },

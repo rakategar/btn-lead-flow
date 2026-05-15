@@ -12,7 +12,7 @@ export type PageKey =
   | "mgmt-alerts" | "mgmt-ai" | "mgmt-users" | "mgmt-config" | "mgmt-audit";
 
 const menu: { key: PageKey; label: string; icon: React.ComponentType<any>; group: string; leaderOnly?: boolean; managementOnly?: boolean }[] = [
-  // Sales Leader & RM
+  // Leader & RM
   { key: "overview", label: "Overview", icon: LayoutGrid, group: "Ringkasan" },
   { key: "command", label: "A.C.T Command Center", icon: Gauge, group: "Ringkasan" },
   { key: "pipeline", label: "Pipeline & Leads", icon: Workflow, group: "Operasional" },
@@ -20,7 +20,7 @@ const menu: { key: PageKey; label: string; icon: React.ComponentType<any>; group
   { key: "followup", label: "Follow-Up & Status", icon: BellRing, group: "Operasional" },
   { key: "kpi", label: "KPI & Review", icon: LineChart, group: "Manajemen" },
   { key: "laporan", label: "Generate Laporan", icon: FileText, group: "Manajemen", leaderOnly: true },
-  // Management (superuser)
+  // Senior Leader
   { key: "mgmt-overview", label: "Executive Overview",  icon: LayoutGrid,    group: "Executive",  managementOnly: true },
   { key: "mgmt-command",  label: "A.C.T Command Center", icon: Gauge,         group: "Executive",  managementOnly: true },
   { key: "mgmt-branch",   label: "Branch Performance",  icon: Building2,     group: "Analitik",   managementOnly: true },
@@ -58,7 +58,7 @@ export function AppShell({ current, onChange, onAddActivity, search, onSearch, c
   });
   const groups = Array.from(new Set(visibleMenu.map((m) => m.group)));
   const RoleIcon = isMgmt ? ShieldCheck : user.role === "leader" ? Crown : UserRound;
-  const roleLabel = isMgmt ? "Management (Superuser)" : user.role === "leader" ? "Sales Leader" : "Sales Team (RM)";
+  const roleLabel = isMgmt ? "Senior Leader" : user.role === "leader" ? "Leader" : "RM";
 
   return (
     <div className="min-h-screen bg-background">

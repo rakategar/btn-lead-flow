@@ -8,7 +8,7 @@ import { mgmtUsers, rolePermissions, branches } from "@/lib/dummy-data";
 import { PageHero, PanelHeader } from "./_shared";
 
 export function UserManagementPage() {
-  const [role, setRole] = useState<"Semua" | "Management" | "Sales Leader" | "Sales Team">("Semua");
+  const [role, setRole] = useState<"Semua" | "Senior Leader" | "Leader" | "RM">("Semua");
   const [branch, setBranch] = useState("Semua");
   const [status, setStatus] = useState<"Semua" | "Aktif" | "Nonaktif">("Semua");
   const [q, setQ] = useState("");
@@ -27,14 +27,14 @@ export function UserManagementPage() {
 
   return (
     <div className="space-y-5">
-      <PageHero title="User & Role Management" subtitle="Direktori pengguna, role matrix, dan bulk action." badge="Khusus Management · Superuser" />
+      <PageHero title="User & Role Management" subtitle="Direktori pengguna, role matrix, dan bulk action." badge="Khusus Senior Leader" />
 
       {/* Toolbar */}
       <div className="panel p-4 flex flex-wrap items-center gap-2">
         <Chip active={role === "Semua"} onClick={() => setRole("Semua")}>Semua Role</Chip>
-        <Chip active={role === "Management"} onClick={() => setRole("Management")}>Management</Chip>
-        <Chip active={role === "Sales Leader"} onClick={() => setRole("Sales Leader")}>Sales Leader</Chip>
-        <Chip active={role === "Sales Team"} onClick={() => setRole("Sales Team")}>Sales Team</Chip>
+        <Chip active={role === "Senior Leader"} onClick={() => setRole("Senior Leader")}>Senior Leader</Chip>
+        <Chip active={role === "Leader"} onClick={() => setRole("Leader")}>Leader</Chip>
+        <Chip active={role === "RM"} onClick={() => setRole("RM")}>RM</Chip>
         <span className="mx-1 h-5 w-px bg-border" />
         <select value={branch} onChange={(e) => setBranch(e.target.value)} className="h-9 px-2 text-sm rounded-md border border-input bg-background">
           <option value="Semua">Semua Cabang</option>
@@ -91,7 +91,7 @@ export function UserManagementPage() {
                 <tr key={u.id} className="hover:bg-muted/30">
                   <td className="pl-5 py-3"><input type="checkbox" checked={selected.includes(u.id)} onChange={() => toggleOne(u.id)} /></td>
                   <td className="px-3 py-3 font-medium text-navy">{u.name}</td>
-                  <td className="px-3 py-3"><StatusBadge tone={u.role === "Management" ? "gold" : u.role === "Sales Leader" ? "navy" : "blue"}>{u.role}</StatusBadge></td>
+                  <td className="px-3 py-3"><StatusBadge tone={u.role === "Senior Leader" ? "gold" : u.role === "Leader" ? "navy" : "blue"}>{u.role}</StatusBadge></td>
                   <td className="px-3 py-3 text-muted-foreground">{u.branch}</td>
                   <td className="px-3 py-3"><StatusBadge tone={u.status === "Aktif" ? "green" : "gray"}>{u.status}</StatusBadge></td>
                   <td className="px-3 py-3 text-muted-foreground">{u.lastLogin}</td>
@@ -113,9 +113,9 @@ export function UserManagementPage() {
             <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
                 <th className="text-left px-5 py-3">Permission</th>
-                <th className="text-center px-3 py-3">Management</th>
-                <th className="text-center px-3 py-3">Sales Leader</th>
-                <th className="text-center pr-5 py-3">Sales Team</th>
+                <th className="text-center px-3 py-3">Senior Leader</th>
+                <th className="text-center px-3 py-3">Leader</th>
+                <th className="text-center pr-5 py-3">RM</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">

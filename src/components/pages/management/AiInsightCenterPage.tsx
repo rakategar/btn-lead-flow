@@ -19,10 +19,10 @@ export function AiInsightCenterPage() {
 
   const generate = () => {
     setPlan([
-      { step: `Audit pipeline & hot lead di ${branch}`, owner: "Sales Leader cabang",   due: "3 hari" },
-      { step: "Coaching closing & objection handling",   owner: "Sales Leader + 2 RM senior", due: "1 minggu" },
-      { step: "Reassign 5 hot lead ke top performer",    owner: "Sales Leader",          due: "2 hari" },
-      { step: "Review weekly progress & sprint FU",      owner: "Management + Leader",   due: "2 minggu" },
+      { step: `Audit pipeline & hot lead di ${branch}`, owner: "Leader cabang",   due: "3 hari" },
+      { step: "Coaching closing & objection handling",   owner: "Leader + 2 RM senior", due: "1 minggu" },
+      { step: "Reassign 5 hot lead ke top performer",    owner: "Leader",          due: "2 hari" },
+      { step: "Review weekly progress & sprint FU",      owner: "Senior Leader + Leader",   due: "2 minggu" },
     ]);
     toast.success("AI Remedial Plan dihasilkan", { description: `Untuk ${branch}` });
   };
@@ -110,7 +110,7 @@ export function AiInsightCenterPage() {
                 </div>
               </div>
             ))}
-            <Button size="sm" className="bg-[hsl(var(--gold))] text-navy hover:bg-[hsl(var(--gold))]/90 font-semibold" onClick={() => toast.success("Plan terkirim ke Sales Leader cabang", { description: branch })}>
+            <Button size="sm" className="bg-[hsl(var(--gold))] text-navy hover:bg-[hsl(var(--gold))]/90 font-semibold" onClick={() => toast.success("Plan terkirim ke Leader cabang", { description: branch })}>
               Kirim ke Leader Cabang
             </Button>
           </div>
