@@ -344,7 +344,7 @@ export const remedialDashboard = [
 export interface MgmtUser {
   id: string;
   name: string;
-  role: "Management" | "Leader" | "RM";
+  role: "Senior Leader" | "Leader" | "RM";
   branch: string;
   status: "Aktif" | "Nonaktif";
   lastLogin: string;
@@ -352,7 +352,7 @@ export interface MgmtUser {
 }
 
 export const mgmtUsers: MgmtUser[] = [
-  { id: "U-001", name: "Direktur Operasional", role: "Management",   branch: "Head Office",     status: "Aktif",    lastLogin: "Hari ini, 08:12",  email: "direktur.ops@btn.demo" },
+  { id: "U-001", name: "Direktur Operasional", role: "Senior Leader",   branch: "Head Office",     status: "Aktif",    lastLogin: "Hari ini, 08:12",  email: "direktur.ops@btn.demo" },
   { id: "U-002", name: "Andre Wibowo",         role: "Leader", branch: "KC Jakarta Pusat",   status: "Aktif",    lastLogin: "Hari ini, 07:45",  email: "andre.w@btn.demo" },
   { id: "U-003", name: "Sari Trihandayani",    role: "Leader", branch: "KC Jakarta Selatan", status: "Aktif",    lastLogin: "Kemarin, 17:30",   email: "sari.t@btn.demo" },
   { id: "U-004", name: "Bayu Mahendra",        role: "Leader", branch: "KC Tangerang",       status: "Aktif",    lastLogin: "2 hari lalu",      email: "bayu.m@btn.demo" },

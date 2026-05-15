@@ -22,7 +22,7 @@ export function AiInsightCenterPage() {
       { step: `Audit pipeline & hot lead di ${branch}`, owner: "Leader cabang",   due: "3 hari" },
       { step: "Coaching closing & objection handling",   owner: "Leader + 2 RM senior", due: "1 minggu" },
       { step: "Reassign 5 hot lead ke top performer",    owner: "Leader",          due: "2 hari" },
-      { step: "Review weekly progress & sprint FU",      owner: "Management + Leader",   due: "2 minggu" },
+      { step: "Review weekly progress & sprint FU",      owner: "Senior Leader + Leader",   due: "2 minggu" },
     ]);
     toast.success("AI Remedial Plan dihasilkan", { description: `Untuk ${branch}` });
   };
