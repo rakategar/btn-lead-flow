@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Phone, MessageSquare, Calendar, CheckCircle2, Crown, UserRound, Plus, Trash2, Inbox, ListChecks, StickyNote, BellRing, Check } from "lucide-react";
+import { Phone, MessageSquare, Calendar, CheckCircle2, Crown, UserRound, Plus, Trash2, ListChecks, StickyNote, BellRing, Check } from "lucide-react";
 import { KpiCard } from "@/components/KpiCard";
 import { StatusBadge, statusToTone } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
