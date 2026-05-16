@@ -27,6 +27,13 @@ export function leaderOfRM(rm: string): string {
   return l ? l.name : "—";
 }
 
+export interface LeadNote {
+  id: string;
+  leader: string;
+  message: string;
+  ts: string; // ISO
+}
+
 export interface Lead {
   id: string;
   nama: string;
@@ -41,6 +48,21 @@ export interface Lead {
   fuStage: FollowUpStage;
   status: ResolutionStatus;
   ringkasan: string;
+  notes?: LeadNote[];
+}
+
+export interface RmActivity {
+  id: string;
+  rm: string;
+  leader: string;
+  jenis: string;        // Prospecting / Follow-Up / Meeting / etc.
+  leadId?: string;
+  leadName?: string;
+  datetime: string;     // ISO
+  description: string;
+  hasil?: string;
+  photos?: string[];    // data URLs
+  createdAt: string;    // ISO
 }
 
 export const initialLeads: Lead[] = [

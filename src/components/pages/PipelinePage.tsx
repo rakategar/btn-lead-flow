@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Search, X, Flame, Droplet, Snowflake, MessageSquare, Calendar, RefreshCw, Users, Sparkles, AlertTriangle } from "lucide-react";
+import { Search, X, Flame, Droplet, Snowflake, MessageSquare, Calendar, RefreshCw, Users, Sparkles, AlertTriangle, StickyNote, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge, statusToTone } from "@/components/StatusBadge";
 import { cn } from "@/lib/utils";
-import { type Lead, type Priority, type ResolutionStatus, type PipelineStage } from "@/lib/dummy-data";
+import { type Lead, type Priority, type ResolutionStatus, type PipelineStage, type LeadNote } from "@/lib/dummy-data";
 import { AiFollowUpDraftModal } from "@/components/ai/AiFollowUpDraftModal";
 import { checkLeadQuality } from "@/lib/ai-sales";
+import { useAuth } from "@/lib/auth";
 
 // Catatan terminologi:
 // - "Status" lead = temperatur lead (Hot / Warm / Cold)
@@ -26,6 +27,10 @@ export function PipelinePage({ leads, setLeads, globalSearch }: Props) {
   const [q, setQ] = useState("");
   const [open, setOpen] = useState<Lead | null>(null);
   const [aiLead, setAiLead] = useState<Lead | null>(null);
+  const [noteDraft, setNoteDraft] = useState("");
+  const [showNoteInput, setShowNoteInput] = useState(false);
+  const { user } = useAuth();
+  const isLeader = user?.role === "leader";
 
   const search = (q || globalSearch).toLowerCase();
   const filtered = leads.filter((l) =>
@@ -42,6 +47,12 @@ export function PipelinePage({ leads, setLeads, globalSearch }: Props) {
   const updateStage = (id: string, newStage: PipelineStage) => {
     setLeads((prev) => prev.map((l) => l.id === id ? { ...l, stage: newStage, lastActivity: newStage === "Meet" ? "Meeting dijadwalkan" : l.lastActivity } : l));
     setOpen((o) => o && o.id === id ? { ...o, stage: newStage } : o);
+  };
+
+  const addNote = (id: string, message: string) => {
+    const note: LeadNote = { id: `n-${Date.now()}`, leader: user?.name || "Leader", message, ts: new Date().toISOString() };
+    setLeads((prev) => prev.map((l) => l.id === id ? { ...l, notes: [...(l.notes ?? []), note] } : l));
+    setOpen((o) => o && o.id === id ? { ...o, notes: [...(o.notes ?? []), note] } : o);
   };
 
   return (
@@ -177,14 +188,76 @@ export function PipelinePage({ leads, setLeads, globalSearch }: Props) {
                 );
               })()}
 
-              <div className="flex flex-col gap-2 pt-2">
-                <Button onClick={() => setAiLead(open)} className="bg-[hsl(var(--gold))] text-navy hover:bg-[hsl(var(--gold))]/90"><Sparkles className="h-4 w-4 mr-1.5" />Generate Draft FU dengan AI</Button>
-                <Button onClick={() => updateStatus(open.id, "In Progress")} className="bg-primary"><RefreshCw className="h-4 w-4 mr-1.5" />Update Status: In Progress</Button>
-                <Button onClick={() => updateStage(open.id, "Meet")} className="bg-navy hover:bg-navy/90 text-navy-foreground"><Users className="h-4 w-4 mr-1.5" />Tandai Meeting</Button>
-                <Button onClick={() => updateStatus(open.id, "Close")} className="bg-success hover:bg-success/90 text-success-foreground">Tandai Close</Button>
-                <Button variant="outline" onClick={() => updateStatus(open.id, "Follow Up")}><Calendar className="h-4 w-4 mr-1.5" />Jadwalkan Follow-Up</Button>
-                <Button variant="outline"><MessageSquare className="h-4 w-4 mr-1.5" />Tambah Catatan</Button>
-              </div>
+              {isLeader ? (
+                <div className="space-y-3 pt-2">
+                  <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-navy">
+                      <StickyNote className="h-3.5 w-3.5 text-[hsl(var(--gold))]" /> Catatan Leader
+                      <StatusBadge tone="gold">{(open.notes ?? []).length}</StatusBadge>
+                    </div>
+                    {(open.notes ?? []).length === 0 && (
+                      <div className="text-[11px] text-muted-foreground italic">Belum ada catatan untuk lead ini.</div>
+                    )}
+                    <div className="space-y-1.5">
+                      {(open.notes ?? []).slice().reverse().map((n) => (
+                        <div key={n.id} className="rounded-md border border-border bg-card p-2 text-[12px]">
+                          <div className="text-navy">{n.message}</div>
+                          <div className="mt-1 text-[10px] text-muted-foreground">
+                            {n.leader} · {new Date(n.ts).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {showNoteInput ? (
+                      <div className="flex gap-1.5">
+                        <input
+                          autoFocus
+                          value={noteDraft}
+                          onChange={(e) => setNoteDraft(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && noteDraft.trim()) {
+                              addNote(open.id, noteDraft.trim());
+                              setNoteDraft(""); setShowNoteInput(false);
+                            }
+                          }}
+                          placeholder="Tulis catatan untuk lead ini…"
+                          className="flex-1 h-9 px-2 text-sm rounded-md border border-input bg-background"
+                        />
+                        <Button
+                          size="sm"
+                          className="h-9 bg-navy hover:bg-navy/90 text-navy-foreground"
+                          onClick={() => {
+                            if (noteDraft.trim()) {
+                              addNote(open.id, noteDraft.trim());
+                              setNoteDraft(""); setShowNoteInput(false);
+                            }
+                          }}
+                        >
+                          <Send className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => setShowNoteInput(true)}
+                      >
+                        <MessageSquare className="h-3.5 w-3.5 mr-1.5" /> Tambah Catatan
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2 pt-2">
+                  <Button onClick={() => setAiLead(open)} className="bg-[hsl(var(--gold))] text-navy hover:bg-[hsl(var(--gold))]/90"><Sparkles className="h-4 w-4 mr-1.5" />Generate Draft FU dengan AI</Button>
+                  <Button onClick={() => updateStatus(open.id, "In Progress")} className="bg-primary"><RefreshCw className="h-4 w-4 mr-1.5" />Update Status: In Progress</Button>
+                  <Button onClick={() => updateStage(open.id, "Meet")} className="bg-navy hover:bg-navy/90 text-navy-foreground"><Users className="h-4 w-4 mr-1.5" />Tandai Meeting</Button>
+                  <Button onClick={() => updateStatus(open.id, "Close")} className="bg-success hover:bg-success/90 text-success-foreground">Tandai Close</Button>
+                  <Button variant="outline" onClick={() => updateStatus(open.id, "Follow Up")}><Calendar className="h-4 w-4 mr-1.5" />Jadwalkan Follow-Up</Button>
+                  <Button variant="outline"><MessageSquare className="h-4 w-4 mr-1.5" />Tambah Catatan</Button>
+                </div>
+              )}
             </div>
           </aside>
         </div>
