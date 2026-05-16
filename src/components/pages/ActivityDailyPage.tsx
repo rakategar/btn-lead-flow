@@ -373,6 +373,49 @@ export function ActivityDailyPage({ extraActivities = [] }: { extraActivities?: 
         </section>
       )}
 
+      {/* Aktivitas baru yang baru diinput RM */}
+      {extraActivities.length > 0 && (
+        <section className="panel overflow-hidden">
+          <div className="px-5 py-4 border-b border-border flex items-center justify-between gap-3 flex-wrap">
+            <div>
+              <h3 className="font-bold text-navy">Aktivitas Baru Diinput</h3>
+              <p className="text-xs text-muted-foreground">Aktivitas terbaru yang dicatat RM via tombol "+ Tambah Activity".</p>
+            </div>
+            <StatusBadge tone="blue">{extraActivities.length} aktivitas</StatusBadge>
+          </div>
+          <div className="divide-y divide-border">
+            {extraActivities.slice(0, 10).map((a) => (
+              <div key={a.id} className="px-5 py-3 flex items-start gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary-light text-primary shrink-0">
+                  <Calendar className="h-3.5 w-3.5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <StatusBadge tone="navy">{a.jenis}</StatusBadge>
+                    {a.hasil && <StatusBadge tone={/positif|closing/i.test(a.hasil) ? "green" : /ditolak|tidak/i.test(a.hasil) ? "red" : "orange"}>{a.hasil}</StatusBadge>}
+                    {a.leadName && <span className="text-xs text-muted-foreground">Lead: <span className="text-navy font-medium">{a.leadName}</span></span>}
+                  </div>
+                  <div className="text-sm text-navy mt-1 break-words">{a.description}</div>
+                  <div className="mt-1 text-[11px] text-muted-foreground">
+                    {a.rm} · {new Date(a.datetime).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                    {a.photos && a.photos.length > 0 && (
+                      <span className="ml-2 inline-flex items-center gap-1"><ImageIcon className="h-3 w-3" />{a.photos.length} foto</span>
+                    )}
+                  </div>
+                  {a.photos && a.photos.length > 0 && (
+                    <div className="mt-2 flex gap-2">
+                      {a.photos.map((p, i) => (
+                        <img key={i} src={p} alt="" className="h-14 w-14 object-cover rounded-md border border-border" />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* PIC table */}
       <section className="panel overflow-hidden">
         <div className="px-5 py-4 border-b border-border flex items-center justify-between gap-3 flex-wrap">
