@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Search, X, Flame, Droplet, Snowflake, MessageSquare, Calendar, RefreshCw, Users, Sparkles, AlertTriangle } from "lucide-react";
+import { Search, X, Flame, Droplet, Snowflake, MessageSquare, Calendar, RefreshCw, Users, Sparkles, AlertTriangle, StickyNote, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge, statusToTone } from "@/components/StatusBadge";
 import { cn } from "@/lib/utils";
-import { type Lead, type Priority, type ResolutionStatus, type PipelineStage } from "@/lib/dummy-data";
+import { type Lead, type Priority, type ResolutionStatus, type PipelineStage, type LeadNote } from "@/lib/dummy-data";
 import { AiFollowUpDraftModal } from "@/components/ai/AiFollowUpDraftModal";
 import { checkLeadQuality } from "@/lib/ai-sales";
+import { useAuth } from "@/lib/auth";
 
 // Catatan terminologi:
 // - "Status" lead = temperatur lead (Hot / Warm / Cold)
