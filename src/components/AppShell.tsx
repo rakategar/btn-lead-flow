@@ -162,13 +162,23 @@ export function AppShell({ current, onChange, onAddLead, onAddActivity, search, 
                   <ListChecks className="h-4 w-4 mr-1.5" /> Lihat Pipeline
                 </Button>
               )}
-              {!isMgmt && (
+              {user.role === "rm" && onAddLead && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={onAddLead}
+                  className="border-primary/40 text-primary hover:bg-primary-light/50"
+                >
+                  <Plus className="h-4 w-4 mr-1.5" /> Tambah Leads
+                </Button>
+              )}
+              {user.role === "rm" && onAddActivity && (
                 <Button
                   size="sm"
                   onClick={onAddActivity}
                   className="bg-[hsl(var(--gold))] text-navy hover:bg-[hsl(var(--gold))]/90 shadow-sm font-semibold"
                 >
-                  <Plus className="h-4 w-4 mr-1.5" /> Tambah Aktivitas Dummy
+                  <Plus className="h-4 w-4 mr-1.5" /> Tambah Activity
                 </Button>
               )}
               <div className="hidden md:flex items-center gap-2 pl-2 ml-1 border-l border-border">
