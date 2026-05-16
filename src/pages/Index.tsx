@@ -17,11 +17,12 @@ import { AiInsightCenterPage } from "@/components/pages/management/AiInsightCent
 import { UserManagementPage } from "@/components/pages/management/UserManagementPage";
 import { SystemConfigPage } from "@/components/pages/management/SystemConfigPage";
 import { AuditGovernancePage } from "@/components/pages/management/AuditGovernancePage";
-import { initialLeads, leaderOfRM, leaders, type Lead } from "@/lib/dummy-data";
+import { initialLeads, leaderOfRM, leaders, type Lead, type RmActivity } from "@/lib/dummy-data";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { LoginScreen } from "@/components/LoginScreen";
-import { toast } from "sonner";
 import { personalWarnings } from "@/lib/ai-sales";
+import { AddLeadModal } from "@/components/forms/AddLeadModal";
+import { AddActivityModal } from "@/components/forms/AddActivityModal";
 
 const pageMeta: Record<PageKey, { title: string; subtitle: string }> = {
   overview: { title: "A.C.T Sales CRM Demo", subtitle: "Sales Performance Dashboard & CRM Concept — Primera Karya Sinergia." },
@@ -43,15 +44,14 @@ const pageMeta: Record<PageKey, { title: string; subtitle: string }> = {
   "mgmt-audit":    { title: "Audit & Governance", subtitle: "Log aktivitas, log export, keamanan, dan kualitas data." },
 };
 
-const dummyNames = ["Putri Maharani", "Eko Saputra", "Lina Marlina", "Hadi Kurniawan", "Citra Dewi", "Bagas Pradana"];
-const products = ["KPR Rumah Pertama", "KPR Subsidi", "Take Over KPR", "KPR Platinum"];
-const fallbackRMs = leaders.flatMap((l) => l.rms);
-
 const IndexInner = () => {
   const { user, logout } = useAuth();
   const [page, setPage] = useState<PageKey>("overview");
   const [leads, setLeads] = useState<Lead[]>(initialLeads);
+  const [activities, setActivities] = useState<RmActivity[]>([]);
   const [search, setSearch] = useState("");
+  const [openAddLead, setOpenAddLead] = useState(false);
+  const [openAddActivity, setOpenAddActivity] = useState(false);
 
   // Set landing page sesuai role saat login
   useEffect(() => {
@@ -68,46 +68,22 @@ const IndexInner = () => {
     );
   }, [leads, user]);
 
-  const handleAddActivity = () => {
-    if (!user) return;
-    const seq = leads.length + 1;
-    const id = `LD-${seq.toString().padStart(3, "0")}`;
-    // RM untuk aktivitas dummy:
-    // - jika login sebagai RM, gunakan dirinya
-    // - jika login sebagai leader, pilih salah satu RM dalam tim-nya
-    const teamRMs = leaders.find((l) => l.name === user.name)?.rms ?? fallbackRMs;
-    const rm = user.role === "rm" ? user.name : teamRMs[seq % teamRMs.length];
-    const leader = user.role === "leader" ? user.name : (user.leaderName ?? leaderOfRM(rm));
-    const newLead: Lead = {
-      id,
-      nama: dummyNames[seq % dummyNames.length],
-      stage: "Contact",
-      priority: "Medium",
-      pic: rm,
-      leader,
-      source: "Aktivitas dummy",
-      produk: products[seq % products.length],
-      lastActivity: "Aktivitas baru ditambahkan",
-      nextFollowUp: "Besok",
-      fuStage: "FU1",
-      status: "In Progress",
-      ringkasan: "Aktivitas dummy dibuat dari header. Lead masuk tahap Contact.",
-    };
-    setLeads((prev) => [newLead, ...prev]);
-    toast.success("Aktivitas dummy ditambahkan", {
-      description: `${newLead.nama} · ${newLead.produk} · RM ${newLead.pic} · Leader ${newLead.leader}`,
-    });
-    if (page === "overview") setPage("pipeline");
-  };
+  // Scope activities by role
+  const scopedActivities = useMemo(() => {
+    if (!user) return [] as RmActivity[];
+    if (user.role === "management") return activities;
+    if (user.role === "leader") return activities.filter((a) => a.leader === user.name);
+    return activities.filter((a) => a.rm === user.name);
+  }, [activities, user]);
 
   const meta = pageMeta[page];
 
   const content = useMemo(() => {
     switch (page) {
-      case "overview": return <OverviewPage onNavigate={setPage} user={user!} leads={scopedLeads} />;
+      case "overview": return <OverviewPage onNavigate={setPage} user={user!} leads={scopedLeads} activities={scopedActivities} />;
       case "command": return <CommandCenterPage leads={scopedLeads} />;
       case "pipeline": return <PipelinePage leads={scopedLeads} setLeads={setLeads} globalSearch={search} />;
-      case "activity": return <ActivityDailyPage />;
+      case "activity": return <ActivityDailyPage extraActivities={scopedActivities} />;
       case "followup": return <FollowUpPage />;
       case "kpi": return <KpiReviewPage />;
       case "laporan": return <GenerateLaporanPage user={user!} leads={scopedLeads} />;
@@ -122,7 +98,7 @@ const IndexInner = () => {
       case "mgmt-config":   return <SystemConfigPage />;
       case "mgmt-audit":    return <AuditGovernancePage />;
     }
-  }, [page, scopedLeads, search, user]);
+  }, [page, scopedLeads, scopedActivities, search, user]);
 
   const warningCount = useMemo(
     () => (user && user.role !== "management" ? personalWarnings(scopedLeads).length : 0),
@@ -131,21 +107,53 @@ const IndexInner = () => {
 
   if (!user) return <LoginScreen />;
 
+  const isRM = user.role === "rm";
+  const rmLeaderName = user.leaderName ?? leaderOfRM(user.name);
+
   return (
-    <AppShell
-      current={page}
-      onChange={setPage}
-      onAddActivity={handleAddActivity}
-      search={search}
-      onSearch={setSearch}
-      pageTitle={meta.title}
-      pageSubtitle={meta.subtitle}
-      user={user}
-      onLogout={logout}
-      warningCount={warningCount}
-    >
-      {content}
-    </AppShell>
+    <>
+      <AppShell
+        current={page}
+        onChange={setPage}
+        onAddLead={isRM ? () => setOpenAddLead(true) : undefined}
+        onAddActivity={isRM ? () => setOpenAddActivity(true) : undefined}
+        search={search}
+        onSearch={setSearch}
+        pageTitle={meta.title}
+        pageSubtitle={meta.subtitle}
+        user={user}
+        onLogout={logout}
+        warningCount={warningCount}
+      >
+        {content}
+      </AppShell>
+
+      {isRM && openAddLead && (
+        <AddLeadModal
+          rmName={user.name}
+          leaderName={rmLeaderName}
+          existingCount={leads.length}
+          onClose={() => setOpenAddLead(false)}
+          onSave={(lead) => {
+            setLeads((prev) => [lead, ...prev]);
+            if (page === "overview") setPage("pipeline");
+          }}
+        />
+      )}
+
+      {isRM && openAddActivity && (
+        <AddActivityModal
+          rmName={user.name}
+          leaderName={rmLeaderName}
+          rmLeads={scopedLeads}
+          onClose={() => setOpenAddActivity(false)}
+          onSave={(a) => {
+            setActivities((prev) => [a, ...prev]);
+            if (page === "overview") setPage("activity");
+          }}
+        />
+      )}
+    </>
   );
 };
 
