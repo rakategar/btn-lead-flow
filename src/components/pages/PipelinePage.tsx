@@ -49,6 +49,12 @@ export function PipelinePage({ leads, setLeads, globalSearch }: Props) {
     setOpen((o) => o && o.id === id ? { ...o, stage: newStage } : o);
   };
 
+  const addNote = (id: string, message: string) => {
+    const note: LeadNote = { id: `n-${Date.now()}`, leader: user?.name || "Leader", message, ts: new Date().toISOString() };
+    setLeads((prev) => prev.map((l) => l.id === id ? { ...l, notes: [...(l.notes ?? []), note] } : l));
+    setOpen((o) => o && o.id === id ? { ...o, notes: [...(o.notes ?? []), note] } : o);
+  };
+
   return (
     <div className="space-y-5">
       {/* Filters */}
