@@ -2,10 +2,11 @@ import { Users, Activity, Bell, TrendingUp, Star, Target, ArrowRight, CheckCircl
 import { KpiCard } from "@/components/KpiCard";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
-import { pipelineSummary, priorityAlerts, picActivities, leaders, type Lead } from "@/lib/dummy-data";
+import { pipelineSummary, priorityAlerts, picActivities, leaders, type Lead, type RmActivity } from "@/lib/dummy-data";
 import type { PageKey } from "@/components/AppShell";
 import type { SessionUser } from "@/lib/auth";
 import { AiPriorityToday, AiEarlyWarningPanel } from "@/components/ai/AiPanels";
+import { TeamAlertPanel } from "@/components/ai/TeamAlertPanel";
 
 const actPillars = [
   { letter: "A", title: "Action Daily", desc: "Aktivitas nyata harian: prospecting, kunjungan, follow-up, appointment.", tone: "blue" as const },
@@ -17,9 +18,10 @@ interface Props {
   onNavigate: (k: PageKey) => void;
   user: SessionUser;
   leads: Lead[];
+  activities?: RmActivity[];
 }
 
-export function OverviewPage({ onNavigate, user, leads }: Props) {
+export function OverviewPage({ onNavigate, user, leads, activities = [] }: Props) {
   const isLeader = user.role === "leader";
 
   // Scope aktivitas tim untuk leader / RM untuk dirinya
