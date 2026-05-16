@@ -36,7 +36,8 @@ const menu: { key: PageKey; label: string; icon: React.ComponentType<any>; group
 interface Props {
   current: PageKey;
   onChange: (k: PageKey) => void;
-  onAddActivity: () => void;
+  onAddLead?: () => void;
+  onAddActivity?: () => void;
   search: string;
   onSearch: (s: string) => void;
   children: React.ReactNode;
@@ -47,7 +48,7 @@ interface Props {
   warningCount?: number;
 }
 
-export function AppShell({ current, onChange, onAddActivity, search, onSearch, children, pageTitle, pageSubtitle, user, onLogout, warningCount = 0 }: Props) {
+export function AppShell({ current, onChange, onAddLead, onAddActivity, search, onSearch, children, pageTitle, pageSubtitle, user, onLogout, warningCount = 0 }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const isMgmt = user.role === "management";
   const visibleMenu = menu.filter((m) => {
