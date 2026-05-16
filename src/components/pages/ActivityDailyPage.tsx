@@ -63,7 +63,32 @@ export function ActivityDailyPage({ extraActivities = [] }: { extraActivities?: 
     return "";
   }, [user, isLeader, isRM]);
 
-  const visiblePics = picActivities.filter((p) => teamRMs.includes(p.pic));
+  // Augment counters dengan aktivitas baru yang diinput RM hari ini
+  const todayKey = new Date().toDateString();
+  const extraToday = extraActivities.filter((a) => new Date(a.datetime).toDateString() === todayKey);
+  const incFor = (rm: string) => {
+    const list = extraToday.filter((a) => a.rm === rm);
+    const bucket = { prospecting: 0, followUp: 0, meeting: 0, closing: 0 };
+    list.forEach((a) => {
+      const j = a.jenis.toLowerCase();
+      if (j.includes("prospect")) bucket.prospecting += 1;
+      else if (j.includes("follow") || j.includes("telepon") || j.includes("whatsapp")) bucket.followUp += 1;
+      else if (j.includes("meet") || j.includes("kunjung") || j.includes("presentasi")) bucket.meeting += 1;
+      else if (j.includes("closing")) bucket.closing += 1;
+      else bucket.followUp += 1;
+    });
+    return bucket;
+  };
+  const visiblePics = picActivities.filter((p) => teamRMs.includes(p.pic)).map((p) => {
+    const inc = incFor(p.pic);
+    return {
+      ...p,
+      prospecting: p.prospecting + inc.prospecting,
+      followUp: p.followUp + inc.followUp,
+      meeting: p.meeting + inc.meeting,
+      closing: p.closing + inc.closing,
+    };
+  });
   const scopeLabel = isLeader
     ? `Tim ${user!.name} · ${teamRMs.length} RM`
     : isRM
