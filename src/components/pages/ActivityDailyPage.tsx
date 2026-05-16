@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { Phone, MessageSquare, Calendar, CheckCircle2, Crown, UserRound, Plus, Trash2, ListChecks, StickyNote, BellRing, Check } from "lucide-react";
+import { Phone, MessageSquare, Calendar, CheckCircle2, Crown, UserRound, Plus, Trash2, ListChecks, StickyNote, BellRing, Check, Image as ImageIcon } from "lucide-react";
 import { KpiCard } from "@/components/KpiCard";
 import { StatusBadge, statusToTone } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
-import { picActivities, leaders, type Priority } from "@/lib/dummy-data";
+import { picActivities, leaders, type Priority, type RmActivity } from "@/lib/dummy-data";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
