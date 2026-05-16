@@ -63,10 +63,14 @@ export function OverviewPage({ onNavigate, user, leads, activities = [] }: Props
         <p className="mt-1 text-sm text-muted-foreground">{greetingSub}</p>
       </div>
 
-      {/* AI: Prioritas Hari Ini & Early Warning Personal */}
+      {/* AI: Prioritas Hari Ini & Alert (Leader: Alert Tim, RM: Early Warning Personal) */}
       <div className="grid gap-4 lg:grid-cols-2">
         <AiPriorityToday leads={leads} onNavigatePipeline={() => onNavigate("pipeline")} />
-        <AiEarlyWarningPanel leads={leads} onOpenLead={() => onNavigate("pipeline")} />
+        {isLeader ? (
+          <TeamAlertPanel leaderName={user.name} leads={leads} activities={activities} />
+        ) : (
+          <AiEarlyWarningPanel leads={leads} onOpenLead={() => onNavigate("pipeline")} />
+        )}
       </div>
 
       {/* Hero */}
