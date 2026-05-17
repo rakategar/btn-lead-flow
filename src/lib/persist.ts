@@ -27,7 +27,7 @@ export const leadToRow = (l: Lead) => ({
   source: l.source ?? null, produk: l.produk ?? null,
   last_activity: l.lastActivity ?? null, next_follow_up: l.nextFollowUp ?? null,
   fu_stage: l.fuStage, status: l.status, ringkasan: l.ringkasan ?? null,
-  notes: (l.notes ?? []) as unknown as object,
+  notes: (l.notes ?? []) as unknown as Json,
 });
 
 type ActRow = {
