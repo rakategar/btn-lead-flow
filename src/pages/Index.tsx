@@ -50,7 +50,7 @@ const pageMeta: Record<PageKey, { title: string; subtitle: string }> = {
 const IndexInner = () => {
   const { user, logout } = useAuth();
   const [page, setPage] = useState<PageKey>("overview");
-  const [leads, setLeads] = useState<Lead[]>(initialLeads);
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [activities, setActivities] = useState<RmActivity[]>([]);
   const [search, setSearch] = useState("");
   const [openAddLead, setOpenAddLead] = useState(false);
@@ -61,6 +61,58 @@ const IndexInner = () => {
     if (user?.role === "management") setPage("mgmt-overview");
     else if (user) setPage("overview");
   }, [user]);
+
+  // Load data dari database (+ seed leads jika kosong) & subscribe realtime
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        await seedLeadsIfEmpty(initialLeads);
+        const [ls, acts] = await Promise.all([loadLeads(), loadActivities()]);
+        if (!mounted) return;
+        setLeads(ls);
+        setActivities(acts);
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : "Unknown error";
+        toast.error("Gagal memuat data", { description: msg });
+      }
+    })();
+
+    const ch = supabase
+      .channel("leads_acts_rt")
+      .on("postgres_changes", { event: "*", schema: "public", table: "leads" }, (p) => {
+        setLeads((prev) => {
+          if (p.eventType === "INSERT") {
+            const l = rowToLead(p.new as Parameters<typeof rowToLead>[0]);
+            return prev.some((x) => x.id === l.id) ? prev : [l, ...prev];
+          }
+          if (p.eventType === "UPDATE") {
+            const l = rowToLead(p.new as Parameters<typeof rowToLead>[0]);
+            return prev.map((x) => (x.id === l.id ? l : x));
+          }
+          if (p.eventType === "DELETE") {
+            const id = (p.old as { id: string }).id;
+            return prev.filter((x) => x.id !== id);
+          }
+          return prev;
+        });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "rm_activities" }, (p) => {
+        setActivities((prev) => {
+          if (p.eventType === "INSERT") {
+            const a = rowToActivity(p.new as Parameters<typeof rowToActivity>[0]);
+            return prev.some((x) => x.id === a.id) ? prev : [a, ...prev];
+          }
+          if (p.eventType === "DELETE") {
+            const id = (p.old as { id: string }).id;
+            return prev.filter((x) => x.id !== id);
+          }
+          return prev;
+        });
+      })
+      .subscribe();
+    return () => { mounted = false; supabase.removeChannel(ch); };
+  }, []);
 
   // Scope leads by role (dihitung selalu agar urutan hooks stabil)
   const scopedLeads = useMemo(() => {
