@@ -146,10 +146,7 @@ export function ActivityDailyPage({
     const acts = extraActivities.filter((a) => a.rm === rm).map<MixedCard>((a) => ({
       kind: "activity", id: a.id, rm, sortTs: new Date(a.createdAt || a.datetime).getTime(), activity: a,
     }));
-    const lds = leads.filter((l) => l.pic === rm).map<MixedCard>((l) => ({
-      kind: "lead", id: l.id, rm, sortTs: 0, lead: l,
-    }));
-    return [...acts, ...lds].sort((a, b) => b.sortTs - a.sortTs);
+    return acts.sort((a, b) => b.sortTs - a.sortTs);
   };
 
   const notesForCard = (kind: CardKind, id: string) =>
