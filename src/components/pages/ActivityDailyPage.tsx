@@ -211,11 +211,11 @@ export function ActivityDailyPage({
           <div className="flex items-start gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-navy text-gold shrink-0"><ListChecks className="h-4 w-4" /></div>
             <div>
-              <h3 className="font-bold text-navy">Task Board — Activity & Leads</h3>
+              <h3 className="font-bold text-navy">Task Board — Activity</h3>
               <p className="text-xs text-muted-foreground">
                 {loading ? "Memuat data dari Lovable Cloud…" : isLeader
-                  ? "Pantau kartu Activity & Leads tiap RM. Tulis note di kartu mana pun — RM akan menandai 'Noted' saat dibaca."
-                  : "Card aktivitas & lead yang kamu input muncul di sini. Centang kartu aktivitas yang sudah selesai."}
+                  ? "Pantau kartu Activity tiap RM. Tulis note di kartu mana pun — RM akan menandai 'Noted' saat dibaca."
+                  : "Card aktivitas yang kamu input muncul di sini. Centang kartu yang sudah selesai."}
               </p>
             </div>
           </div>
