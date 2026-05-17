@@ -1,5 +1,6 @@
 // Persistence helpers untuk leads & rm_activities (Lovable Cloud).
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import type { Lead, LeadNote, PipelineStage, Priority, ResolutionStatus, FollowUpStage, RmActivity } from "./dummy-data";
 
 type LeadRow = {
