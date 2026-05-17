@@ -103,6 +103,19 @@ export function ActivityDailyPage({
       ? `Hanya data Anda — ${user!.name}`
       : "Semua RM";
 
+  // Hitung KPI card hari ini langsung dari activities real (DB)
+  const todayCounters = useMemo(() => {
+    const c = { prospecting: 0, followUp: 0, appointment: 0 };
+    extraToday.forEach((a) => {
+      const j = a.jenis.toLowerCase();
+      if (j.includes("prospect")) c.prospecting += 1;
+      else if (j.includes("meet") || j.includes("kunjung") || j.includes("presentasi") || j.includes("appoint")) c.appointment += 1;
+      else if (j.includes("follow") || j.includes("telepon") || j.includes("whatsapp") || j.includes("closing")) c.followUp += 1;
+      else c.followUp += 1;
+    });
+    return c;
+  }, [extraToday]);
+
   // ---- State ---------------------------------------------------------------
   const [tasks, setTasks] = useState<Task[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
