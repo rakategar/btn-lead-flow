@@ -103,6 +103,10 @@ const IndexInner = () => {
             const a = rowToActivity(p.new as Parameters<typeof rowToActivity>[0]);
             return prev.some((x) => x.id === a.id) ? prev : [a, ...prev];
           }
+          if (p.eventType === "UPDATE") {
+            const a = rowToActivity(p.new as Parameters<typeof rowToActivity>[0]);
+            return prev.map((x) => (x.id === a.id ? a : x));
+          }
           if (p.eventType === "DELETE") {
             const id = (p.old as { id: string }).id;
             return prev.filter((x) => x.id !== id);
@@ -138,7 +142,7 @@ const IndexInner = () => {
       case "overview": return <OverviewPage onNavigate={setPage} user={user!} leads={scopedLeads} activities={scopedActivities} />;
       case "command": return <CommandCenterPage leads={scopedLeads} />;
       case "pipeline": return <PipelinePage leads={scopedLeads} setLeads={setLeads} globalSearch={search} />;
-      case "activity": return <ActivityDailyPage extraActivities={scopedActivities} onAddLead={user?.role === "rm" ? () => setOpenAddLead(true) : undefined} onAddActivity={user?.role === "rm" ? () => setOpenAddActivity(true) : undefined} />;
+      case "activity": return <ActivityDailyPage extraActivities={scopedActivities} leads={scopedLeads} />;
       case "followup": return <FollowUpPage leads={scopedLeads} />;
       case "kpi": return <KpiReviewPage />;
       case "laporan": return <GenerateLaporanPage user={user!} leads={scopedLeads} />;

@@ -1,4 +1,4 @@
-// Persistence helpers untuk leads & rm_activities (Lovable Cloud).
+// Persistence helpers untuk leads, rm_activities, dan rm_notifications (Lovable Cloud).
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
 import type { Lead, LeadNote, PipelineStage, Priority, ResolutionStatus, FollowUpStage, RmActivity } from "./dummy-data";
@@ -34,7 +34,7 @@ type ActRow = {
   id: string; rm: string; leader: string; jenis: string;
   lead_id: string | null; lead_name: string | null;
   datetime: string; description: string; hasil: string | null;
-  photos: unknown; created_at: string;
+  photos: unknown; created_at: string; done?: boolean | null;
 };
 export const rowToActivity = (r: ActRow): RmActivity => ({
   id: r.id, rm: r.rm, leader: r.leader, jenis: r.jenis,
@@ -42,6 +42,7 @@ export const rowToActivity = (r: ActRow): RmActivity => ({
   datetime: r.datetime, description: r.description, hasil: r.hasil ?? undefined,
   photos: Array.isArray(r.photos) ? (r.photos as string[]) : [],
   createdAt: r.created_at,
+  done: !!r.done,
 });
 
 export async function loadLeads(): Promise<Lead[]> {
@@ -70,6 +71,10 @@ export async function insertActivity(a: RmActivity): Promise<RmActivity> {
   if (error) throw error;
   return rowToActivity(data as ActRow);
 }
+export async function setActivityDone(id: string, done: boolean): Promise<void> {
+  const { error } = await supabase.from("rm_activities").update({ done }).eq("id", id);
+  if (error) throw error;
+}
 export async function seedLeadsIfEmpty(seed: Lead[]): Promise<void> {
   const { count, error } = await supabase.from("leads").select("*", { count: "exact", head: true });
   if (error) throw error;
@@ -77,4 +82,36 @@ export async function seedLeadsIfEmpty(seed: Lead[]): Promise<void> {
   const rows = seed.map(leadToRow);
   const { error: insErr } = await supabase.from("leads").insert(rows);
   if (insErr) throw insErr;
+}
+
+// --------- Notifications ---------
+export interface RmNotification {
+  id: string; rmName: string; message: string; source: string;
+  createdBy: string | null; readAt: string | null; createdAt: string;
+}
+type NotifRow = {
+  id: string; rm_name: string; message: string; source: string;
+  created_by: string | null; read_at: string | null; created_at: string;
+};
+export const rowToNotif = (r: NotifRow): RmNotification => ({
+  id: r.id, rmName: r.rm_name, message: r.message, source: r.source,
+  createdBy: r.created_by, readAt: r.read_at, createdAt: r.created_at,
+});
+export async function loadNotificationsFor(rm: string): Promise<RmNotification[]> {
+  const { data, error } = await supabase.from("rm_notifications")
+    .select("*").eq("rm_name", rm).order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map((r) => rowToNotif(r as NotifRow));
+}
+export async function insertNotification(n: { rmName: string; message: string; source?: string; createdBy?: string }): Promise<RmNotification> {
+  const { data, error } = await supabase.from("rm_notifications").insert({
+    rm_name: n.rmName, message: n.message, source: n.source ?? "alert", created_by: n.createdBy ?? null,
+  }).select("*").single();
+  if (error) throw error;
+  return rowToNotif(data as NotifRow);
+}
+export async function markNotificationRead(id: string): Promise<void> {
+  const { error } = await supabase.from("rm_notifications")
+    .update({ read_at: new Date().toISOString() }).eq("id", id);
+  if (error) throw error;
 }

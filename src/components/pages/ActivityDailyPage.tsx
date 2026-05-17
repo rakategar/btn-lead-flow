@@ -1,57 +1,48 @@
 import { useEffect, useMemo, useState } from "react";
-import { Phone, MessageSquare, Calendar, CheckCircle2, Crown, UserRound, Plus, Trash2, ListChecks, StickyNote, BellRing, Check, Image as ImageIcon } from "lucide-react";
+import { Phone, MessageSquare, Calendar, CheckCircle2, Crown, UserRound, ListChecks, StickyNote, Image as ImageIcon, Flame, Thermometer, Snowflake } from "lucide-react";
 import { KpiCard } from "@/components/KpiCard";
 import { StatusBadge, statusToTone } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
-import { picActivities, leaders, type Priority, type RmActivity } from "@/lib/dummy-data";
+import { picActivities, leaders, type Lead, type RmActivity } from "@/lib/dummy-data";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { setActivityDone } from "@/lib/persist";
 
-// ---- Models ---------------------------------------------------------------
-interface Task {
-  id: string;
-  title: string;
-  detail?: string | null;
-  priority: Priority;
-  assignee: string | null;
-  done: boolean;
-  createdBy: string;
-}
-type TaskRow = {
-  id: string; title: string; detail: string | null; priority: string;
-  assignee: string | null; done: boolean; created_by: string;
-};
-const fromTask = (r: TaskRow): Task => ({
-  id: r.id, title: r.title, detail: r.detail,
-  priority: (r.priority as Priority) ?? "Medium",
-  assignee: r.assignee, done: r.done, createdBy: r.created_by,
-});
-
+// ---- Note model ----------------------------------------------------------
 interface Note {
   id: string; rmName: string; leaderName: string; message: string;
   readAt: string | null; readBy: string | null; createdAt: string;
+  targetType: string | null; targetId: string | null;
 }
 type NoteRow = {
   id: string; rm_name: string; leader_name: string; message: string;
   read_at: string | null; read_by: string | null; created_at: string;
+  target_type: string | null; target_id: string | null;
 };
 const fromNote = (r: NoteRow): Note => ({
   id: r.id, rmName: r.rm_name, leaderName: r.leader_name, message: r.message,
   readAt: r.read_at, readBy: r.read_by, createdAt: r.created_at,
+  targetType: r.target_type, targetId: r.target_id,
 });
 
-const priorityOrder: Record<Priority, number> = { High: 0, Medium: 1, Low: 2 };
+type CardKind = "activity" | "lead";
+interface MixedCard {
+  kind: CardKind;
+  id: string;
+  rm: string;
+  sortTs: number;
+  activity?: RmActivity;
+  lead?: Lead;
+}
 
 export function ActivityDailyPage({
   extraActivities = [],
-  onAddLead,
-  onAddActivity,
+  leads = [],
 }: {
   extraActivities?: RmActivity[];
-  onAddLead?: () => void;
-  onAddActivity?: () => void;
+  leads?: Lead[];
 } = {}) {
   const { user } = useAuth();
   const isLeader = user?.role === "leader";
@@ -64,14 +55,13 @@ export function ActivityDailyPage({
     return [];
   }, [user, isLeader, isRM]);
 
-  // Leader name relevan untuk RM (untuk filter notes yang dia terima)
   const leaderName = useMemo(() => {
     if (isLeader) return user!.name;
     if (isRM) return user!.leaderName ?? leaders.find((l) => l.rms.includes(user!.name))?.name ?? "";
     return "";
   }, [user, isLeader, isRM]);
 
-  // Augment counters dengan aktivitas baru yang diinput RM hari ini
+  // KPI counters (today)
   const todayKey = new Date().toDateString();
   const extraToday = extraActivities.filter((a) => new Date(a.datetime).toDateString() === todayKey);
   const incFor = (rm: string) => {
@@ -103,7 +93,6 @@ export function ActivityDailyPage({
       ? `Hanya data Anda — ${user!.name}`
       : "Semua RM";
 
-  // Hitung KPI card hari ini langsung dari activities real (DB)
   const todayCounters = useMemo(() => {
     const c = { prospecting: 0, followUp: 0, appointment: 0 };
     extraToday.forEach((a) => {
@@ -116,48 +105,21 @@ export function ActivityDailyPage({
     return c;
   }, [extraToday]);
 
-  // ---- State ---------------------------------------------------------------
-  const [tasks, setTasks] = useState<Task[]>([]);
+  // ---- Notes state + realtime ---------------------------------------------
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
-  const [draftTitle, setDraftTitle] = useState("");
-  const [draftPriority, setDraftPriority] = useState<Priority>("Medium");
 
-  // Load + realtime
   useEffect(() => {
     let mounted = true;
     (async () => {
-      const [tRes, nRes] = await Promise.all([
-        supabase.from("daily_tasks").select("*").order("created_at", { ascending: false }),
-        supabase.from("task_notes").select("*").order("created_at", { ascending: false }),
-      ]);
+      const { data, error } = await supabase.from("task_notes").select("*").order("created_at", { ascending: false });
       if (!mounted) return;
-      if (tRes.error) toast.error("Gagal memuat tasks", { description: tRes.error.message });
-      else setTasks((tRes.data ?? []).map((r) => fromTask(r as TaskRow)));
-      if (nRes.error) toast.error("Gagal memuat notes", { description: nRes.error.message });
-      else setNotes((nRes.data ?? []).map((r) => fromNote(r as NoteRow)));
+      if (error) toast.error("Gagal memuat notes", { description: error.message });
+      else setNotes((data ?? []).map((r) => fromNote(r as NoteRow)));
       setLoading(false);
     })();
-
     const ch = supabase
-      .channel("daily_board_rt")
-      .on("postgres_changes", { event: "*", schema: "public", table: "daily_tasks" }, (payload) => {
-        setTasks((prev) => {
-          if (payload.eventType === "INSERT") {
-            const t = fromTask(payload.new as TaskRow);
-            return prev.some((x) => x.id === t.id) ? prev : [t, ...prev];
-          }
-          if (payload.eventType === "UPDATE") {
-            const t = fromTask(payload.new as TaskRow);
-            return prev.map((x) => (x.id === t.id ? t : x));
-          }
-          if (payload.eventType === "DELETE") {
-            const id = (payload.old as { id: string }).id;
-            return prev.filter((x) => x.id !== id);
-          }
-          return prev;
-        });
-      })
+      .channel("notes_rt")
       .on("postgres_changes", { event: "*", schema: "public", table: "task_notes" }, (payload) => {
         setNotes((prev) => {
           if (payload.eventType === "INSERT") {
@@ -176,74 +138,48 @@ export function ActivityDailyPage({
         });
       })
       .subscribe();
-    return () => {
-      mounted = false;
-      supabase.removeChannel(ch);
-    };
+    return () => { mounted = false; supabase.removeChannel(ch); };
   }, []);
 
-  // ---- Helpers -------------------------------------------------------------
-  const tasksFor = (rm: string) =>
-    tasks.filter((t) => t.assignee === rm)
-      .sort((a, b) => Number(a.done) - Number(b.done) || priorityOrder[a.priority] - priorityOrder[b.priority]);
+  // ---- Build mixed cards per RM -------------------------------------------
+  const cardsFor = (rm: string): MixedCard[] => {
+    const acts = extraActivities.filter((a) => a.rm === rm).map<MixedCard>((a) => ({
+      kind: "activity", id: a.id, rm, sortTs: new Date(a.createdAt || a.datetime).getTime(), activity: a,
+    }));
+    const lds = leads.filter((l) => l.pic === rm).map<MixedCard>((l) => ({
+      kind: "lead", id: l.id, rm, sortTs: 0, lead: l,
+    }));
+    return [...acts, ...lds].sort((a, b) => b.sortTs - a.sortTs);
+  };
 
-  const notesFor = (rm: string) =>
-    notes.filter((n) => n.rmName === rm).sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  const notesForCard = (kind: CardKind, id: string) =>
+    notes.filter((n) => n.targetType === kind && n.targetId === id)
+      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
 
-  const unreadCountFor = (rm: string) => notesFor(rm).filter((n) => !n.readAt).length;
-
-  // ---- RM actions: tasks ---------------------------------------------------
-  const addOwnTask = async () => {
-    if (!isRM || !user || !draftTitle.trim()) return;
-    const title = draftTitle.trim();
-    const optimistic: Task = {
-      id: `tmp-${crypto.randomUUID()}`,
-      title, detail: null, priority: draftPriority,
-      assignee: user.name, done: false, createdBy: user.name,
-    };
-    setDraftTitle("");
-    setTasks((prev) => [optimistic, ...prev]);
-    const { data, error } = await supabase.from("daily_tasks").insert({
-      title, priority: draftPriority, assignee: user.name, done: false, created_by: user.name,
-    }).select("*").single();
-    if (error) {
-      setTasks((prev) => prev.filter((t) => t.id !== optimistic.id));
-      toast.error("Gagal membuat task", { description: error.message });
-    } else if (data) {
-      const real = fromTask(data as TaskRow);
-      setTasks((prev) => {
-        const without = prev.filter((t) => t.id !== optimistic.id && t.id !== real.id);
-        return [real, ...without];
-      });
+  // ---- Actions -------------------------------------------------------------
+  const toggleActivityDone = async (a: RmActivity) => {
+    if (!isRM || a.rm !== user?.name) return;
+    const next = !a.done;
+    try {
+      await setActivityDone(a.id, next);
+      // realtime will update via Index, but show feedback
+    } catch (e) {
+      toast.error("Gagal update", { description: e instanceof Error ? e.message : "Unknown" });
     }
   };
 
-  const removeOwnTask = async (taskId: string) => {
-    setTasks((prev) => prev.filter((t) => t.id !== taskId));
-    const { error } = await supabase.from("daily_tasks").delete().eq("id", taskId);
-    if (error) toast.error("Gagal hapus", { description: error.message });
-  };
-
-  const toggleDone = async (taskId: string) => {
-    const cur = tasks.find((t) => t.id === taskId);
-    if (!cur || cur.assignee !== user?.name) return;
-    const next = !cur.done;
-    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, done: next } : t)));
-    const { error } = await supabase.from("daily_tasks").update({ done: next }).eq("id", taskId);
-    if (error) toast.error("Gagal update", { description: error.message });
-  };
-
-  // ---- Leader actions: notes ----------------------------------------------
-  const addNote = async (rm: string, message: string) => {
+  const sendNote = async (kind: CardKind, targetId: string, rm: string, message: string) => {
     if (!isLeader || !user || !message.trim()) return;
     const optimistic: Note = {
       id: `tmp-${crypto.randomUUID()}`,
       rmName: rm, leaderName: user.name, message: message.trim(),
       readAt: null, readBy: null, createdAt: new Date().toISOString(),
+      targetType: kind, targetId,
     };
     setNotes((prev) => [optimistic, ...prev]);
     const { data, error } = await supabase.from("task_notes").insert({
       rm_name: rm, leader_name: user.name, message: message.trim(),
+      target_type: kind, target_id: targetId,
     }).select("*").single();
     if (error) {
       setNotes((prev) => prev.filter((n) => n.id !== optimistic.id));
@@ -254,19 +190,14 @@ export function ActivityDailyPage({
         const without = prev.filter((n) => n.id !== optimistic.id && n.id !== real.id);
         return [real, ...without];
       });
-      toast.success(`Note terkirim ke ${rm}`);
     }
   };
 
-  // RM marks note as read
-  const markNoted = async (noteId: string) => {
-    if (!isRM || !user) return;
-    const ts = new Date().toISOString();
-    setNotes((prev) => prev.map((n) => (n.id === noteId ? { ...n, readAt: ts, readBy: user.name } : n)));
-    const { error } = await supabase.from("task_notes")
-      .update({ read_at: ts, read_by: user.name })
-      .eq("id", noteId);
-    if (error) toast.error("Gagal menandai noted", { description: error.message });
+  // Per-RM activity progress (cards.activity only)
+  const progressFor = (rm: string) => {
+    const acts = extraActivities.filter((a) => a.rm === rm);
+    const done = acts.filter((a) => a.done).length;
+    return { done, total: acts.length, pct: acts.length === 0 ? 0 : Math.round((done / acts.length) * 100) };
   };
 
   return (
@@ -283,123 +214,68 @@ export function ActivityDailyPage({
           <div className="flex items-start gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-navy text-gold shrink-0"><ListChecks className="h-4 w-4" /></div>
             <div>
-              <h3 className="font-bold text-navy">Task Board — Daily Activity</h3>
+              <h3 className="font-bold text-navy">Task Board — Activity & Leads</h3>
               <p className="text-xs text-muted-foreground">
                 {loading ? "Memuat data dari Lovable Cloud…" : isLeader
-                  ? "Pantau checklist tiap RM (read-only). Tulis note/instruksi per RM — RM akan menandai 'Noted' saat sudah dibaca."
-                  : "Catat aktivitas & lead lewat tombol di bawah. Note dari Leader muncul di panel kanan."}
+                  ? "Pantau kartu Activity & Leads tiap RM. Tulis note di kartu mana pun — RM akan menandai 'Noted' saat dibaca."
+                  : "Card aktivitas & lead yang kamu input muncul di sini. Centang kartu aktivitas yang sudah selesai."}
               </p>
             </div>
           </div>
           <StatusBadge tone={isLeader ? "gold" : "blue"}>{scopeLabel}</StatusBadge>
         </div>
 
-        {/* RM: dua tombol pengganti area input task lama */}
-        {isRM && (onAddActivity || onAddLead) && (
-          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <Button
-              onClick={onAddActivity}
-              disabled={!onAddActivity}
-              className="bg-navy hover:bg-navy/90 text-navy-foreground"
-            >
-              <Plus className="h-4 w-4 mr-1.5" /> Tambah Activity
-            </Button>
-            <Button
-              onClick={onAddLead}
-              disabled={!onAddLead}
-              variant="outline"
-              className="border-[hsl(var(--gold))] text-navy hover:bg-gold-light"
-            >
-              <Plus className="h-4 w-4 mr-1.5" /> Tambah Leads
-            </Button>
-          </div>
-        )}
-
         {/* Board */}
         {isRM ? (
-          // Compact RM layout: task di kiri, notes panel di kanan
-          <div className="mt-4 grid gap-3 lg:grid-cols-2">
+          <div className="mt-4 space-y-3">
             {teamRMs.map((rm) => {
-              const list = tasksFor(rm);
-              const done = list.filter((t) => t.done).length;
-              const pct = list.length === 0 ? 0 : Math.round((done / list.length) * 100);
-              const rmNotes = notesFor(rm);
+              const cards = cardsFor(rm);
+              const { done, total, pct } = progressFor(rm);
               return (
-                <div key={rm} className="contents">
-                  <RMColumn
-                    rmName={rm}
-                    progress={pct}
-                    doneCount={done}
-                    totalCount={list.length}
-                    hasUnread={false}
-                    isLeaderView={false}
-                  >
-                    {list.length === 0 && <Empty text="Belum ada task hari ini." />}
-                    {list.map((t) => (
-                      <TaskCard
-                        key={t.id}
-                        task={t}
-                        canCheck={t.assignee === user?.name}
-                        onToggle={() => toggleDone(t.id)}
-                        onRemove={t.assignee === user?.name ? () => removeOwnTask(t.id) : undefined}
+                <RMColumn key={rm} rmName={rm} progress={pct} doneCount={done} totalCount={total} hasUnread={false} isLeaderView={false} dense>
+                  {cards.length === 0 && <Empty text="Belum ada activity atau lead. Gunakan tombol di header." />}
+                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    {cards.map((c) => (
+                      <BoardCard
+                        key={`${c.kind}-${c.id}`}
+                        card={c}
+                        notes={notesForCard(c.kind, c.id)}
+                        isLeader={false}
+                        isRM={true}
+                        canCheck={c.kind === "activity" && c.activity?.rm === user?.name}
+                        onToggleDone={() => c.activity && toggleActivityDone(c.activity)}
+                        onSendNote={(msg) => sendNote(c.kind, c.id, rm, msg)}
+                        currentLeader={leaderName}
                       />
                     ))}
-                  </RMColumn>
-                  <div className="rounded-xl border border-border bg-muted/40 p-3 flex flex-col min-h-[220px]">
-                    <div className="flex items-center gap-2 mb-2">
-                      <StickyNote className="h-4 w-4 text-[hsl(var(--gold))]" />
-                      <div className="text-sm font-bold text-navy">Note dari Leader</div>
-                    </div>
-                    <NotesSection
-                      rm={rm}
-                      notes={rmNotes}
-                      isLeader={false}
-                      isRM={true}
-                      currentLeader={leaderName}
-                      onSend={() => {}}
-                      onMarkNoted={markNoted}
-                      hideHeader
-                    />
                   </div>
-                </div>
+                </RMColumn>
               );
             })}
           </div>
         ) : (
-          <div className="mt-4 grid gap-3 lg:grid-cols-3">
+          <div className="mt-4 grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
             {teamRMs.map((rm) => {
-              const list = tasksFor(rm);
-              const done = list.filter((t) => t.done).length;
-              const pct = list.length === 0 ? 0 : Math.round((done / list.length) * 100);
-              const rmNotes = notesFor(rm);
-              const unread = unreadCountFor(rm);
+              const cards = cardsFor(rm);
+              const { done, total, pct } = progressFor(rm);
+              const rmHasUnread = cards.some((c) =>
+                notesForCard(c.kind, c.id).some((n) => !n.readAt)
+              );
               return (
-                <RMColumn
-                  key={rm}
-                  rmName={rm}
-                  progress={pct}
-                  doneCount={done}
-                  totalCount={list.length}
-                  hasUnread={unread > 0}
-                  isLeaderView={isLeader}
-                >
-                  {list.length === 0 && <Empty text="RM belum membuat task hari ini." />}
-                  {list.map((t) => (
-                    <TaskCard
-                      key={t.id}
-                      task={t}
+                <RMColumn key={rm} rmName={rm} progress={pct} doneCount={done} totalCount={total} hasUnread={rmHasUnread} isLeaderView={true}>
+                  {cards.length === 0 && <Empty text="RM belum input activity atau lead." />}
+                  {cards.map((c) => (
+                    <BoardCard
+                      key={`${c.kind}-${c.id}`}
+                      card={c}
+                      notes={notesForCard(c.kind, c.id)}
+                      isLeader={true}
+                      isRM={false}
                       canCheck={false}
+                      onSendNote={(msg) => sendNote(c.kind, c.id, rm, msg)}
+                      currentLeader={leaderName}
                     />
                   ))}
-                  <NotesSection
-                    rm={rm}
-                    notes={rmNotes}
-                    isLeader={isLeader}
-                    isRM={false}
-                    currentLeader={leaderName}
-                    onSend={(msg) => addNote(rm, msg)}
-                    onMarkNoted={markNoted}
-                  />
                 </RMColumn>
               );
             })}
@@ -414,19 +290,17 @@ export function ActivityDailyPage({
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gold-light text-[hsl(var(--gold))] shrink-0"><Crown className="h-4 w-4" /></div>
             <div>
               <h3 className="font-bold text-navy">Monitoring Progress Tim</h3>
-              <p className="text-xs text-muted-foreground">Progress eksekusi task harian per RM.</p>
+              <p className="text-xs text-muted-foreground">Progress eksekusi activity harian per RM (centang di kartu activity).</p>
             </div>
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {teamRMs.map((rm) => {
-              const list = tasks.filter((t) => t.assignee === rm);
-              const done = list.filter((t) => t.done).length;
-              const pct = list.length === 0 ? 0 : Math.round((done / list.length) * 100);
+              const { done, total, pct } = progressFor(rm);
               return (
                 <div key={rm} className="rounded-lg border border-border bg-card p-3">
                   <div className="flex items-center justify-between">
                     <div className="text-sm font-semibold text-navy">{rm}</div>
-                    <span className="text-xs text-muted-foreground">{done}/{list.length}</span>
+                    <span className="text-xs text-muted-foreground">{done}/{total}</span>
                   </div>
                   <div className="mt-2 h-2 rounded-full bg-muted overflow-hidden">
                     <div className={cn("h-full rounded-full transition-all", pct >= 80 ? "bg-success" : pct >= 50 ? "bg-[hsl(var(--gold))]" : "bg-primary")} style={{ width: `${pct}%` }} />
@@ -435,49 +309,6 @@ export function ActivityDailyPage({
                 </div>
               );
             })}
-          </div>
-        </section>
-      )}
-
-      {/* Aktivitas baru yang baru diinput RM */}
-      {extraActivities.length > 0 && (
-        <section className="panel overflow-hidden">
-          <div className="px-5 py-4 border-b border-border flex items-center justify-between gap-3 flex-wrap">
-            <div>
-              <h3 className="font-bold text-navy">Aktivitas Baru Diinput</h3>
-              <p className="text-xs text-muted-foreground">Aktivitas terbaru yang dicatat RM via tombol "+ Tambah Activity".</p>
-            </div>
-            <StatusBadge tone="blue">{extraActivities.length} aktivitas</StatusBadge>
-          </div>
-          <div className="divide-y divide-border">
-            {extraActivities.slice(0, 10).map((a) => (
-              <div key={a.id} className="px-5 py-3 flex items-start gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary-light text-primary shrink-0">
-                  <Calendar className="h-3.5 w-3.5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <StatusBadge tone="navy">{a.jenis}</StatusBadge>
-                    {a.hasil && <StatusBadge tone={/positif|closing/i.test(a.hasil) ? "green" : /ditolak|tidak/i.test(a.hasil) ? "red" : "orange"}>{a.hasil}</StatusBadge>}
-                    {a.leadName && <span className="text-xs text-muted-foreground">Lead: <span className="text-navy font-medium">{a.leadName}</span></span>}
-                  </div>
-                  <div className="text-sm text-navy mt-1 break-words">{a.description}</div>
-                  <div className="mt-1 text-[11px] text-muted-foreground">
-                    {a.rm} · {new Date(a.datetime).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
-                    {a.photos && a.photos.length > 0 && (
-                      <span className="ml-2 inline-flex items-center gap-1"><ImageIcon className="h-3 w-3" />{a.photos.length} foto</span>
-                    )}
-                  </div>
-                  {a.photos && a.photos.length > 0 && (
-                    <div className="mt-2 flex gap-2">
-                      {a.photos.map((p, i) => (
-                        <img key={i} src={p} alt="" className="h-14 w-14 object-cover rounded-md border border-border" />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
           </div>
         </section>
       )}
@@ -530,14 +361,15 @@ export function ActivityDailyPage({
 // ---- Sub-components --------------------------------------------------------
 
 function RMColumn({
-  rmName, progress, doneCount, totalCount, hasUnread, isLeaderView, children,
+  rmName, progress, doneCount, totalCount, hasUnread, isLeaderView, children, dense,
 }: {
   rmName: string; progress: number; doneCount: number; totalCount: number;
-  hasUnread: boolean; isLeaderView: boolean; children: React.ReactNode;
+  hasUnread: boolean; isLeaderView: boolean; children: React.ReactNode; dense?: boolean;
 }) {
   return (
     <div className={cn(
-      "rounded-xl border bg-muted/40 p-3 flex flex-col min-h-[220px] transition-colors",
+      "rounded-xl border bg-muted/40 p-3 flex flex-col transition-colors",
+      dense ? "" : "min-h-[220px]",
       hasUnread && isLeaderView ? "border-[hsl(var(--gold))] bg-gold-light/40" : "border-border"
     )}>
       <div className="flex items-center gap-2 mb-2">
@@ -545,15 +377,8 @@ function RMColumn({
           <UserRound className="h-3.5 w-3.5" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5">
-            <div className="text-sm font-bold text-navy truncate">{rmName}</div>
-            {hasUnread && isLeaderView && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-[hsl(var(--gold))] text-navy text-[10px] font-bold px-1.5 py-0.5">
-                <BellRing className="h-2.5 w-2.5" /> Belum dibaca
-              </span>
-            )}
-          </div>
-          <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{doneCount}/{totalCount} selesai</div>
+          <div className="text-sm font-bold text-navy truncate">{rmName}</div>
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{doneCount}/{totalCount} activity selesai</div>
         </div>
       </div>
       <div className="mb-2 h-1.5 rounded-full bg-card overflow-hidden">
@@ -564,124 +389,158 @@ function RMColumn({
   );
 }
 
-function TaskCard({ task, canCheck, onToggle, onRemove }: {
-  task: Task; canCheck?: boolean; onToggle?: () => void; onRemove?: () => void;
+function hasilTone(h?: string): "blue" | "orange" | "red" | "green" | "navy" {
+  if (!h) return "navy";
+  const v = h.toLowerCase();
+  if (v.includes("positif") || v.includes("closing")) return "green";
+  if (v.includes("ditolak")) return "red";
+  if (v.includes("tidak")) return "orange";
+  if (v.includes("follow")) return "orange";
+  return "blue";
+}
+
+function tempIcon(temp: "Hot" | "Warm" | "Cold") {
+  if (temp === "Hot") return <Flame className="h-3 w-3" />;
+  if (temp === "Warm") return <Thermometer className="h-3 w-3" />;
+  return <Snowflake className="h-3 w-3" />;
+}
+
+function leadTemp(l: Lead): "Hot" | "Warm" | "Cold" {
+  if (l.priority === "High") return "Hot";
+  if (l.priority === "Medium") return "Warm";
+  return "Cold";
+}
+
+function BoardCard({
+  card, notes, isLeader, isRM, canCheck, onToggleDone, onSendNote, currentLeader,
+}: {
+  card: MixedCard;
+  notes: Note[];
+  isLeader: boolean;
+  isRM: boolean;
+  canCheck: boolean;
+  onToggleDone?: () => void;
+  onSendNote: (msg: string) => void;
+  currentLeader: string;
 }) {
   return (
-    <div className={cn(
-      "group rounded-lg border border-border bg-card p-2.5 shadow-soft hover:shadow-card transition-shadow",
-      task.done && "opacity-70"
-    )}>
-      <div className="flex items-start gap-2">
-        {canCheck ? (
-          <button onClick={onToggle} aria-label="Tandai selesai" className="mt-0.5 shrink-0">
-            <CheckCircle2 className={cn("h-4 w-4", task.done ? "text-success" : "text-muted-foreground hover:text-primary")} />
-          </button>
-        ) : (
-          <CheckCircle2 className={cn("h-4 w-4 mt-0.5 shrink-0", task.done ? "text-success" : "text-muted-foreground/50")} />
-        )}
-        <div className="flex-1 min-w-0">
-          <div className={cn("text-sm font-medium text-navy", task.done && "line-through text-muted-foreground")}>{task.title}</div>
-          {task.detail && <div className="text-[11px] text-muted-foreground mt-0.5">{task.detail}</div>}
-          <div className="mt-1.5 flex items-center gap-1.5">
-            <StatusBadge tone={statusToTone(task.priority)}>{task.priority}</StatusBadge>
-            <span className="text-[10px] text-muted-foreground">oleh {task.createdBy}</span>
-          </div>
-        </div>
-        {onRemove && (
-          <button onClick={onRemove} aria-label="Hapus" className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-danger-light text-muted-foreground hover:text-danger">
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
-        )}
-      </div>
+    <div className="rounded-lg border border-border bg-card p-3 shadow-soft hover:shadow-card transition-shadow flex flex-col gap-2">
+      {card.kind === "activity" && card.activity ? (
+        <ActivityCardBody a={card.activity} canCheck={canCheck} onToggleDone={onToggleDone} />
+      ) : card.lead ? (
+        <LeadCardBody l={card.lead} />
+      ) : null}
+
+      <CardNotes notes={notes} isLeader={isLeader} isRM={isRM} rm={card.rm} onSend={onSendNote} currentLeader={currentLeader} />
     </div>
   );
 }
 
-function NotesSection({
-  rm, notes, isLeader, isRM, currentLeader, onSend, onMarkNoted, hideHeader,
-}: {
-  rm: string; notes: Note[]; isLeader: boolean; isRM: boolean;
-  currentLeader: string;
-  onSend: (msg: string) => void;
-  onMarkNoted: (id: string) => void;
-  hideHeader?: boolean;
-}) {
-  const [draft, setDraft] = useState("");
-  if (notes.length === 0 && !isLeader && !isRM) return null;
-
+function ActivityCardBody({ a, canCheck, onToggleDone }: { a: RmActivity; canCheck: boolean; onToggleDone?: () => void }) {
   return (
-    <div className={cn(!hideHeader && "mt-2 rounded-lg border border-dashed border-border bg-card/60 p-2.5")}>
-      {!hideHeader && (
-        <div className="flex items-center gap-1.5 mb-2">
-          <StickyNote className="h-3.5 w-3.5 text-[hsl(var(--gold))]" />
-          <span className="text-[11px] uppercase tracking-wider font-semibold text-navy">Note dari Leader</span>
+    <div className={cn(a.done && "opacity-70")}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <StatusBadge tone="navy">{a.jenis}</StatusBadge>
+          {a.hasil && <StatusBadge tone={hasilTone(a.hasil)}>{a.hasil}</StatusBadge>}
+        </div>
+        {canCheck ? (
+          <button onClick={onToggleDone} aria-label="Tandai selesai" className="shrink-0">
+            <CheckCircle2 className={cn("h-5 w-5", a.done ? "text-success" : "text-muted-foreground hover:text-primary")} />
+          </button>
+        ) : (
+          <CheckCircle2 className={cn("h-5 w-5 shrink-0", a.done ? "text-success" : "text-muted-foreground/40")} />
+        )}
+      </div>
+      {a.leadName && (
+        <div className="mt-1 text-[11px] text-muted-foreground">Lead: <span className="text-navy font-medium">{a.leadName}</span></div>
+      )}
+      <div className="mt-1 text-[11px] text-muted-foreground">
+        {new Date(a.datetime).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+      </div>
+      <div className={cn("mt-1 text-[13px] text-navy break-words", a.done && "line-through text-muted-foreground")}>{a.description}</div>
+      {a.photos && a.photos.length > 0 && (
+        <div className="mt-2">
+          <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-1">
+            <ImageIcon className="h-3 w-3" /> {a.photos.length} foto
+          </div>
+          <div className="flex gap-1.5 flex-wrap">
+            {a.photos.map((p, i) => (
+              <img key={i} src={p} alt="" className="h-12 w-12 object-cover rounded-md border border-border" />
+            ))}
+          </div>
         </div>
       )}
+    </div>
+  );
+}
 
-      {notes.length === 0 && (
-        <div className="text-[11px] text-muted-foreground italic mb-2">Belum ada note untuk {rm}.</div>
-      )}
-
-      <div className="flex flex-col gap-1.5 mb-2">
-        {notes.map((n) => {
-          const isUnread = !n.readAt;
-          return (
-            <div
-              key={n.id}
-              className={cn(
-                "rounded-md border p-2 text-[12px]",
-                isUnread ? "border-[hsl(var(--gold))] bg-gold-light/60" : "border-border bg-card"
-              )}
-            >
-              <div className="text-navy">{n.message}</div>
-              <div className="mt-1 flex items-center justify-between gap-2 text-[10px] text-muted-foreground">
-                <span>{n.leaderName} · {new Date(n.createdAt).toLocaleString("id-ID", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short" })}</span>
-                {n.readAt ? (
-                  <span className="inline-flex items-center gap-1 text-success font-medium">
-                    <Check className="h-3 w-3" /> Noted oleh {n.readBy} · {new Date(n.readAt).toLocaleString("id-ID", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short" })}
-                  </span>
-                ) : isRM ? (
-                  <button
-                    onClick={() => onMarkNoted(n.id)}
-                    className="inline-flex items-center gap-1 rounded-full bg-navy text-navy-foreground px-2 py-0.5 font-semibold hover:bg-navy/90"
-                  >
-                    Noted ✓
-                  </button>
-                ) : (
-                  <span className="text-[hsl(var(--gold))] font-semibold">Belum dibaca</span>
-                )}
-              </div>
-            </div>
-          );
-        })}
+function LeadCardBody({ l }: { l: Lead }) {
+  const temp = leadTemp(l);
+  const tempTone: "red" | "orange" | "blue" = temp === "Hot" ? "red" : temp === "Warm" ? "orange" : "blue";
+  return (
+    <div>
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <div className="text-sm font-semibold text-navy">{l.nama}</div>
+          <div className="text-[10px] text-muted-foreground">{l.id}</div>
+        </div>
+        <StatusBadge tone="gold">Lead</StatusBadge>
       </div>
+      <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+        <StatusBadge tone="navy">{l.stage}</StatusBadge>
+        <StatusBadge tone={tempTone}><span className="inline-flex items-center gap-1">{tempIcon(temp)} {temp}</span></StatusBadge>
+        <StatusBadge tone={statusToTone(l.status)}>{l.status}</StatusBadge>
+      </div>
+      {l.produk && <div className="mt-1.5 text-[12px] text-navy">Produk: <span className="font-medium">{l.produk}</span></div>}
+      {l.nextFollowUp && <div className="text-[11px] text-muted-foreground">FU berikutnya: {l.nextFollowUp}</div>}
+    </div>
+  );
+}
 
+function CardNotes({
+  notes, isLeader, isRM, rm, onSend, currentLeader,
+}: {
+  notes: Note[]; isLeader: boolean; isRM: boolean; rm: string;
+  onSend: (msg: string) => void; currentLeader: string;
+}) {
+  const [draft, setDraft] = useState("");
+  if (notes.length === 0 && !isLeader) return null;
+  return (
+    <div className="mt-1 rounded-md border border-dashed border-border bg-muted/40 p-2 space-y-1.5">
+      {notes.length > 0 && (
+        <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider font-semibold text-navy">
+          <StickyNote className="h-3 w-3 text-[hsl(var(--gold))]" /> Note dari Leader
+        </div>
+      )}
+      {notes.map((n) => (
+        <div key={n.id} className={cn("rounded border p-1.5 text-[12px]", !n.readAt && isLeader ? "border-[hsl(var(--gold))] bg-gold-light/60" : "border-border bg-card")}>
+          <div className="text-navy">{n.message}</div>
+          <div className="text-[10px] text-muted-foreground mt-0.5">
+            {n.leaderName} · {new Date(n.createdAt).toLocaleString("id-ID", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short" })}
+          </div>
+        </div>
+      ))}
       {isLeader && (
-        <div className="flex gap-1.5">
+        <div className="flex gap-1.5 pt-1">
           <input
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && draft.trim()) {
-                onSend(draft); setDraft("");
-              }
-            }}
-            placeholder={`Tulis note untuk ${rm}…`}
-            className="flex-1 h-8 px-2 text-[12px] rounded-md border border-input bg-background"
+            onKeyDown={(e) => { if (e.key === "Enter" && draft.trim()) { onSend(draft); setDraft(""); } }}
+            placeholder={`Note untuk ${rm}…`}
+            className="flex-1 h-7 px-2 text-[11px] rounded-md border border-input bg-background"
           />
           <Button
             size="sm"
-            className="h-8 bg-navy hover:bg-navy/90 text-navy-foreground"
+            className="h-7 px-2 bg-navy hover:bg-navy/90 text-navy-foreground text-[11px]"
             onClick={() => { if (draft.trim()) { onSend(draft); setDraft(""); } }}
           >
             Kirim
           </Button>
         </div>
       )}
-
-      {isRM && currentLeader && (
-        <div className="text-[10px] text-muted-foreground italic">Note dari Leader Anda — {currentLeader}</div>
+      {isRM && currentLeader && notes.length > 0 && (
+        <div className="text-[10px] text-muted-foreground italic">Dari Leader — {currentLeader}</div>
       )}
     </div>
   );

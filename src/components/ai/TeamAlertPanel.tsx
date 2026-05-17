@@ -1,8 +1,10 @@
 import { useMemo, useState } from "react";
-import { AlertTriangle, AlertOctagon, CheckCircle2, Clock, X } from "lucide-react";
+import { AlertTriangle, AlertOctagon, CheckCircle2, Send } from "lucide-react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { picActivities, leaders, type Lead, type RmActivity } from "@/lib/dummy-data";
+import { insertNotification } from "@/lib/persist";
+import { toast } from "sonner";
 
 interface AlertItem {
   id: string;
@@ -24,7 +26,8 @@ export function TeamAlertPanel({ leaderName, leads, activities }: Props) {
     [leaderName]
   );
 
-  const [resolved, setResolved] = useState<Set<string>>(new Set());
+  const [sent, setSent] = useState<Set<string>>(new Set());
+  const [sending, setSending] = useState<Set<string>>(new Set());
 
   const alerts = useMemo<AlertItem[]>(() => {
     const out: AlertItem[] = [];
@@ -94,8 +97,8 @@ export function TeamAlertPanel({ leaderName, leads, activities }: Props) {
       });
     }
 
-    return out.filter((a) => !resolved.has(a.id));
-  }, [teamRMs, leads, activities, resolved]);
+    return out;
+  }, [teamRMs, leads, activities]);
 
   const kritisCount = alerts.filter((a) => a.level === "Kritis").length;
   const peringatanCount = alerts.filter((a) => a.level === "Peringatan").length;
@@ -141,14 +144,34 @@ export function TeamAlertPanel({ leaderName, leads, activities }: Props) {
                   {a.detail}{a.rm ? ` · RM ${a.rm}` : ""}
                 </div>
               </div>
-              <Button
-                size="sm"
-                variant="outline"
-                className="shrink-0"
-                onClick={() => setResolved((prev) => new Set(prev).add(a.id))}
-              >
-                <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Tandai Selesai
-              </Button>
+              {(() => {
+                const isSent = sent.has(a.id);
+                const isSending = sending.has(a.id);
+                return (
+                  <Button
+                    size="sm"
+                    variant={isSent ? "outline" : "default"}
+                    disabled={isSent || isSending || !a.rm}
+                    className={`shrink-0 ${isSent ? "" : "bg-danger text-white hover:bg-danger/90"}`}
+                    onClick={async () => {
+                      if (!a.rm) return;
+                      setSending((p) => new Set(p).add(a.id));
+                      try {
+                        const message = `Leader menandai: ${a.title} — ${a.detail}`;
+                        await insertNotification({ rmName: a.rm, message, source: "alert", createdBy: leaderName });
+                        setSent((p) => new Set(p).add(a.id));
+                        toast.success(`Alert berhasil dikirim ke ${a.rm}`);
+                      } catch (e) {
+                        toast.error("Gagal mengirim alert", { description: e instanceof Error ? e.message : "Unknown" });
+                      } finally {
+                        setSending((p) => { const n = new Set(p); n.delete(a.id); return n; });
+                      }
+                    }}
+                  >
+                    {isSent ? (<><CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Terkirim</>) : (<><Send className="h-3.5 w-3.5 mr-1" /> {isSending ? "Mengirim…" : "Alert"}</>)}
+                  </Button>
+                );
+              })()}
             </div>
           );
         })}

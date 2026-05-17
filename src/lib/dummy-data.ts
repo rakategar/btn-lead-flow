@@ -63,6 +63,7 @@ export interface RmActivity {
   hasil?: string;
   photos?: string[];    // data URLs
   createdAt: string;    // ISO
+  done?: boolean;
 }
 
 export const initialLeads: Lead[] = [

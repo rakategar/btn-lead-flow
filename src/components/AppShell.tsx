@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ActLogo } from "@/components/ActLogo";
 import type { SessionUser } from "@/lib/auth";
+import { NotificationsBell } from "@/components/ai/NotificationsBell";
 
 export type PageKey =
   | "overview" | "command" | "pipeline" | "activity" | "followup" | "kpi" | "laporan"
@@ -142,7 +143,10 @@ export function AppShell({ current, onChange, onAddLead, onAddActivity, search, 
                   className="h-9 w-full rounded-lg border border-input bg-background pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/40"
                 />
               </div>
-              {!isMgmt && (
+              {!isMgmt && user.role === "rm" && (
+                <NotificationsBell rmName={user.name} />
+              )}
+              {!isMgmt && user.role !== "rm" && (
                 <button
                   onClick={() => onChange("overview")}
                   className="relative p-2 rounded-md hover:bg-muted text-muted-foreground hover:text-navy"
