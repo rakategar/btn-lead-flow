@@ -1,13 +1,14 @@
 // Persistence helpers untuk leads, rm_activities, dan rm_notifications (Lovable Cloud).
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
-import type { Lead, LeadNote, PipelineStage, Priority, ResolutionStatus, FollowUpStage, RmActivity } from "./dummy-data";
+import type { Lead, LeadNote, LeadExtras, PipelineStage, Priority, ResolutionStatus, FollowUpStage, RmActivity } from "./dummy-data";
 
 type LeadRow = {
   id: string; nama: string; stage: string; priority: string; pic: string; leader: string;
   source: string | null; produk: string | null; last_activity: string | null;
   next_follow_up: string | null; fu_stage: string; status: string; ringkasan: string | null;
   notes: unknown;
+  extras?: unknown;
 };
 export const rowToLead = (r: LeadRow): Lead => ({
   id: r.id, nama: r.nama,
@@ -21,6 +22,7 @@ export const rowToLead = (r: LeadRow): Lead => ({
   status: (r.status as ResolutionStatus) ?? "In Progress",
   ringkasan: r.ringkasan ?? "",
   notes: Array.isArray(r.notes) ? (r.notes as LeadNote[]) : [],
+  extras: (r.extras && typeof r.extras === "object" ? (r.extras as LeadExtras) : {}),
 });
 export const leadToRow = (l: Lead) => ({
   id: l.id, nama: l.nama, stage: l.stage, priority: l.priority, pic: l.pic, leader: l.leader,
@@ -28,6 +30,7 @@ export const leadToRow = (l: Lead) => ({
   last_activity: l.lastActivity ?? null, next_follow_up: l.nextFollowUp ?? null,
   fu_stage: l.fuStage, status: l.status, ringkasan: l.ringkasan ?? null,
   notes: (l.notes ?? []) as unknown as Json,
+  extras: (l.extras ?? {}) as unknown as Json,
 });
 
 type ActRow = {
