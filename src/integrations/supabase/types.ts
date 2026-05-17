@@ -136,6 +136,7 @@ export type Database = {
           created_at: string
           datetime: string
           description: string
+          done: boolean
           hasil: string | null
           id: string
           jenis: string
@@ -149,6 +150,7 @@ export type Database = {
           created_at?: string
           datetime?: string
           description: string
+          done?: boolean
           hasil?: string | null
           id?: string
           jenis: string
@@ -162,6 +164,7 @@ export type Database = {
           created_at?: string
           datetime?: string
           description?: string
+          done?: boolean
           hasil?: string | null
           id?: string
           jenis?: string
@@ -170,6 +173,36 @@ export type Database = {
           leader?: string
           photos?: Json
           rm?: string
+        }
+        Relationships: []
+      }
+      rm_notifications: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          message: string
+          read_at: string | null
+          rm_name: string
+          source: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          message: string
+          read_at?: string | null
+          rm_name: string
+          source?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          message?: string
+          read_at?: string | null
+          rm_name?: string
+          source?: string
         }
         Relationships: []
       }
@@ -182,6 +215,8 @@ export type Database = {
           read_at: string | null
           read_by: string | null
           rm_name: string
+          target_id: string | null
+          target_type: string | null
         }
         Insert: {
           created_at?: string
@@ -191,6 +226,8 @@ export type Database = {
           read_at?: string | null
           read_by?: string | null
           rm_name: string
+          target_id?: string | null
+          target_type?: string | null
         }
         Update: {
           created_at?: string
@@ -200,6 +237,8 @@ export type Database = {
           read_at?: string | null
           read_by?: string | null
           rm_name?: string
+          target_id?: string | null
+          target_type?: string | null
         }
         Relationships: []
       }
