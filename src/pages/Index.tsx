@@ -23,6 +23,9 @@ import { LoginScreen } from "@/components/LoginScreen";
 import { personalWarnings } from "@/lib/ai-sales";
 import { AddLeadModal } from "@/components/forms/AddLeadModal";
 import { AddActivityModal } from "@/components/forms/AddActivityModal";
+import { supabase } from "@/integrations/supabase/client";
+import { loadLeads, loadActivities, insertLead, insertActivity, seedLeadsIfEmpty, rowToLead, rowToActivity } from "@/lib/persist";
+import { toast } from "sonner";
 
 const pageMeta: Record<PageKey, { title: string; subtitle: string }> = {
   overview: { title: "A.C.T Sales CRM Demo", subtitle: "Sales Performance Dashboard & CRM Concept — Primera Karya Sinergia." },
