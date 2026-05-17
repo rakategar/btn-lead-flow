@@ -272,9 +272,9 @@ export function ActivityDailyPage({
   return (
     <div className="space-y-5">
       <div className="grid gap-4 sm:grid-cols-3">
-        <KpiCard title="Prospecting Hari Ini" value="24" hint="Kontak baru ditambahkan" icon={Phone} tone="blue" />
-        <KpiCard title="Follow-Up Hari Ini" value="31" hint="Eksekusi pipeline FU1–FU3" icon={MessageSquare} tone="orange" />
-        <KpiCard title="Appointment Hari Ini" value="9" hint="Meeting & kunjungan" icon={Calendar} tone="green" />
+        <KpiCard title="Prospecting Hari Ini" value={todayCounters.prospecting} hint="Kontak baru ditambahkan" icon={Phone} tone="blue" />
+        <KpiCard title="Follow-Up Hari Ini" value={todayCounters.followUp} hint="Eksekusi pipeline FU1–FU3" icon={MessageSquare} tone="orange" />
+        <KpiCard title="Appointment Hari Ini" value={todayCounters.appointment} hint="Meeting & kunjungan" icon={Calendar} tone="green" />
       </div>
 
       {/* Task Board */}
@@ -287,79 +287,124 @@ export function ActivityDailyPage({
               <p className="text-xs text-muted-foreground">
                 {loading ? "Memuat data dari Lovable Cloud…" : isLeader
                   ? "Pantau checklist tiap RM (read-only). Tulis note/instruksi per RM — RM akan menandai 'Noted' saat sudah dibaca."
-                  : "Buat dan centang sendiri task harian Anda. Note dari Leader muncul di kolom Anda."}
+                  : "Catat aktivitas & lead lewat tombol di bawah. Note dari Leader muncul di panel kanan."}
               </p>
             </div>
           </div>
           <StatusBadge tone={isLeader ? "gold" : "blue"}>{scopeLabel}</StatusBadge>
         </div>
 
-        {/* RM: form buat task sendiri */}
-        {isRM && (
-          <div className="mt-4 rounded-lg border border-dashed border-border bg-muted/30 p-3 flex flex-col sm:flex-row gap-2">
-            <input
-              value={draftTitle}
-              onChange={(e) => setDraftTitle(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && addOwnTask()}
-              placeholder="Tulis task aktivitas hari ini, mis. Telpon nasabah X…"
-              className="flex-1 h-9 px-3 text-sm rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring/40"
-            />
-            <select
-              value={draftPriority}
-              onChange={(e) => setDraftPriority(e.target.value as Priority)}
-              className="h-9 px-2 text-sm rounded-md border border-input bg-background"
+        {/* RM: dua tombol pengganti area input task lama */}
+        {isRM && (onAddActivity || onAddLead) && (
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <Button
+              onClick={onAddActivity}
+              disabled={!onAddActivity}
+              className="bg-navy hover:bg-navy/90 text-navy-foreground"
             >
-              <option value="High">High</option>
-              <option value="Medium">Medium</option>
-              <option value="Low">Low</option>
-            </select>
-            <Button onClick={addOwnTask} className="bg-navy hover:bg-navy/90 text-navy-foreground"><Plus className="h-4 w-4 mr-1.5" />Tambah Task</Button>
+              <Plus className="h-4 w-4 mr-1.5" /> Tambah Activity
+            </Button>
+            <Button
+              onClick={onAddLead}
+              disabled={!onAddLead}
+              variant="outline"
+              className="border-[hsl(var(--gold))] text-navy hover:bg-gold-light"
+            >
+              <Plus className="h-4 w-4 mr-1.5" /> Tambah Leads
+            </Button>
           </div>
         )}
 
         {/* Board */}
-        <div className="mt-4 grid gap-3 lg:grid-cols-3">
-          {teamRMs.map((rm) => {
-            const list = tasksFor(rm);
-            const done = list.filter((t) => t.done).length;
-            const pct = list.length === 0 ? 0 : Math.round((done / list.length) * 100);
-            const rmNotes = notesFor(rm);
-            const unread = unreadCountFor(rm);
-            return (
-              <RMColumn
-                key={rm}
-                rmName={rm}
-                progress={pct}
-                doneCount={done}
-                totalCount={list.length}
-                hasUnread={unread > 0}
-                isLeaderView={isLeader}
-              >
-                {list.length === 0 && <Empty text={isRM ? "Belum ada task. Tambahkan di atas." : "RM belum membuat task hari ini."} />}
-                {list.map((t) => (
-                  <TaskCard
-                    key={t.id}
-                    task={t}
-                    canCheck={isRM && t.assignee === user?.name}
-                    onToggle={() => toggleDone(t.id)}
-                    onRemove={isRM && t.assignee === user?.name ? () => removeOwnTask(t.id) : undefined}
+        {isRM ? (
+          // Compact RM layout: task di kiri, notes panel di kanan
+          <div className="mt-4 grid gap-3 lg:grid-cols-2">
+            {teamRMs.map((rm) => {
+              const list = tasksFor(rm);
+              const done = list.filter((t) => t.done).length;
+              const pct = list.length === 0 ? 0 : Math.round((done / list.length) * 100);
+              const rmNotes = notesFor(rm);
+              return (
+                <div key={rm} className="contents">
+                  <RMColumn
+                    rmName={rm}
+                    progress={pct}
+                    doneCount={done}
+                    totalCount={list.length}
+                    hasUnread={false}
+                    isLeaderView={false}
+                  >
+                    {list.length === 0 && <Empty text="Belum ada task hari ini." />}
+                    {list.map((t) => (
+                      <TaskCard
+                        key={t.id}
+                        task={t}
+                        canCheck={t.assignee === user?.name}
+                        onToggle={() => toggleDone(t.id)}
+                        onRemove={t.assignee === user?.name ? () => removeOwnTask(t.id) : undefined}
+                      />
+                    ))}
+                  </RMColumn>
+                  <div className="rounded-xl border border-border bg-muted/40 p-3 flex flex-col min-h-[220px]">
+                    <div className="flex items-center gap-2 mb-2">
+                      <StickyNote className="h-4 w-4 text-[hsl(var(--gold))]" />
+                      <div className="text-sm font-bold text-navy">Note dari Leader</div>
+                    </div>
+                    <NotesSection
+                      rm={rm}
+                      notes={rmNotes}
+                      isLeader={false}
+                      isRM={true}
+                      currentLeader={leaderName}
+                      onSend={() => {}}
+                      onMarkNoted={markNoted}
+                      hideHeader
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="mt-4 grid gap-3 lg:grid-cols-3">
+            {teamRMs.map((rm) => {
+              const list = tasksFor(rm);
+              const done = list.filter((t) => t.done).length;
+              const pct = list.length === 0 ? 0 : Math.round((done / list.length) * 100);
+              const rmNotes = notesFor(rm);
+              const unread = unreadCountFor(rm);
+              return (
+                <RMColumn
+                  key={rm}
+                  rmName={rm}
+                  progress={pct}
+                  doneCount={done}
+                  totalCount={list.length}
+                  hasUnread={unread > 0}
+                  isLeaderView={isLeader}
+                >
+                  {list.length === 0 && <Empty text="RM belum membuat task hari ini." />}
+                  {list.map((t) => (
+                    <TaskCard
+                      key={t.id}
+                      task={t}
+                      canCheck={false}
+                    />
+                  ))}
+                  <NotesSection
+                    rm={rm}
+                    notes={rmNotes}
+                    isLeader={isLeader}
+                    isRM={false}
+                    currentLeader={leaderName}
+                    onSend={(msg) => addNote(rm, msg)}
+                    onMarkNoted={markNoted}
                   />
-                ))}
-
-                {/* Notes section */}
-                <NotesSection
-                  rm={rm}
-                  notes={rmNotes}
-                  isLeader={isLeader}
-                  isRM={isRM && rm === user?.name}
-                  currentLeader={leaderName}
-                  onSend={(msg) => addNote(rm, msg)}
-                  onMarkNoted={markNoted}
-                />
-              </RMColumn>
-            );
-          })}
-        </div>
+                </RMColumn>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       {/* Monitoring Progress Tim (leader only) */}
