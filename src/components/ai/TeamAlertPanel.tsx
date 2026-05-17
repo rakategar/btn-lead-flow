@@ -97,8 +97,8 @@ export function TeamAlertPanel({ leaderName, leads, activities }: Props) {
       });
     }
 
-    return out.filter((a) => !resolved.has(a.id));
-  }, [teamRMs, leads, activities, resolved]);
+    return out;
+  }, [teamRMs, leads, activities]);
 
   const kritisCount = alerts.filter((a) => a.level === "Kritis").length;
   const peringatanCount = alerts.filter((a) => a.level === "Peringatan").length;
