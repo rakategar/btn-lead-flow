@@ -102,7 +102,7 @@ export function FollowUpPage({ leads }: { leads?: Lead[] } = {}) {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {followUpDue.map((l) => (
+              {rows.map((l) => (
                 <tr key={l.nama} className="hover:bg-muted/30">
                   <td className="px-5 py-3 font-medium text-navy">{l.nama}</td>
                   <td className="px-3 py-3"><StatusBadge tone="navy">{l.stage}</StatusBadge></td>
