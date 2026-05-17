@@ -599,22 +599,25 @@ function TaskCard({ task, canCheck, onToggle, onRemove }: {
 }
 
 function NotesSection({
-  rm, notes, isLeader, isRM, currentLeader, onSend, onMarkNoted,
+  rm, notes, isLeader, isRM, currentLeader, onSend, onMarkNoted, hideHeader,
 }: {
   rm: string; notes: Note[]; isLeader: boolean; isRM: boolean;
   currentLeader: string;
   onSend: (msg: string) => void;
   onMarkNoted: (id: string) => void;
+  hideHeader?: boolean;
 }) {
   const [draft, setDraft] = useState("");
   if (notes.length === 0 && !isLeader && !isRM) return null;
 
   return (
-    <div className="mt-2 rounded-lg border border-dashed border-border bg-card/60 p-2.5">
-      <div className="flex items-center gap-1.5 mb-2">
-        <StickyNote className="h-3.5 w-3.5 text-[hsl(var(--gold))]" />
-        <span className="text-[11px] uppercase tracking-wider font-semibold text-navy">Note dari Leader</span>
-      </div>
+    <div className={cn(!hideHeader && "mt-2 rounded-lg border border-dashed border-border bg-card/60 p-2.5")}>
+      {!hideHeader && (
+        <div className="flex items-center gap-1.5 mb-2">
+          <StickyNote className="h-3.5 w-3.5 text-[hsl(var(--gold))]" />
+          <span className="text-[11px] uppercase tracking-wider font-semibold text-navy">Note dari Leader</span>
+        </div>
+      )}
 
       {notes.length === 0 && (
         <div className="text-[11px] text-muted-foreground italic mb-2">Belum ada note untuk {rm}.</div>
