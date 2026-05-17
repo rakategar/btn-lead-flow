@@ -49,6 +49,34 @@ export interface Lead {
   status: ResolutionStatus;
   ringkasan: string;
   notes?: LeadNote[];
+  extras?: LeadExtras;
+}
+
+export type Gender = "Laki-laki" | "Perempuan";
+export type Persona = "Pengusaha" | "Karyawan" | "Pensiunan" | "Executives";
+export type CustomerStatus = "NTB" | "Existing";
+export type Segmen = "Retail" | "Affluent" | "HNWI";
+export type BusinessType = "B2C" | "B2B";
+export type LeadGenType = "Program" | "Non Program";
+export type ProductMix = "MF" | "Bonds" | "Banca" | "Casa" | "TD";
+
+export interface LeadExtras {
+  usia?: number;
+  gender?: Gender;
+  persona?: Persona;
+  customerStatus?: CustomerStatus;
+  segmen?: Segmen;
+  businessType?: BusinessType;
+  leadGen?: LeadGenType;
+  productMix?: ProductMix[];
+  plan?: number;       // Rupiah
+  actual?: number;     // Rupiah
+  remark?: string;
+  toBeImproved?: string;
+  cabang?: string;
+  inputDate?: string;  // ISO
+  bulan?: string;
+  minggu?: number;
 }
 
 export interface RmActivity {
