@@ -44,7 +44,15 @@ const fromNote = (r: NoteRow): Note => ({
 
 const priorityOrder: Record<Priority, number> = { High: 0, Medium: 1, Low: 2 };
 
-export function ActivityDailyPage({ extraActivities = [] }: { extraActivities?: RmActivity[] } = {}) {
+export function ActivityDailyPage({
+  extraActivities = [],
+  onAddLead,
+  onAddActivity,
+}: {
+  extraActivities?: RmActivity[];
+  onAddLead?: () => void;
+  onAddActivity?: () => void;
+} = {}) {
   const { user } = useAuth();
   const isLeader = user?.role === "leader";
   const isRM = user?.role === "rm";
