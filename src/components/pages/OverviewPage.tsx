@@ -38,7 +38,9 @@ export function OverviewPage({ onNavigate, user, leads, activities = [] }: Props
     meeting: leads.filter((l) => l.stage === "Meet").length,
     closing: leads.filter((l) => l.stage === "Close" || l.status === "Close").length,
   };
-  const totalActs = progress.prospecting + progress.followUp + progress.meeting + progress.closing;
+  const todayKey = new Date().toDateString();
+  const todayActsCount = activities.filter((a) => new Date(a.datetime).toDateString() === todayKey).length;
+  const totalActs = todayActsCount > 0 ? todayActsCount : (progress.prospecting + progress.followUp + progress.meeting + progress.closing);
   const totalLeads = leads.length;
   const closedLeads = leads.filter((l) => l.status === "Close").length;
   const followUpDue = leads.filter((l) => l.nextFollowUp === "Hari ini" || l.nextFollowUp === "Besok").length;
