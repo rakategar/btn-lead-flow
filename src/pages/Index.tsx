@@ -139,7 +139,7 @@ const IndexInner = () => {
       case "command": return <CommandCenterPage leads={scopedLeads} />;
       case "pipeline": return <PipelinePage leads={scopedLeads} setLeads={setLeads} globalSearch={search} />;
       case "activity": return <ActivityDailyPage extraActivities={scopedActivities} onAddLead={user?.role === "rm" ? () => setOpenAddLead(true) : undefined} onAddActivity={user?.role === "rm" ? () => setOpenAddActivity(true) : undefined} />;
-      case "followup": return <FollowUpPage />;
+      case "followup": return <FollowUpPage leads={scopedLeads} />;
       case "kpi": return <KpiReviewPage />;
       case "laporan": return <GenerateLaporanPage user={user!} leads={scopedLeads} />;
       case "mgmt-overview": return <ExecutiveOverviewPage user={user!} onNavigate={setPage} />;
