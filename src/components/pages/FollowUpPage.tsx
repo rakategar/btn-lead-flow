@@ -1,6 +1,6 @@
 import { Clock, MessageCircle, Megaphone, CheckCircle2, AlertCircle, Hourglass, XCircle } from "lucide-react";
 import { StatusBadge, statusToTone } from "@/components/StatusBadge";
-import { followUpDue } from "@/lib/dummy-data";
+import { followUpDue as defaultFollowUpDue, type Lead } from "@/lib/dummy-data";
 
 const fuStages = [
   { stage: "FU1", time: "H+1 s.d H+3", desc: "Reminder dan klarifikasi awal setelah pertemuan.", icon: MessageCircle, tone: "blue" as const },
@@ -15,7 +15,20 @@ const resolutions = [
   { name: "Not Eligible", icon: XCircle, tone: "gray" as const, desc: "Tidak memenuhi syarat / belum sesuai kebutuhan." },
 ];
 
-export function FollowUpPage() {
+export function FollowUpPage({ leads }: { leads?: Lead[] } = {}) {
+  // Sumber data: lead dari DB (via props) yang punya jadwal follow-up.
+  // Fallback ke dummy `followUpDue` agar UI tetap terisi saat belum ada data.
+  const liveDue = (leads ?? [])
+    .filter((l) => l.nextFollowUp && l.nextFollowUp !== "-" && l.nextFollowUp !== "Belum dijadwalkan" && l.status !== "Close")
+    .map((l) => ({
+      nama: l.nama,
+      stage: l.stage,
+      pic: l.pic,
+      fu: l.fuStage,
+      jadwal: l.nextFollowUp,
+      catatan: l.priority === "High" ? "Prioritas tinggi" : l.priority === "Low" ? "Evaluasi ulang" : "Perlu follow-up",
+    }));
+  const rows = liveDue.length > 0 ? liveDue : defaultFollowUpDue;
   return (
     <div className="space-y-5">
       {/* A — Eskalasi */}
@@ -89,7 +102,7 @@ export function FollowUpPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {followUpDue.map((l) => (
+              {rows.map((l) => (
                 <tr key={l.nama} className="hover:bg-muted/30">
                   <td className="px-5 py-3 font-medium text-navy">{l.nama}</td>
                   <td className="px-3 py-3"><StatusBadge tone="navy">{l.stage}</StatusBadge></td>

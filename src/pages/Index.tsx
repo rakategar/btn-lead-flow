@@ -23,6 +23,9 @@ import { LoginScreen } from "@/components/LoginScreen";
 import { personalWarnings } from "@/lib/ai-sales";
 import { AddLeadModal } from "@/components/forms/AddLeadModal";
 import { AddActivityModal } from "@/components/forms/AddActivityModal";
+import { supabase } from "@/integrations/supabase/client";
+import { loadLeads, loadActivities, insertLead, insertActivity, seedLeadsIfEmpty, rowToLead, rowToActivity } from "@/lib/persist";
+import { toast } from "sonner";
 
 const pageMeta: Record<PageKey, { title: string; subtitle: string }> = {
   overview: { title: "A.C.T Sales CRM Demo", subtitle: "Sales Performance Dashboard & CRM Concept — Primera Karya Sinergia." },
@@ -47,7 +50,7 @@ const pageMeta: Record<PageKey, { title: string; subtitle: string }> = {
 const IndexInner = () => {
   const { user, logout } = useAuth();
   const [page, setPage] = useState<PageKey>("overview");
-  const [leads, setLeads] = useState<Lead[]>(initialLeads);
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [activities, setActivities] = useState<RmActivity[]>([]);
   const [search, setSearch] = useState("");
   const [openAddLead, setOpenAddLead] = useState(false);
@@ -58,6 +61,58 @@ const IndexInner = () => {
     if (user?.role === "management") setPage("mgmt-overview");
     else if (user) setPage("overview");
   }, [user]);
+
+  // Load data dari database (+ seed leads jika kosong) & subscribe realtime
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        await seedLeadsIfEmpty(initialLeads);
+        const [ls, acts] = await Promise.all([loadLeads(), loadActivities()]);
+        if (!mounted) return;
+        setLeads(ls);
+        setActivities(acts);
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : "Unknown error";
+        toast.error("Gagal memuat data", { description: msg });
+      }
+    })();
+
+    const ch = supabase
+      .channel("leads_acts_rt")
+      .on("postgres_changes", { event: "*", schema: "public", table: "leads" }, (p) => {
+        setLeads((prev) => {
+          if (p.eventType === "INSERT") {
+            const l = rowToLead(p.new as Parameters<typeof rowToLead>[0]);
+            return prev.some((x) => x.id === l.id) ? prev : [l, ...prev];
+          }
+          if (p.eventType === "UPDATE") {
+            const l = rowToLead(p.new as Parameters<typeof rowToLead>[0]);
+            return prev.map((x) => (x.id === l.id ? l : x));
+          }
+          if (p.eventType === "DELETE") {
+            const id = (p.old as { id: string }).id;
+            return prev.filter((x) => x.id !== id);
+          }
+          return prev;
+        });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "rm_activities" }, (p) => {
+        setActivities((prev) => {
+          if (p.eventType === "INSERT") {
+            const a = rowToActivity(p.new as Parameters<typeof rowToActivity>[0]);
+            return prev.some((x) => x.id === a.id) ? prev : [a, ...prev];
+          }
+          if (p.eventType === "DELETE") {
+            const id = (p.old as { id: string }).id;
+            return prev.filter((x) => x.id !== id);
+          }
+          return prev;
+        });
+      })
+      .subscribe();
+    return () => { mounted = false; supabase.removeChannel(ch); };
+  }, []);
 
   // Scope leads by role (dihitung selalu agar urutan hooks stabil)
   const scopedLeads = useMemo(() => {
@@ -83,8 +138,8 @@ const IndexInner = () => {
       case "overview": return <OverviewPage onNavigate={setPage} user={user!} leads={scopedLeads} activities={scopedActivities} />;
       case "command": return <CommandCenterPage leads={scopedLeads} />;
       case "pipeline": return <PipelinePage leads={scopedLeads} setLeads={setLeads} globalSearch={search} />;
-      case "activity": return <ActivityDailyPage extraActivities={scopedActivities} />;
-      case "followup": return <FollowUpPage />;
+      case "activity": return <ActivityDailyPage extraActivities={scopedActivities} onAddLead={user?.role === "rm" ? () => setOpenAddLead(true) : undefined} onAddActivity={user?.role === "rm" ? () => setOpenAddActivity(true) : undefined} />;
+      case "followup": return <FollowUpPage leads={scopedLeads} />;
       case "kpi": return <KpiReviewPage />;
       case "laporan": return <GenerateLaporanPage user={user!} leads={scopedLeads} />;
       case "mgmt-overview": return <ExecutiveOverviewPage user={user!} onNavigate={setPage} />;
@@ -134,9 +189,21 @@ const IndexInner = () => {
           leaderName={rmLeaderName}
           existingCount={leads.length}
           onClose={() => setOpenAddLead(false)}
-          onSave={(lead) => {
+          onSave={async (lead) => {
+            // Optimistic
             setLeads((prev) => [lead, ...prev]);
-            if (page === "overview") setPage("pipeline");
+            try {
+              const saved = await insertLead(lead);
+              setLeads((prev) => {
+                const without = prev.filter((l) => l.id !== lead.id && l.id !== saved.id);
+                return [saved, ...without];
+              });
+              if (page === "overview") setPage("pipeline");
+            } catch (e: unknown) {
+              setLeads((prev) => prev.filter((l) => l.id !== lead.id));
+              const msg = e instanceof Error ? e.message : "Unknown error";
+              toast.error("Gagal simpan lead", { description: msg });
+            }
           }}
         />
       )}
@@ -147,9 +214,20 @@ const IndexInner = () => {
           leaderName={rmLeaderName}
           rmLeads={scopedLeads}
           onClose={() => setOpenAddActivity(false)}
-          onSave={(a) => {
+          onSave={async (a) => {
             setActivities((prev) => [a, ...prev]);
-            if (page === "overview") setPage("activity");
+            try {
+              const saved = await insertActivity(a);
+              setActivities((prev) => {
+                const without = prev.filter((x) => x.id !== a.id && x.id !== saved.id);
+                return [saved, ...without];
+              });
+              if (page === "overview") setPage("activity");
+            } catch (e: unknown) {
+              setActivities((prev) => prev.filter((x) => x.id !== a.id));
+              const msg = e instanceof Error ? e.message : "Unknown error";
+              toast.error("Gagal simpan activity", { description: msg });
+            }
           }}
         />
       )}

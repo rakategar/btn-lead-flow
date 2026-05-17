@@ -50,6 +50,63 @@ export type Database = {
         }
         Relationships: []
       }
+      leads: {
+        Row: {
+          created_at: string
+          fu_stage: string
+          id: string
+          last_activity: string | null
+          leader: string
+          nama: string
+          next_follow_up: string | null
+          notes: Json
+          pic: string
+          priority: string
+          produk: string | null
+          ringkasan: string | null
+          source: string | null
+          stage: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          fu_stage?: string
+          id: string
+          last_activity?: string | null
+          leader: string
+          nama: string
+          next_follow_up?: string | null
+          notes?: Json
+          pic: string
+          priority?: string
+          produk?: string | null
+          ringkasan?: string | null
+          source?: string | null
+          stage?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          fu_stage?: string
+          id?: string
+          last_activity?: string | null
+          leader?: string
+          nama?: string
+          next_follow_up?: string | null
+          notes?: Json
+          pic?: string
+          priority?: string
+          produk?: string | null
+          ringkasan?: string | null
+          source?: string | null
+          stage?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       rhythms: {
         Row: {
           created_at: string
@@ -71,6 +128,48 @@ export type Database = {
           label?: string
           position?: number
           type?: string
+        }
+        Relationships: []
+      }
+      rm_activities: {
+        Row: {
+          created_at: string
+          datetime: string
+          description: string
+          hasil: string | null
+          id: string
+          jenis: string
+          lead_id: string | null
+          lead_name: string | null
+          leader: string
+          photos: Json
+          rm: string
+        }
+        Insert: {
+          created_at?: string
+          datetime?: string
+          description: string
+          hasil?: string | null
+          id?: string
+          jenis: string
+          lead_id?: string | null
+          lead_name?: string | null
+          leader: string
+          photos?: Json
+          rm: string
+        }
+        Update: {
+          created_at?: string
+          datetime?: string
+          description?: string
+          hasil?: string | null
+          id?: string
+          jenis?: string
+          lead_id?: string | null
+          lead_name?: string | null
+          leader?: string
+          photos?: Json
+          rm?: string
         }
         Relationships: []
       }
