@@ -1,8 +1,10 @@
 import { useMemo, useState } from "react";
-import { AlertTriangle, AlertOctagon, CheckCircle2, Clock, X } from "lucide-react";
+import { AlertTriangle, AlertOctagon, CheckCircle2, Send } from "lucide-react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { picActivities, leaders, type Lead, type RmActivity } from "@/lib/dummy-data";
+import { insertNotification } from "@/lib/persist";
+import { toast } from "sonner";
 
 interface AlertItem {
   id: string;
@@ -24,7 +26,8 @@ export function TeamAlertPanel({ leaderName, leads, activities }: Props) {
     [leaderName]
   );
 
-  const [resolved, setResolved] = useState<Set<string>>(new Set());
+  const [sent, setSent] = useState<Set<string>>(new Set());
+  const [sending, setSending] = useState<Set<string>>(new Set());
 
   const alerts = useMemo<AlertItem[]>(() => {
     const out: AlertItem[] = [];
