@@ -64,7 +64,7 @@ export async function insertActivity(a: RmActivity): Promise<RmActivity> {
     rm: a.rm, leader: a.leader, jenis: a.jenis,
     lead_id: a.leadId ?? null, lead_name: a.leadName ?? null,
     datetime: a.datetime, description: a.description,
-    hasil: a.hasil ?? null, photos: (a.photos ?? []) as unknown as object,
+    hasil: a.hasil ?? null, photos: (a.photos ?? []) as unknown as Json,
   };
   const { data, error } = await supabase.from("rm_activities").insert(row).select("*").single();
   if (error) throw error;
