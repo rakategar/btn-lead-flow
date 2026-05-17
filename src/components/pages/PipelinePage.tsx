@@ -106,6 +106,10 @@ export function PipelinePage({ leads, setLeads, globalSearch }: Props) {
                 <Th>Status</Th>
                 <Th>RM</Th>
                 <Th>Leader</Th>
+                <Th>Persona</Th>
+                <Th>Segmen</Th>
+                <Th className="text-right">Plan (Rp)</Th>
+                <Th className="text-right">Actual (Rp)</Th>
                 <Th>Last Activity</Th>
                 <Th>Next FU</Th>
                 <Th>Progress</Th>
@@ -114,7 +118,7 @@ export function PipelinePage({ leads, setLeads, globalSearch }: Props) {
             </thead>
             <tbody className="divide-y divide-border">
               {filtered.length === 0 && (
-                <tr><td colSpan={9} className="text-center py-12 text-muted-foreground text-sm">Tidak ada lead sesuai filter.</td></tr>
+                <tr><td colSpan={13} className="text-center py-12 text-muted-foreground text-sm">Tidak ada lead sesuai filter.</td></tr>
               )}
               {filtered.map((l) => (
                 <tr key={l.id} className="hover:bg-muted/40 cursor-pointer" onClick={() => setOpen(l)}>
@@ -126,6 +130,10 @@ export function PipelinePage({ leads, setLeads, globalSearch }: Props) {
                   <Td><StatusBadge tone={statusToTone(l.priority)} dot>{statusLabel[l.priority]}</StatusBadge></Td>
                   <Td className="text-navy">{l.pic}</Td>
                   <Td className="text-navy">{l.leader}</Td>
+                  <Td className="text-navy">{l.extras?.persona ?? "—"}</Td>
+                  <Td className="text-navy">{l.extras?.segmen ?? "—"}</Td>
+                  <Td className="text-right text-navy whitespace-nowrap">{l.extras?.plan ? `Rp ${l.extras.plan.toLocaleString("id-ID")}` : "—"}</Td>
+                  <Td className="text-right text-navy whitespace-nowrap">{l.extras?.actual ? `Rp ${l.extras.actual.toLocaleString("id-ID")}` : "—"}</Td>
                   <Td className="text-muted-foreground">{l.lastActivity}</Td>
                   <Td className="text-navy">{l.nextFollowUp}</Td>
                   <Td><StatusBadge tone={statusToTone(l.status)}>{l.status}</StatusBadge></Td>
