@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { Brain, Lightbulb, AlertTriangle, TrendingUp, Sparkles, Activity, Wand2 } from "lucide-react";
+import { Lightbulb, AlertTriangle, TrendingUp, Activity, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { StatusBadge } from "@/components/StatusBadge";
 import { toast } from "sonner";
-import { aiInsights, aiRecommendations, pipelineHealth30d, branches } from "@/lib/dummy-data";
+import { aiInsights, pipelineHealth30d, branches } from "@/lib/dummy-data";
 import { PageHero, PanelHeader } from "./_shared";
 
 const summaryBlocks = [
@@ -59,24 +58,6 @@ export function AiInsightCenterPage() {
             </div>
           );
         })}
-      </section>
-
-      {/* Recommendations */}
-      <section>
-        <div className="mb-3 flex items-end justify-between gap-3">
-          <div><h3 className="text-base font-bold text-navy">Rekomendasi AI</h3><p className="text-xs text-muted-foreground">Tindakan yang disarankan untuk minggu ini.</p></div>
-          <StatusBadge tone="gold"><Sparkles className="h-3 w-3 mr-1" />AI Generated</StatusBadge>
-        </div>
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-          {aiRecommendations.map((r) => (
-            <div key={r.title} className="panel p-4 flex flex-col">
-              <div className="flex items-start gap-2"><Lightbulb className="h-4 w-4 text-[hsl(var(--gold))] mt-0.5" /><div className="text-sm font-bold text-navy">{r.title}</div></div>
-              <p className="mt-2 text-xs text-muted-foreground">{r.context}</p>
-              <div className="mt-3 text-xs text-navy"><span className="font-semibold">Action: </span>{r.action}</div>
-              <Button size="sm" variant="outline" className="mt-3" onClick={() => toast.success("Rekomendasi diterapkan", { description: r.title })}>Terapkan</Button>
-            </div>
-          ))}
-        </div>
       </section>
 
       {/* Pipeline health 30d */}
