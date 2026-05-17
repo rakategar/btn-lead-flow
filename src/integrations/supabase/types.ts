@@ -53,6 +53,7 @@ export type Database = {
       leads: {
         Row: {
           created_at: string
+          extras: Json
           fu_stage: string
           id: string
           last_activity: string | null
@@ -71,6 +72,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          extras?: Json
           fu_stage?: string
           id: string
           last_activity?: string | null
@@ -89,6 +91,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          extras?: Json
           fu_stage?: string
           id?: string
           last_activity?: string | null
