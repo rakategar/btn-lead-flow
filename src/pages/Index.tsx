@@ -189,9 +189,21 @@ const IndexInner = () => {
           leaderName={rmLeaderName}
           existingCount={leads.length}
           onClose={() => setOpenAddLead(false)}
-          onSave={(lead) => {
+          onSave={async (lead) => {
+            // Optimistic
             setLeads((prev) => [lead, ...prev]);
-            if (page === "overview") setPage("pipeline");
+            try {
+              const saved = await insertLead(lead);
+              setLeads((prev) => {
+                const without = prev.filter((l) => l.id !== lead.id && l.id !== saved.id);
+                return [saved, ...without];
+              });
+              if (page === "overview") setPage("pipeline");
+            } catch (e: unknown) {
+              setLeads((prev) => prev.filter((l) => l.id !== lead.id));
+              const msg = e instanceof Error ? e.message : "Unknown error";
+              toast.error("Gagal simpan lead", { description: msg });
+            }
           }}
         />
       )}
@@ -202,9 +214,20 @@ const IndexInner = () => {
           leaderName={rmLeaderName}
           rmLeads={scopedLeads}
           onClose={() => setOpenAddActivity(false)}
-          onSave={(a) => {
+          onSave={async (a) => {
             setActivities((prev) => [a, ...prev]);
-            if (page === "overview") setPage("activity");
+            try {
+              const saved = await insertActivity(a);
+              setActivities((prev) => {
+                const without = prev.filter((x) => x.id !== a.id && x.id !== saved.id);
+                return [saved, ...without];
+              });
+              if (page === "overview") setPage("activity");
+            } catch (e: unknown) {
+              setActivities((prev) => prev.filter((x) => x.id !== a.id));
+              const msg = e instanceof Error ? e.message : "Unknown error";
+              toast.error("Gagal simpan activity", { description: msg });
+            }
           }}
         />
       )}
