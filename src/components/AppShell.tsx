@@ -142,7 +142,10 @@ export function AppShell({ current, onChange, onAddLead, onAddActivity, search, 
                   className="h-9 w-full rounded-lg border border-input bg-background pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/40"
                 />
               </div>
-              {!isMgmt && (
+              {!isMgmt && user.role === "rm" && (
+                <NotificationsBell rmName={user.name} />
+              )}
+              {!isMgmt && user.role !== "rm" && (
                 <button
                   onClick={() => onChange("overview")}
                   className="relative p-2 rounded-md hover:bg-muted text-muted-foreground hover:text-navy"
