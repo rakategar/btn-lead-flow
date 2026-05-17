@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ActLogo } from "@/components/ActLogo";
 import type { SessionUser } from "@/lib/auth";
+import { NotificationsBell } from "@/components/ai/NotificationsBell";
 
 export type PageKey =
   | "overview" | "command" | "pipeline" | "activity" | "followup" | "kpi" | "laporan"
