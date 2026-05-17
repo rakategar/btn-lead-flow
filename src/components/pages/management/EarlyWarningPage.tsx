@@ -2,6 +2,9 @@ import { useState } from "react";
 import { AlertOctagon, AlertTriangle, Eye, ArrowUpRight, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { mgmtAlerts, type AlertLevel } from "@/lib/dummy-data";
@@ -16,6 +19,28 @@ const levels: { key: AlertLevel; title: string; tone: string; icon: any; border:
 export function EarlyWarningPage() {
   const [tab, setTab] = useState<"open" | "resolved">("open");
   const items = mgmtAlerts.filter((a) => (tab === "open" ? !a.resolved : a.resolved));
+  const [sheet, setSheet] = useState<{ alertId: string; title: string; target: string; mode: "delegasi" | "eskalasi" } | null>(null);
+  const [note, setNote] = useState("");
+
+  const openSheet = (mode: "delegasi" | "eskalasi", alert: typeof mgmtAlerts[number]) => {
+    const target = mode === "delegasi"
+      ? (alert.pic ? `${alert.pic} (${alert.branch})` : `Leader ${alert.branch}`)
+      : `Senior Leader · ${alert.branch}`;
+    setSheet({ alertId: alert.id, title: alert.title, target, mode });
+    setNote("");
+  };
+
+  const sendNote = () => {
+    if (!sheet) return;
+    if (!note.trim()) {
+      toast.error("Note tidak boleh kosong");
+      return;
+    }
+    const label = sheet.mode === "delegasi" ? "Delegasi" : "Eskalasi";
+    toast.success(`${label} terkirim ke ${sheet.target}`, { description: sheet.title });
+    setSheet(null);
+    setNote("");
+  };
 
   return (
     <div className="space-y-5">
@@ -49,8 +74,8 @@ export function EarlyWarningPage() {
                   </div>
                   {!a.resolved && (
                     <div className="mt-3 flex gap-2">
-                      <Button size="sm" className="bg-navy hover:bg-navy/90 text-navy-foreground" onClick={() => toast.success("Tindak lanjut dicatat", { description: a.title })}>Tindak Lanjut</Button>
-                      <Button size="sm" variant="outline" onClick={() => toast.success("Eskalasi terkirim", { description: `Ke leader ${a.branch}` })}><ArrowUpRight className="h-3.5 w-3.5 mr-1" />Eskalasi</Button>
+                      <Button size="sm" className="bg-navy hover:bg-navy/90 text-navy-foreground" onClick={() => openSheet("delegasi", a)}>Delegasi</Button>
+                      <Button size="sm" variant="outline" onClick={() => openSheet("eskalasi", a)}><ArrowUpRight className="h-3.5 w-3.5 mr-1" />Eskalasi</Button>
                     </div>
                   )}
                 </div>
@@ -59,6 +84,34 @@ export function EarlyWarningPage() {
           </section>
         );
       })}
+
+      <Sheet open={!!sheet} onOpenChange={(o) => !o && setSheet(null)}>
+        <SheetContent side="right" className="sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle>{sheet?.mode === "delegasi" ? "Delegasi Tindak Lanjut" : "Eskalasi Alert"}</SheetTitle>
+            <SheetDescription>
+              {sheet?.title}
+              <div className="mt-1 text-xs">Tujuan: <span className="font-semibold text-navy">{sheet?.target}</span></div>
+            </SheetDescription>
+          </SheetHeader>
+          <div className="mt-4 space-y-2">
+            <Label htmlFor="alert-note">Note</Label>
+            <Textarea
+              id="alert-note"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder={sheet?.mode === "delegasi"
+                ? "Tulis instruksi tindak lanjut untuk penerima delegasi…"
+                : "Tulis konteks dan urgensi untuk eskalasi…"}
+              rows={6}
+            />
+          </div>
+          <SheetFooter className="mt-4">
+            <Button variant="outline" onClick={() => setSheet(null)}>Batal</Button>
+            <Button className="bg-navy hover:bg-navy/90 text-navy-foreground" onClick={sendNote}>Kirim</Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
