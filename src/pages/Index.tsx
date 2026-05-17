@@ -103,6 +103,10 @@ const IndexInner = () => {
             const a = rowToActivity(p.new as Parameters<typeof rowToActivity>[0]);
             return prev.some((x) => x.id === a.id) ? prev : [a, ...prev];
           }
+          if (p.eventType === "UPDATE") {
+            const a = rowToActivity(p.new as Parameters<typeof rowToActivity>[0]);
+            return prev.map((x) => (x.id === a.id ? a : x));
+          }
           if (p.eventType === "DELETE") {
             const id = (p.old as { id: string }).id;
             return prev.filter((x) => x.id !== id);
