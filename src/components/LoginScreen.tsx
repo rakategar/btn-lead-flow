@@ -8,7 +8,7 @@ import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 
 const DEMO_ACCOUNTS = [
-  { role: "management" as const, name: "Direktur Operasional", email: "direktur@btn.demo", subtitle: "Senior Leader" },
+  { role: "management" as const, name: "Kadiv/Kadep", email: "kadiv@btn.demo", subtitle: "Senior Leader" },
   { role: "leader" as const, name: "Andre Wibowo", email: "andre.wibowo@btn.demo", subtitle: "Leader" },
   { role: "rm" as const, name: "Rina A.", leaderName: "Andre Wibowo", email: "rina.a@btn.demo", subtitle: "RM · Tim Andre Wibowo" },
 ];

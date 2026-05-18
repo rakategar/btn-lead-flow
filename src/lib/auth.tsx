@@ -37,7 +37,7 @@ export function useAuth() {
 /** Daftar akun dummy untuk login picker. */
 export function listAccounts(): SessionUser[] {
   const accounts: SessionUser[] = [
-    { role: "management", name: "Direktur Operasional" },
+    { role: "management", name: "Kadiv/Kadep" },
   ];
   for (const l of leaders) {
     accounts.push({ role: "leader", name: l.name });
