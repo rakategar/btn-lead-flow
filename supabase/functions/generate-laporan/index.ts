@@ -89,7 +89,7 @@ Kembalikan HANYA JSON valid:
   if (!LOVABLE_API_KEY) {
     return { ...buildFallbackInsight(dashboard), _warning: "LOVABLE_API_KEY tidak tersedia. Memakai fallback." };
   }
-  const model = Deno.env.get("GEMINI_MODEL") || "google/gemini-2.0-flash-001";
+  const model = Deno.env.get("GEMINI_MODEL") || "google/gemini-2.5-flash";
   let delay = 1500;
   let lastStatus = 0;
   let lastErr = "";
