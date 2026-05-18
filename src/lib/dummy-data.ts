@@ -403,7 +403,7 @@ export interface MgmtUser {
 }
 
 export const mgmtUsers: MgmtUser[] = [
-  { id: "U-001", name: "Direktur Operasional", role: "Senior Leader",   branch: "Head Office",     status: "Aktif",    lastLogin: "Hari ini, 08:12",  email: "direktur.ops@btn.demo" },
+  { id: "U-001", name: "Kadiv/Kadep", role: "Senior Leader",   branch: "Head Office",     status: "Aktif",    lastLogin: "Hari ini, 08:12",  email: "kadiv@btn.demo" },
   { id: "U-002", name: "Andre Wibowo",         role: "Leader", branch: "KC Jakarta Pusat",   status: "Aktif",    lastLogin: "Hari ini, 07:45",  email: "andre.w@btn.demo" },
   { id: "U-003", name: "Sari Trihandayani",    role: "Leader", branch: "KC Jakarta Selatan", status: "Aktif",    lastLogin: "Kemarin, 17:30",   email: "sari.t@btn.demo" },
   { id: "U-004", name: "Bayu Mahendra",        role: "Leader", branch: "KC Tangerang",       status: "Aktif",    lastLogin: "2 hari lalu",      email: "bayu.m@btn.demo" },
@@ -431,18 +431,18 @@ export const rolePermissions: { permission: string; management: boolean; leader:
 ];
 
 export const auditLogs: { ts: string; user: string; action: string; target: string }[] = [
-  { ts: "08 Mei 2026, 09:12", user: "Direktur Operasional", action: "Update target",       target: "KC Tangerang · KPR" },
+  { ts: "08 Mei 2026, 09:12", user: "Kadiv/Kadep", action: "Update target",       target: "KC Tangerang · KPR" },
   { ts: "08 Mei 2026, 08:55", user: "Andre Wibowo",         action: "Assign task",         target: "Rina A. · Follow-up LD-008" },
-  { ts: "08 Mei 2026, 08:30", user: "Direktur Operasional", action: "Generate laporan",     target: "Executive Summary harian" },
+  { ts: "08 Mei 2026, 08:30", user: "Kadiv/Kadep", action: "Generate laporan",     target: "Executive Summary harian" },
   { ts: "07 Mei 2026, 17:40", user: "Sari Trihandayani",    action: "Update lead",         target: "LD-004 · stage Prospect" },
-  { ts: "07 Mei 2026, 16:22", user: "Direktur Operasional", action: "Eskalasi alert",       target: "AL-01 → Bayu Mahendra" },
+  { ts: "07 Mei 2026, 16:22", user: "Kadiv/Kadep", action: "Eskalasi alert",       target: "AL-01 → Bayu Mahendra" },
   { ts: "07 Mei 2026, 14:08", user: "Bayu Mahendra",        action: "Login",                target: "Web · IP 10.20.4.18" },
 ];
 
 export const exportLogs: { ts: string; user: string; action: string; target: string }[] = [
-  { ts: "08 Mei 2026, 09:14", user: "Direktur Operasional", action: "Export PPTX",  target: "Laporan Executive Summary" },
+  { ts: "08 Mei 2026, 09:14", user: "Kadiv/Kadep", action: "Export PPTX",  target: "Laporan Executive Summary" },
   { ts: "07 Mei 2026, 18:02", user: "Andre Wibowo",         action: "Export CSV",   target: "Pipeline tim Andre" },
-  { ts: "06 Mei 2026, 11:45", user: "Direktur Operasional", action: "Export XLSX",  target: "Branch Performance MTD" },
+  { ts: "06 Mei 2026, 11:45", user: "Kadiv/Kadep", action: "Export XLSX",  target: "Branch Performance MTD" },
   { ts: "05 Mei 2026, 10:20", user: "Dewi Anggraini",       action: "Export CSV",   target: "Daftar lead KC Bandung" },
 ];
 
