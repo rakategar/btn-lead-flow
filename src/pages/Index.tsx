@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { AppShell, type PageKey } from "@/components/AppShell";
+import type { SearchItem } from "@/components/SearchAutocomplete";
 import { OverviewPage } from "@/components/pages/OverviewPage";
 import { CommandCenterPage } from "@/components/pages/CommandCenterPage";
 import { PipelinePage } from "@/components/pages/PipelinePage";
@@ -26,6 +27,7 @@ import { AddActivityModal } from "@/components/forms/AddActivityModal";
 import { supabase } from "@/integrations/supabase/client";
 import { loadLeads, loadActivities, insertLead, insertActivity, seedLeadsIfEmpty, rowToLead, rowToActivity } from "@/lib/persist";
 import { toast } from "sonner";
+import { SkeletonKpiCard, SkeletonCard } from "@/components/SkeletonCard";
 
 const pageMeta: Record<PageKey, { title: string; subtitle: string }> = {
   overview: { title: "A.C.T Sales CRM Demo", subtitle: "Sales Performance Dashboard & CRM Concept — Primera Karya Sinergia." },
@@ -52,9 +54,12 @@ const IndexInner = () => {
   const [page, setPage] = useState<PageKey>("overview");
   const [leads, setLeads] = useState<Lead[]>([]);
   const [activities, setActivities] = useState<RmActivity[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [openAddLead, setOpenAddLead] = useState(false);
   const [openAddActivity, setOpenAddActivity] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const prevPage = useRef<PageKey | null>(null);
 
   // Set landing page sesuai role saat login
   useEffect(() => {
@@ -75,6 +80,8 @@ const IndexInner = () => {
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : "Unknown error";
         toast.error("Gagal memuat data", { description: msg });
+      } finally {
+        if (mounted) setDataLoading(false);
       }
     })();
 
@@ -139,10 +146,12 @@ const IndexInner = () => {
 
   const content = useMemo(() => {
     switch (page) {
-      case "overview": return <OverviewPage onNavigate={setPage} user={user!} leads={scopedLeads} activities={scopedActivities} />;
+      case "overview": return dataLoading
+        ? <div className="space-y-5"><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{Array.from({length:4}).map((_,i)=><SkeletonKpiCard key={i}/>)}</div><SkeletonCard/><SkeletonCard/></div>
+        : <OverviewPage onNavigate={setPage} user={user!} leads={scopedLeads} activities={scopedActivities} />;
       case "command": return <CommandCenterPage leads={scopedLeads} />;
       case "pipeline": return <PipelinePage leads={scopedLeads} setLeads={setLeads} globalSearch={search} />;
-      case "activity": return <ActivityDailyPage extraActivities={scopedActivities} leads={scopedLeads} />;
+      case "activity": return <ActivityDailyPage extraActivities={scopedActivities} leads={scopedLeads} onAddActivity={user?.role === "rm" ? () => setOpenAddActivity(true) : undefined} />;
       case "followup": return <FollowUpPage leads={scopedLeads} />;
       case "kpi": return <KpiReviewPage />;
       case "laporan": return <GenerateLaporanPage user={user!} leads={scopedLeads} />;
@@ -164,6 +173,31 @@ const IndexInner = () => {
     [scopedLeads, user]
   );
 
+  // Page transition loading
+  const handlePageChange = (k: PageKey) => {
+    if (k !== page) {
+      setIsLoading(true);
+      prevPage.current = page;
+      setPage(k);
+      setTimeout(() => setIsLoading(false), 350);
+    }
+  };
+
+  // Search items for autocomplete
+  const searchItems = useMemo<SearchItem[]>(() => {
+    const items: SearchItem[] = [];
+    const seenOfficers = new Set<string>();
+    scopedLeads.forEach((l) => {
+      items.push({ id: `lead-${l.id}`, type: "lead", title: l.nama, subtitle: `${l.produk ?? ""} · ${l.stage}`, pageKey: "pipeline" });
+      if (l.pic && !seenOfficers.has(l.pic)) { seenOfficers.add(l.pic); items.push({ id: `officer-${l.pic}`, type: "officer", title: l.pic, subtitle: "Relationship Manager", pageKey: "pipeline" }); }
+      if (l.leader && !seenOfficers.has(l.leader)) { seenOfficers.add(l.leader); items.push({ id: `leader-${l.leader}`, type: "officer", title: l.leader, subtitle: "Leader" }); }
+    });
+    scopedActivities.slice(0, 30).forEach((a) => {
+      items.push({ id: `act-${a.id}`, type: "activity", title: a.description || a.jenis, subtitle: `${a.rm} · ${a.jenis}`, pageKey: "activity" });
+    });
+    return items;
+  }, [scopedLeads, scopedActivities]);
+
   if (!user) return <LoginScreen />;
 
   const isRM = user.role === "rm";
@@ -173,16 +207,18 @@ const IndexInner = () => {
     <>
       <AppShell
         current={page}
-        onChange={setPage}
+        onChange={handlePageChange}
         onAddLead={isRM ? () => setOpenAddLead(true) : undefined}
         onAddActivity={isRM ? () => setOpenAddActivity(true) : undefined}
         search={search}
         onSearch={setSearch}
+        searchItems={searchItems}
         pageTitle={meta.title}
         pageSubtitle={meta.subtitle}
         user={user}
         onLogout={logout}
         warningCount={warningCount}
+        isLoading={isLoading}
       >
         {content}
       </AppShell>

@@ -55,7 +55,7 @@ export function PipelineIntelligencePage({ leads }: Props) {
                 <div key={d.name} className="rounded-lg border border-border p-3">
                   <div className="flex items-center justify-between mb-1.5">
                     <div className="text-sm font-semibold text-navy">{d.name}</div>
-                    <div className="text-xs text-muted-foreground"><span className={cn("font-bold", ok ? "text-success" : "text-danger")}>{d.score}</span> · benchmark {d.benchmark}</div>
+                    <div className="text-xs text-muted-foreground"><span className={cn("font-bold", ok ? "text-primary" : "text-danger")}>{d.score}</span> · benchmark {d.benchmark}</div>
                   </div>
                   <ProgressBar pct={d.score} tone={ok ? "success" : "danger"} />
                 </div>
@@ -94,7 +94,7 @@ export function PipelineIntelligencePage({ leads }: Props) {
               return (
                 <div key={k} className="rounded-lg border border-border p-3">
                   <div className="flex items-center justify-between mb-1.5">
-                    <div className="flex items-center gap-2"><Icon className={cn("h-4 w-4", k === "Hot" ? "text-danger" : k === "Warm" ? "text-accent" : "text-primary")} /><span className="font-semibold text-navy">{k}</span></div>
+                    <div className="flex items-center gap-2"><Icon className={cn("h-4 w-4", k === "Hot" ? "text-danger" : k === "Warm" ? "text-primary" : "text-primary")} /><span className="font-semibold text-navy">{k}</span></div>
                     <StatusBadge tone={tone as any}>{counts[k]} · {Math.round((counts[k] / total) * 100)}%</StatusBadge>
                   </div>
                   <div className="text-xs text-muted-foreground truncate">{items.map((i) => i.nama).join(" · ") || "—"}</div>
@@ -108,7 +108,7 @@ export function PipelineIntelligencePage({ leads }: Props) {
       {/* Stage Aging */}
       <section className="panel overflow-hidden">
         <div className="px-5 py-4 border-b border-border flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-navy text-gold"><Hourglass className="h-4 w-4" /></div>
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-navy text-white"><Hourglass className="h-4 w-4" /></div>
           <div><h3 className="font-bold text-navy">Stage Aging per Cabang</h3><p className="text-xs text-muted-foreground">Rata-rata hari lead stagnan di tiap stage.</p></div>
         </div>
         <div className="overflow-x-auto">
@@ -134,7 +134,7 @@ export function PipelineIntelligencePage({ leads }: Props) {
       {/* Conversion Diagnosis */}
       <section className="panel overflow-hidden">
         <div className="px-5 py-4 border-b border-border flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-navy text-gold"><TrendingDown className="h-4 w-4" /></div>
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-navy text-white"><TrendingDown className="h-4 w-4" /></div>
           <div><h3 className="font-bold text-navy">Conversion Diagnosis</h3><p className="text-xs text-muted-foreground">Tahap mana paling banyak drop di tiap cabang.</p></div>
         </div>
         <div className="overflow-x-auto">

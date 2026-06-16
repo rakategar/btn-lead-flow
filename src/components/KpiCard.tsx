@@ -7,14 +7,14 @@ interface Props {
   hint?: string;
   delta?: { value: string; up?: boolean };
   icon: React.ComponentType<{ className?: string }>;
-  tone?: "blue" | "orange" | "green" | "navy";
+  tone?: "blue" | "red" | "navy" | "muted";
 }
 
 const toneMap = {
-  blue: "bg-primary-light text-primary",
-  orange: "bg-accent-light text-accent",
-  green: "bg-success-light text-success",
-  navy: "bg-navy/10 text-navy",
+  blue:  "bg-primary-light text-primary",
+  red:   "bg-[hsl(var(--danger-light))] text-[hsl(var(--danger))]",
+  navy:  "bg-navy/10 text-navy",
+  muted: "bg-muted text-muted-foreground",
 };
 
 export function KpiCard({ title, value, hint, delta, icon: Icon, tone = "blue" }: Props) {
@@ -27,7 +27,7 @@ export function KpiCard({ title, value, hint, delta, icon: Icon, tone = "blue" }
         {delta && (
           <span className={cn(
             "inline-flex items-center gap-1 text-xs font-medium",
-            delta.up ? "text-success" : "text-danger"
+            delta.up ? "text-primary" : "text-[hsl(var(--danger))]"
           )}>
             {delta.up ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
             {delta.value}

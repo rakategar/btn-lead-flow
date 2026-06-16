@@ -174,7 +174,7 @@ export function GenerateLaporanPage({ user, leads }: Props) {
               Buat laporan otomatis berdasarkan data dashboard saat ini.
             </p>
           </div>
-          <Badge className="bg-gold-light text-navy border border-gold/40">Leader</Badge>
+          <Badge className="bg-primary-light text-primary border border-primary/40">Leader</Badge>
         </div>
       </div>
 
@@ -226,7 +226,7 @@ export function GenerateLaporanPage({ user, leads }: Props) {
               return (
                 <li key={s} className="flex items-center gap-3 text-sm">
                   {done ? (
-                    <CheckCircle2 className="h-4 w-4 text-success" />
+                    <CheckCircle2 className="h-4 w-4 text-primary" />
                   ) : active ? (
                     <Loader2 className="h-4 w-4 animate-spin text-primary" />
                   ) : (
@@ -259,7 +259,7 @@ export function GenerateLaporanPage({ user, leads }: Props) {
           </div>
 
           {result.warning && (
-            <div className="rounded-md border border-warning/30 bg-warning/10 p-3 text-sm text-warning flex gap-2">
+            <div className="rounded-md border border-primary/30 bg-primary/10 p-3 text-sm text-primary flex gap-2">
               <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
               <div>{result.warning}</div>
             </div>

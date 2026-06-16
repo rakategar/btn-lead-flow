@@ -10,11 +10,18 @@ import { toast } from "sonner";
 type RhythmType = "weekly" | "monthly";
 interface Rhythm { id: string; type: RhythmType; label: string; position: number }
 
+function alignmentTone(value: string): "blue" | "red" | "gray" {
+  const v = value.toLowerCase();
+  if (/perlu|gap|sinkronisasi|remedial|coaching|tinggi|risiko|terlambat/.test(v)) return "red";
+  if (/track|terjadwal|selesai|baik|tepat|aktif/.test(v)) return "blue";
+  return "gray";
+}
+
 const alignment = [
-  { label: "RM Status", value: "On Track", tone: "green" as const },
-  { label: "Leader Review", value: "Mingguan terjadwal", tone: "blue" as const },
-  { label: "Gap Alignment", value: "2 area perlu sinkronisasi", tone: "orange" as const },
-  { label: "Next Coaching Focus", value: "Closing & objection handling", tone: "gold" as const },
+  { label: "RM Status", value: "On Track" },
+  { label: "Leader Review", value: "Mingguan terjadwal" },
+  { label: "Gap Alignment", value: "2 area perlu sinkronisasi" },
+  { label: "Next Coaching Focus", value: "Closing & objection handling" },
 ];
 
 const resultIcons: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -105,7 +112,7 @@ export function KpiReviewPage() {
           {alignment.map((a) => (
             <div key={a.label} className="panel p-4">
               <div className="text-xs text-muted-foreground">{a.label}</div>
-              <div className="mt-2"><StatusBadge tone={a.tone}>{a.value}</StatusBadge></div>
+              <div className="mt-2"><StatusBadge tone={alignmentTone(a.value)}>{a.value}</StatusBadge></div>
             </div>
           ))}
         </div>
@@ -118,9 +125,9 @@ export function KpiReviewPage() {
           {resultArea.map((r) => {
             const Icon = resultIcons[r.name] ?? Trophy;
             return (
-              <div key={r.name} className="panel p-5 bg-gradient-to-br from-card to-gold-light/40">
+              <div key={r.name} className="panel p-5 bg-gradient-to-br from-card to-primary-light/40">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-navy text-gold"><Icon className="h-5 w-5" /></div>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-navy text-white"><Icon className="h-5 w-5" /></div>
                   <div className="text-sm font-semibold text-navy">{r.name}</div>
                 </div>
                 <div className="mt-3 text-2xl font-extrabold text-navy">{r.value}</div>
@@ -131,7 +138,7 @@ export function KpiReviewPage() {
         </div>
       </section>
 
-      <div className="panel p-4 text-xs text-muted-foreground border-l-4 border-l-[hsl(var(--gold))]">
+      <div className="panel p-4 text-xs text-muted-foreground border-l-4 border-l-primary">
         <span className="font-semibold text-navy">Catatan:</span> Nilai pada halaman ini adalah dummy untuk kebutuhan presentasi konsep.
         Kerangka A.C.T menjaga konsistensi dari aktivitas harian hingga area hasil.
       </div>
@@ -198,7 +205,7 @@ function RhythmCard({
         {!loading && items.length === 0 && <li className="text-xs text-muted-foreground">Belum ada item.</li>}
         {items.map((it) => (
           <li key={it.id} className="group flex items-start gap-2.5">
-            <CheckCircle2 className="h-4 w-4 text-success mt-0.5 shrink-0" />
+            <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 shrink-0" />
             {editingId === it.id ? (
               <div className="flex-1 flex items-center gap-1">
                 <input
@@ -211,7 +218,7 @@ function RhythmCard({
                   }}
                   className="flex-1 h-7 px-2 text-sm rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring/40"
                 />
-                <button onClick={() => save(it.id)} className="p-1 rounded hover:bg-success-light text-success" aria-label="Simpan"><Check className="h-3.5 w-3.5" /></button>
+                <button onClick={() => save(it.id)} className="p-1 rounded hover:bg-primary-light text-primary" aria-label="Simpan"><Check className="h-3.5 w-3.5" /></button>
                 <button onClick={() => setEditingId(null)} className="p-1 rounded hover:bg-muted text-muted-foreground" aria-label="Batal"><X className="h-3.5 w-3.5" /></button>
               </div>
             ) : (

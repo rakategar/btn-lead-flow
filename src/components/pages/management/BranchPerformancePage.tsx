@@ -23,7 +23,7 @@ export function BranchPerformancePage() {
         <PanelHeader title="Heatmap Performance" caption="Warna mengindikasikan performance score: hijau sehat, kuning watchlist, merah at risk." icon={Building2} />
         <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
           {branches.map((b) => {
-            const bg = b.status === "Healthy" ? "bg-success/20 border-success/30" : b.status === "Watchlist" ? "bg-accent/20 border-accent/30" : "bg-danger/20 border-danger/30";
+            const bg = b.status === "Healthy" ? "bg-primary/20 border-primary/30" : b.status === "Watchlist" ? "bg-primary/20 border-primary/30" : "bg-danger/20 border-danger/30";
             return (
               <button key={b.name} onClick={() => setOpen(b)} className={cn("rounded-lg border p-3 text-left hover:shadow-soft transition-shadow", bg)}>
                 <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground truncate">{b.region}</div>
@@ -78,7 +78,7 @@ export function BranchPerformancePage() {
                   <td className="px-3 py-3 text-right text-navy">{fmtRp(b.pipelineValue)}</td>
                   <td className="px-3 py-3 text-right text-navy">{fmtRp(b.closingMTD)}</td>
                   <td className="px-3 py-3 text-right text-muted-foreground">{fmtRp(b.target)}</td>
-                  <td className={cn("px-3 py-3 text-right font-semibold", b.gap < -30 ? "text-danger" : "text-accent")}>{b.gap}%</td>
+                  <td className={cn("px-3 py-3 text-right font-semibold", b.gap < -30 ? "text-danger" : "text-primary")}>{b.gap}%</td>
                   <td className="pr-5 py-3 text-right"><StatusBadge tone={statusToneFor(b.status)}>{b.status}</StatusBadge></td>
                 </tr>
               ))}
@@ -125,7 +125,7 @@ function BranchDrawer({ branch, onClose }: { branch: Branch; onClose: () => void
               <span className="text-muted-foreground">Closing vs Target</span>
               <span className="font-semibold text-navy">{pct}% · {fmtRp(branch.closingMTD)} / {fmtRp(branch.target)}</span>
             </div>
-            <div className="mt-2"><ProgressBar pct={pct} tone={pct >= 80 ? "success" : pct >= 50 ? "gold" : "danger"} /></div>
+            <div className="mt-2"><ProgressBar pct={pct} tone={pct < 50 ? "danger" : "primary"} /></div>
           </div>
 
           <section>

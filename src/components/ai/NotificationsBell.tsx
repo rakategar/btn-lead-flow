@@ -73,7 +73,7 @@ export function NotificationsBell({ rmName }: { rmName: string }) {
             <div className="px-3 py-6 text-xs text-muted-foreground text-center">Belum ada notifikasi.</div>
           )}
           {items.map((n) => (
-            <div key={n.id} className={cn("px-3 py-2.5", !n.readAt && "bg-gold-light/40")}>
+            <div key={n.id} className={cn("px-3 py-2.5", !n.readAt && "bg-primary-light/40")}>
               <div className="text-[13px] text-navy">{n.message}</div>
               <div className="mt-0.5 text-[10px] text-muted-foreground">
                 {n.createdBy ? `${n.createdBy} · ` : ""}

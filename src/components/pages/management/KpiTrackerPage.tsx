@@ -20,13 +20,13 @@ export function KpiTrackerPage() {
           {productKpis.map((p) => (
             <div key={p.name} className="kpi-card">
               <div className="flex items-center justify-between">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-navy text-gold"><Target className="h-4 w-4" /></div>
-                <StatusBadge tone={p.pct >= 85 ? "green" : p.pct >= 70 ? "orange" : "red"}>{p.pct}%</StatusBadge>
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-navy text-white"><Target className="h-4 w-4" /></div>
+                <StatusBadge tone={p.pct < 70 ? "red" : "blue"}>{p.pct}%</StatusBadge>
               </div>
               <div className="mt-3 text-sm text-muted-foreground">{p.name}</div>
               <div className="mt-1 text-2xl font-extrabold text-navy">{fmtRp(p.actual)}</div>
               <div className="mt-1 text-xs text-muted-foreground">Target {fmtRp(p.target)} · gap {fmtRp(Math.abs(p.gap))}</div>
-              <div className="mt-3"><ProgressBar pct={p.pct} tone={p.pct >= 85 ? "success" : p.pct >= 70 ? "gold" : "danger"} /></div>
+              <div className="mt-3"><ProgressBar pct={p.pct} tone={p.pct < 70 ? "danger" : "primary"} /></div>
             </div>
           ))}
         </div>
@@ -38,8 +38,8 @@ export function KpiTrackerPage() {
         <div className="mt-5 space-y-3">
           {[
             { label: "MTD",          value: totalMtd,  tone: "primary" as const },
-            { label: "Bulan Lalu",   value: totalPrev, tone: "gold" as const },
-            { label: "Tahun Lalu",   value: totalLY,   tone: "accent" as const },
+            { label: "Bulan Lalu",   value: totalPrev, tone: "blue" as const },
+            { label: "Tahun Lalu",   value: totalLY,   tone: "blue" as const },
           ].map((row) => (
             <div key={row.label} className="grid grid-cols-[100px_1fr_120px] items-center gap-3">
               <span className="text-sm font-semibold text-navy">{row.label}</span>
@@ -53,7 +53,7 @@ export function KpiTrackerPage() {
       {/* Officer productivity */}
       <section className="panel overflow-hidden">
         <div className="px-5 py-4 border-b border-border flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-navy text-gold"><Trophy className="h-4 w-4" /></div>
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-navy text-white"><Trophy className="h-4 w-4" /></div>
           <div>
             <h3 className="font-bold text-navy">Produktivitas Officer</h3>
             <p className="text-xs text-muted-foreground">Aktivitas dan revenue per officer dengan ranking.</p>
@@ -75,7 +75,7 @@ export function KpiTrackerPage() {
             <tbody className="divide-y divide-border">
               {officerProductivity.map((o, i) => (
                 <tr key={o.name} className="hover:bg-muted/30">
-                  <td className="px-5 py-3"><span className={cn("inline-flex h-7 w-7 items-center justify-center rounded-md text-xs font-bold", i < 3 ? "bg-navy text-gold" : "bg-muted text-muted-foreground")}>{i + 1}</span></td>
+                  <td className="px-5 py-3"><span className={cn("inline-flex h-7 w-7 items-center justify-center rounded-md text-xs font-bold", i < 3 ? "bg-navy text-white" : "bg-muted text-muted-foreground")}>{i + 1}</span></td>
                   <td className="px-3 py-3 font-medium text-navy">{o.name}</td>
                   <td className="px-3 py-3 text-muted-foreground">{o.branch}</td>
                   <td className="px-3 py-3 text-center">{o.contact}</td>

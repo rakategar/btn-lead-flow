@@ -8,8 +8,8 @@ import { PageHero, PanelHeader } from "./_shared";
 const summaryBlocks = [
   { key: "situation", title: "Current Situation",   icon: Activity,        items: aiInsights.situation,   tone: "bg-primary-light text-primary" },
   { key: "issues",    title: "Key Issues",          icon: AlertTriangle,   items: aiInsights.keyIssues,   tone: "bg-danger-light text-danger" },
-  { key: "improve",   title: "Need to be Improved", icon: Lightbulb,       items: aiInsights.improve,     tone: "bg-gold-light text-[hsl(var(--gold))]" },
-  { key: "grow",      title: "Continue to Grow",    icon: TrendingUp,      items: aiInsights.grow,        tone: "bg-success-light text-success" },
+  { key: "improve",   title: "Need to be Improved", icon: Lightbulb,       items: aiInsights.improve,     tone: "bg-primary-light text-primary" },
+  { key: "grow",      title: "Continue to Grow",    icon: TrendingUp,      items: aiInsights.grow,        tone: "bg-primary-light text-primary" },
 ];
 
 export function AiInsightCenterPage() {
@@ -84,7 +84,7 @@ export function AiInsightCenterPage() {
             <div className="text-xs uppercase tracking-wider font-semibold text-primary">Action Plan · {branch}</div>
             {plan.map((p, i) => (
               <div key={i} className="rounded-lg border border-border bg-card p-3 flex items-start gap-3">
-                <div className="flex h-7 w-7 items-center justify-center rounded-md bg-navy text-gold text-xs font-bold shrink-0">{i + 1}</div>
+                <div className="flex h-7 w-7 items-center justify-center rounded-md bg-navy text-white text-xs font-bold shrink-0">{i + 1}</div>
                 <div className="flex-1">
                   <div className="text-sm font-semibold text-navy">{p.step}</div>
                   <div className="text-[11px] text-muted-foreground">Owner: {p.owner} · Timeline: {p.due}</div>

@@ -4,14 +4,14 @@ import { followUpDue as defaultFollowUpDue, type Lead } from "@/lib/dummy-data";
 
 const fuStages = [
   { stage: "FU1", time: "H+1 s.d H+3", desc: "Reminder dan klarifikasi awal setelah pertemuan.", icon: MessageCircle, tone: "blue" as const },
-  { stage: "FU2", time: "H+5 s.d H+7", desc: "Tindak lanjut intensif, objection handling, dan tambahan informasi.", icon: Hourglass, tone: "orange" as const },
+  { stage: "FU2", time: "H+5 s.d H+7", desc: "Tindak lanjut intensif, objection handling, dan tambahan informasi.", icon: Hourglass, tone: "blue" as const },
   { stage: "FU3", time: "H+10 s.d H+14", desc: "Dorongan final, urgensi penawaran, dan keputusan akhir.", icon: Megaphone, tone: "red" as const },
 ];
 
 const resolutions = [
-  { name: "Close", icon: CheckCircle2, tone: "green" as const, desc: "Prospek sukses dikonversi menjadi nasabah / transaksi selesai." },
+  { name: "Close", icon: CheckCircle2, tone: "blue" as const, desc: "Prospek sukses dikonversi menjadi nasabah / transaksi selesai." },
   { name: "In Progress", icon: Clock, tone: "blue" as const, desc: "Masih aktif dalam proses Contact / Meet / Prospect." },
-  { name: "Follow Up", icon: AlertCircle, tone: "orange" as const, desc: "Masih menunggu waktu, approval, atau tindak lanjut spesifik." },
+  { name: "Follow Up", icon: AlertCircle, tone: "blue" as const, desc: "Masih menunggu waktu, approval, atau tindak lanjut spesifik." },
   { name: "Not Eligible", icon: XCircle, tone: "gray" as const, desc: "Tidak memenuhi syarat / belum sesuai kebutuhan." },
 ];
 
@@ -39,12 +39,10 @@ export function FollowUpPage({ leads }: { leads?: Lead[] } = {}) {
             const Icon = f.icon;
             return (
               <div key={f.stage} className="panel p-5 relative overflow-hidden">
-                <div className={`absolute top-0 left-0 h-1 w-full ${f.tone === "blue" ? "bg-primary" : f.tone === "orange" ? "bg-accent" : "bg-danger"}`} />
+                <div className={`absolute top-0 left-0 h-1 w-full ${f.tone === "red" ? "bg-[hsl(var(--danger))]" : "bg-primary"}`} />
                 <div className="flex items-center gap-3">
                   <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${
-                    f.tone === "blue" ? "bg-primary-light text-primary" :
-                    f.tone === "orange" ? "bg-accent-light text-accent" :
-                    "bg-danger-light text-danger"
+                    f.tone === "red" ? "bg-[hsl(var(--danger-light))] text-[hsl(var(--danger))]" : "bg-primary-light text-primary"
                   }`}><Icon className="h-5 w-5" /></div>
                   <div>
                     <div className="text-lg font-extrabold text-navy">{f.stage}</div>
@@ -69,10 +67,7 @@ export function FollowUpPage({ leads }: { leads?: Lead[] } = {}) {
               <div key={r.name} className="panel p-5">
                 <div className="flex items-center gap-2">
                   <Icon className={`h-5 w-5 ${
-                    r.tone === "green" ? "text-success" :
-                    r.tone === "blue" ? "text-primary" :
-                    r.tone === "orange" ? "text-accent" :
-                    "text-muted-foreground"
+                    r.tone === "gray" ? "text-muted-foreground" : "text-primary"
                   }`} />
                   <div className="font-bold text-navy">{r.name}</div>
                 </div>
@@ -107,7 +102,7 @@ export function FollowUpPage({ leads }: { leads?: Lead[] } = {}) {
                   <td className="px-5 py-3 font-medium text-navy">{l.nama}</td>
                   <td className="px-3 py-3"><StatusBadge tone="navy">{l.stage}</StatusBadge></td>
                   <td className="px-3 py-3 text-navy">{l.pic}</td>
-                  <td className="px-3 py-3"><StatusBadge tone={l.fu === "FU1" ? "blue" : l.fu === "FU2" ? "orange" : "red"}>{l.fu}</StatusBadge></td>
+                  <td className="px-3 py-3"><StatusBadge tone={l.fu === "FU3" ? "red" : "blue"}>{l.fu}</StatusBadge></td>
                   <td className="px-3 py-3 text-navy">{l.jadwal}</td>
                   <td className="pr-5 py-3 text-right"><StatusBadge tone={statusToTone(l.catatan === "Prioritas tinggi" ? "High" : l.catatan === "Evaluasi ulang" ? "Low" : "Medium")}>{l.catatan}</StatusBadge></td>
                 </tr>

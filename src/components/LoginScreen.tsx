@@ -31,7 +31,7 @@ export function LoginScreen() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-primary-light/30 to-gold-light/40 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-background via-primary-light/30 to-primary-light/40 flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-5">
         {/* Brand */}
         <div className="flex items-center justify-center gap-3">
@@ -49,8 +49,8 @@ export function LoginScreen() {
               <h2 className="text-xl font-bold text-navy">Welcome back</h2>
               <p className="text-sm text-muted-foreground mt-1">Sign in to your command center.</p>
             </div>
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-navy bg-gold-light px-2.5 py-1 rounded-full">
-              <ShieldCheck className="h-3.5 w-3.5 text-[hsl(var(--gold))]" /> Demo
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-primary bg-primary-light px-2.5 py-1 rounded-full">
+              <ShieldCheck className="h-3.5 w-3.5 text-primary" /> Demo
             </span>
           </div>
 
@@ -69,7 +69,7 @@ export function LoginScreen() {
                 <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} className="pl-9" />
               </div>
             </div>
-            <Button type="submit" className="w-full bg-navy hover:bg-navy/90 text-navy-foreground">
+            <Button type="submit" className="w-full bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary))]/90 text-white">
               Sign in <ArrowRight className="h-4 w-4 ml-1.5" />
             </Button>
           </form>
@@ -86,9 +86,9 @@ export function LoginScreen() {
               const Icon = acc.role === "management" ? Building2 : acc.role === "leader" ? Crown : UserRound;
               const iconCls =
                 acc.role === "management"
-                  ? "bg-gold text-navy"
+                  ? "bg-navy text-white"
                   : acc.role === "leader"
-                    ? "bg-navy text-gold"
+                    ? "bg-[hsl(var(--primary))] text-white"
                     : "bg-primary-light text-primary";
               return (
                 <button

@@ -57,7 +57,7 @@ export function UserManagementPage() {
 
       {/* Bulk action */}
       {selected.length > 0 && (
-        <div className="panel p-3 flex flex-wrap items-center gap-2 bg-gold-light/40 border-l-4 border-l-[hsl(var(--gold))]">
+        <div className="panel p-3 flex flex-wrap items-center gap-2 bg-primary-light/40 border-l-4 border-l-primary">
           <span className="text-sm font-semibold text-navy">{selected.length} terpilih</span>
           <span className="mx-1 h-5 w-px bg-border" />
           <Button size="sm" variant="outline" onClick={() => { toast.success("Status diubah"); setSelected([]); }}>Set Aktif/Nonaktif</Button>
@@ -70,7 +70,7 @@ export function UserManagementPage() {
       {/* Table */}
       <section className="panel overflow-hidden">
         <div className="px-5 py-4 border-b border-border flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-navy text-gold"><Users2 className="h-4 w-4" /></div>
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-navy text-white"><Users2 className="h-4 w-4" /></div>
           <div><h3 className="font-bold text-navy">Direktori User</h3><p className="text-xs text-muted-foreground">{filtered.length} dari {mgmtUsers.length} user.</p></div>
         </div>
         <div className="overflow-x-auto">
@@ -91,9 +91,9 @@ export function UserManagementPage() {
                 <tr key={u.id} className="hover:bg-muted/30">
                   <td className="pl-5 py-3"><input type="checkbox" checked={selected.includes(u.id)} onChange={() => toggleOne(u.id)} /></td>
                   <td className="px-3 py-3 font-medium text-navy">{u.name}</td>
-                  <td className="px-3 py-3"><StatusBadge tone={u.role === "Senior Leader" ? "gold" : u.role === "Leader" ? "navy" : "blue"}>{u.role}</StatusBadge></td>
+                  <td className="px-3 py-3"><StatusBadge tone={u.role === "Leader" ? "navy" : "blue"}>{u.role}</StatusBadge></td>
                   <td className="px-3 py-3 text-muted-foreground">{u.branch}</td>
-                  <td className="px-3 py-3"><StatusBadge tone={u.status === "Aktif" ? "green" : "gray"}>{u.status}</StatusBadge></td>
+                  <td className="px-3 py-3"><StatusBadge tone={u.status === "Aktif" ? "blue" : "gray"}>{u.status}</StatusBadge></td>
                   <td className="px-3 py-3 text-muted-foreground">{u.lastLogin}</td>
                   <td className="pr-5 py-3 text-muted-foreground">{u.email}</td>
                 </tr>
@@ -136,7 +136,7 @@ export function UserManagementPage() {
 }
 
 function PermIcon({ ok }: { ok: boolean }) {
-  return ok ? <Check className="h-4 w-4 text-success inline" /> : <X className="h-4 w-4 text-muted-foreground inline" />;
+  return ok ? <Check className="h-4 w-4 text-primary inline" /> : <X className="h-4 w-4 text-muted-foreground inline" />;
 }
 
 function Chip({ active, onClick, children }: { active?: boolean; onClick?: () => void; children: React.ReactNode }) {

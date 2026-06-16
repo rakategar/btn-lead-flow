@@ -41,8 +41,8 @@ export function ExecutiveOverviewPage({ user, onNavigate }: Props) {
       {/* KPI */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard title="Total Pipeline Value" value={fmtRp(totalPipeline)} hint="Akumulasi seluruh cabang" icon={Wallet} tone="navy" />
-        <KpiCard title="Total Hot Leads" value={hotLeads} hint="Probabilitas 70%–90%" icon={Flame} tone="orange" />
-        <KpiCard title="Closing MTD vs Target" value={`${closingPct}%`} hint={`${fmtRp(totalClosing)} dari ${fmtRp(totalTarget)}`} icon={Target} tone="green" />
+        <KpiCard title="Total Hot Leads" value={hotLeads} hint="Probabilitas 70%–90%" icon={Flame} tone="blue" />
+        <KpiCard title="Closing MTD vs Target" value={`${closingPct}%`} hint={`${fmtRp(totalClosing)} dari ${fmtRp(totalTarget)}`} icon={Target} tone="blue" />
         <KpiCard title="Avg Productivity Officer" value={`${avgProductivity}%`} hint={`${totalSales} sales aktif`} icon={Activity} tone="blue" />
       </div>
 
@@ -71,14 +71,14 @@ export function ExecutiveOverviewPage({ user, onNavigate }: Props) {
           <div className="mt-4 space-y-2.5">
             {ranked.map((b, i) => (
               <div key={b.name} className="rounded-lg border border-border p-3 flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-navy text-gold text-xs font-bold">{i + 1}</div>
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-navy text-white text-xs font-bold">{i + 1}</div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-semibold text-navy truncate">{b.name}</span>
                     <StatusBadge tone={statusToneFor(b.status)}>{b.status}</StatusBadge>
                   </div>
                   <div className="text-[11px] text-muted-foreground">Leader {b.leader} · {b.salesCount} sales · {fmtRp(b.closingMTD)} closing</div>
-                  <div className="mt-1.5"><ProgressBar pct={b.performanceScore} tone={b.status === "Healthy" ? "success" : b.status === "Watchlist" ? "gold" : "danger"} /></div>
+                  <div className="mt-1.5"><ProgressBar pct={b.performanceScore} tone={b.status === "At Risk" ? "danger" : "primary"} /></div>
                 </div>
                 <div className="text-right">
                   <div className="text-lg font-extrabold text-navy">{b.performanceScore}</div>
@@ -112,12 +112,12 @@ export function ExecutiveOverviewPage({ user, onNavigate }: Props) {
           <div className="mt-4 space-y-2">
             {topContributors.map((c, i) => (
               <div key={c.name} className="flex items-center gap-3 rounded-lg border border-border p-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-navy text-gold text-xs font-bold">{c.name.split(" ").map((p) => p[0]).slice(0, 2).join("")}</div>
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-navy text-white text-xs font-bold">{c.name.split(" ").map((p) => p[0]).slice(0, 2).join("")}</div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-semibold text-navy truncate">{c.name}</div>
                   <div className="text-[11px] text-muted-foreground">{c.branch} · {c.closing} closing</div>
                 </div>
-                <StatusBadge tone="gold">#{i + 1}</StatusBadge>
+                <StatusBadge tone="blue">#{i + 1}</StatusBadge>
                 <div className="text-sm font-bold text-navy w-10 text-right">{c.score}</div>
               </div>
             ))}
@@ -135,7 +135,7 @@ export function ExecutiveOverviewPage({ user, onNavigate }: Props) {
                     <span className="text-sm font-medium text-navy">{b.name}</span>
                     <span className="text-xs text-muted-foreground">{b.updated}/{b.total} · {pct}%</span>
                   </div>
-                  <div className="mt-2"><ProgressBar pct={pct} tone={pct >= 80 ? "success" : pct >= 60 ? "gold" : "danger"} /></div>
+                  <div className="mt-2"><ProgressBar pct={pct} tone={pct < 60 ? "danger" : "primary"} /></div>
                 </div>
               );
             })}

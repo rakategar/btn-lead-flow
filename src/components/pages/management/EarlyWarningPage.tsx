@@ -70,7 +70,7 @@ export function EarlyWarningPage() {
                       <div className="mt-1.5 text-sm font-semibold text-navy">{a.title}</div>
                       <div className="text-[11px] text-muted-foreground">{a.branch}{a.pic ? ` · ${a.pic}` : ""}</div>
                     </div>
-                    {a.resolved && <CheckCircle2 className="h-4 w-4 text-success shrink-0" />}
+                    {a.resolved && <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />}
                   </div>
                   {!a.resolved && (
                     <div className="mt-3 flex gap-2">

@@ -18,16 +18,16 @@ export function AiPriorityToday({ leads, onOpenLead, onNavigatePipeline }: Props
   if (items.length === 0) return null;
 
   return (
-    <section className="panel p-5 border-l-4 border-l-[hsl(var(--gold))]">
+    <section className="panel p-5 border-l-4 border-l-primary">
       <div className="flex items-center justify-between gap-3 mb-3">
         <div className="flex items-center gap-2">
-          <div className="h-9 w-9 rounded-lg bg-gold-light text-[hsl(var(--gold))] flex items-center justify-center">
+          <div className="h-9 w-9 rounded-lg bg-primary-light text-primary flex items-center justify-center">
             <Sparkles className="h-4.5 w-4.5" />
           </div>
           <div>
             <h3 className="text-base font-bold text-navy flex items-center gap-2">
               Prioritas Hari Ini
-              <StatusBadge tone="gold">Saran AI · perlu review</StatusBadge>
+              <StatusBadge tone="blue">Saran AI · perlu review</StatusBadge>
             </h3>
             <p className="text-xs text-muted-foreground">Diurutkan otomatis dari data temperature, stage, last activity & jadwal FU.</p>
           </div>
@@ -60,7 +60,7 @@ function PriorityRow({ item, open, onToggle, onOpenLead }: { item: PriorityItem;
             <button onClick={onOpenLead} className="text-sm font-semibold text-navy hover:underline">{l.nama}</button>
             <span className="text-[11px] font-mono text-muted-foreground">{l.id}</span>
             <StatusBadge tone="navy">{l.stage}</StatusBadge>
-            <StatusBadge tone={l.priority === "High" ? "red" : l.priority === "Medium" ? "orange" : "blue"}>{l.priority}</StatusBadge>
+            <StatusBadge tone={l.priority === "High" ? "red" : "blue"}>{l.priority}</StatusBadge>
           </div>
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             {item.reasons.slice(0, 4).map((r) => (
@@ -69,7 +69,7 @@ function PriorityRow({ item, open, onToggle, onOpenLead }: { item: PriorityItem;
           </div>
           {open && (
             <div className="mt-2 rounded-lg bg-muted/50 p-3 text-xs text-navy">
-              <div className="font-semibold flex items-center gap-1.5 mb-1"><Sparkles className="h-3 w-3 text-[hsl(var(--gold))]" /> Penjelasan AI</div>
+              <div className="font-semibold flex items-center gap-1.5 mb-1"><Sparkles className="h-3 w-3 text-primary" /> Penjelasan AI</div>
               {item.explanation}
               <div className="mt-1 text-[11px] text-muted-foreground italic">Saran berdasarkan data — keputusan tetap di tangan Anda.</div>
             </div>
@@ -95,9 +95,9 @@ export function AiEarlyWarningPanel({ leads, onOpenLead }: { leads: Lead[]; onOp
     return (
       <section className="panel p-5">
         <div className="flex items-center gap-2 mb-1">
-          <Bell className="h-4 w-4 text-success" />
+          <Bell className="h-4 w-4 text-primary" />
           <h3 className="text-base font-bold text-navy">Early Warning Personal</h3>
-          <StatusBadge tone="green">Aman</StatusBadge>
+          <StatusBadge tone="blue">Aman</StatusBadge>
         </div>
         <p className="text-xs text-muted-foreground">Tidak ada peringatan untuk lead Anda saat ini.</p>
       </section>
@@ -114,7 +114,7 @@ export function AiEarlyWarningPanel({ leads, onOpenLead }: { leads: Lead[]; onOp
           <div>
             <h3 className="text-base font-bold text-navy flex items-center gap-2">
               Early Warning Personal
-              <StatusBadge tone="gold">Saran AI · perlu review</StatusBadge>
+              <StatusBadge tone="blue">Saran AI · perlu review</StatusBadge>
             </h3>
             <p className="text-xs text-muted-foreground">Pemantauan otomatis lead Anda — klik untuk membuka lead.</p>
           </div>
@@ -123,7 +123,7 @@ export function AiEarlyWarningPanel({ leads, onOpenLead }: { leads: Lead[]; onOp
       <ul className="space-y-2">
         {items.slice(0, 8).map((w) => {
           const lead = allLeads.find((l) => l.id === w.leadId);
-          const tone = w.level === "danger" ? "red" : w.level === "warning" ? "orange" : "blue";
+          const tone = w.level === "danger" ? "red" : "blue";
           return (
             <li key={w.id} className="flex items-start gap-3 rounded-lg border border-border p-3 hover:bg-muted/30">
               <StatusBadge tone={tone} dot>{w.level === "danger" ? "Kritis" : w.level === "warning" ? "Peringatan" : "Info"}</StatusBadge>

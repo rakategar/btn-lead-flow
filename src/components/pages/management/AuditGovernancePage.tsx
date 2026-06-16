@@ -27,8 +27,8 @@ export function AuditGovernancePage() {
       {tab === "security" && (
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <KpiCard title="Login Sukses" value={securityOverview.loginSuccess} hint="30 hari terakhir" icon={ShieldCheck} tone="green" />
-            <KpiCard title="Login Gagal" value={securityOverview.loginFail} hint="Pantau aktivitas mencurigakan" icon={AlertTriangle} tone="orange" />
+            <KpiCard title="Login Sukses" value={securityOverview.loginSuccess} hint="30 hari terakhir" icon={ShieldCheck} tone="blue" />
+            <KpiCard title="Login Gagal" value={securityOverview.loginFail} hint="Pantau aktivitas mencurigakan" icon={AlertTriangle} tone="blue" />
             <KpiCard title="Sesi Aktif" value={securityOverview.activeSessions} hint="User online sekarang" icon={Lock} tone="blue" />
             <KpiCard title="Akun Idle >30 Hari" value={securityOverview.idleAccounts} hint="Pertimbangkan deaktivasi" icon={AlertTriangle} tone="navy" />
           </div>

@@ -39,16 +39,16 @@ function fallbackDraft(l: LeadCtx): string {
 }
 
 async function callLovableAI(messages: any[]): Promise<string | null> {
-  const KEY = Deno.env.get("LOVABLE_API_KEY");
+  const KEY = Deno.env.get("GEMINI_API_KEY");
   if (!KEY) return null;
   const maxRetries = 2;
   let delay = 1200;
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const resp = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "gemini-2.5-flash",
         messages,
       }),
     });

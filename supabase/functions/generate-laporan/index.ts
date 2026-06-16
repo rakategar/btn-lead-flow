@@ -85,11 +85,11 @@ Kembalikan HANYA JSON valid:
   "rekomendasi_leader": "..."
 }`;
 
-  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-  if (!LOVABLE_API_KEY) {
-    return { ...buildFallbackInsight(dashboard), _warning: "LOVABLE_API_KEY tidak tersedia. Memakai fallback." };
+  const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+  if (!GEMINI_API_KEY) {
+    return { ...buildFallbackInsight(dashboard), _warning: "GEMINI_API_KEY tidak tersedia. Memakai fallback." };
   }
-  const model = Deno.env.get("GEMINI_MODEL") || "google/gemini-2.5-flash";
+  const model = Deno.env.get("GEMINI_MODEL") || "gemini-2.5-flash";
   let delay = 1500;
   let lastStatus = 0;
   let lastErr = "";
@@ -97,9 +97,9 @@ Kembalikan HANYA JSON valid:
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      const r = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${LOVABLE_API_KEY}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${GEMINI_API_KEY}` },
         body: JSON.stringify({
           model,
           messages: [

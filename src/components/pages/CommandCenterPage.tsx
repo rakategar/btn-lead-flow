@@ -1,4 +1,4 @@
-import { Activity, Target, AlertTriangle, Award, GraduationCap, TrendingDown } from "lucide-react";
+import { Activity, Target, AlertTriangle, Award, GraduationCap, TrendingDown, ChevronRight } from "lucide-react";
 import { StatusBadge, statusToTone } from "@/components/StatusBadge";
 import { initialLeads, activityEffectiveness, mtdKpi, earlyWarnings, type Lead, type PipelineStage } from "@/lib/dummy-data";
 
@@ -19,7 +19,7 @@ export function CommandCenterPage({ leads }: Props) {
               <div key={s} className="rounded-xl bg-muted/40 border border-border p-3">
                 <div className="flex items-center justify-between mb-3">
                   <div className="text-sm font-bold text-navy">{s}</div>
-                  <StatusBadge tone="gold">{items.length}</StatusBadge>
+                  <StatusBadge tone="blue">{items.length}</StatusBadge>
                 </div>
                 <div className="space-y-2">
                   {items.length === 0 && <div className="text-xs text-muted-foreground italic px-2 py-3">Tidak ada lead</div>}
@@ -52,13 +52,13 @@ export function CommandCenterPage({ leads }: Props) {
               <Donut key={a.name} label={a.name} value={a.value} target={a.target} />
             ))}
           </div>
-          <div className="mt-5 rounded-lg bg-navy text-navy-foreground p-4 flex items-center justify-between">
+          <div className="mt-5 rounded-lg bg-navy text-white p-4 flex items-center justify-between">
             <div>
-              <div className="text-xs uppercase tracking-wider text-gold font-semibold">Effectiveness Score</div>
+              <div className="text-xs uppercase tracking-wider text-[hsl(var(--primary))] font-semibold">Effectiveness Score</div>
               <div className="text-2xl font-extrabold">75%</div>
               <div className="text-xs opacity-80">Rata-rata 3 dimensi aktivitas</div>
             </div>
-            <Award className="h-12 w-12 text-gold opacity-70" />
+            <Award className="h-12 w-12 text-[hsl(var(--primary))] opacity-70" />
           </div>
         </div>
 
@@ -72,7 +72,7 @@ export function CommandCenterPage({ leads }: Props) {
             <div className="border-t border-border pt-3 space-y-2.5 text-sm">
               <div className="flex items-center justify-between"><span className="text-muted-foreground text-xs">Top Performer</span><span className="font-semibold text-navy">{mtdKpi.topPerformer}</span></div>
               <div className="flex items-center justify-between"><span className="text-muted-foreground text-xs">Need Remedial</span><StatusBadge tone="red">{mtdKpi.needRemedial}</StatusBadge></div>
-              <div className="flex items-center justify-between"><span className="text-muted-foreground text-xs">Coaching Priority</span><StatusBadge tone="gold"><GraduationCap className="h-3 w-3 mr-1" />{mtdKpi.coachingFocus}</StatusBadge></div>
+              <div className="flex items-center justify-between"><span className="text-muted-foreground text-xs">Coaching Priority</span><StatusBadge tone="blue"><GraduationCap className="h-3 w-3 mr-1" />{mtdKpi.coachingFocus}</StatusBadge></div>
             </div>
           </div>
         </div>
@@ -83,9 +83,14 @@ export function CommandCenterPage({ leads }: Props) {
         <Header title="Early Warning System" caption="Deteksi dini potensi underperformance." icon={AlertTriangle} />
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           {earlyWarnings.map((w, i) => (
-            <div key={w} className="flex items-start gap-3 rounded-lg border border-border bg-gradient-to-r from-card to-danger-light/30 p-3">
+            <div
+              key={w}
+              className="group flex items-center gap-3 rounded-lg border border-border bg-gradient-to-r from-card to-danger-light/30 p-3 cursor-pointer hover:bg-[#fff5f5] hover:border-red-200 transition-colors"
+              onClick={() => console.log(`warning clicked: ${i + 1}`)}
+            >
               <div className="flex h-7 w-7 items-center justify-center rounded-md bg-danger-light text-danger shrink-0 text-xs font-bold">!{i + 1}</div>
-              <div className="text-sm text-navy">{w}</div>
+              <div className="flex-1 text-sm text-navy">{w}</div>
+              <ChevronRight className="h-4 w-4 text-[#94a3b8] group-hover:text-[#ff0000] transition-colors shrink-0" />
             </div>
           ))}
         </div>
@@ -97,7 +102,7 @@ export function CommandCenterPage({ leads }: Props) {
 function Header({ title, caption, icon: Icon }: { title: string; caption?: string; icon: React.ComponentType<{ className?: string }> }) {
   return (
     <div className="flex items-start gap-3">
-      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-navy text-gold">
+      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-navy text-white">
         <Icon className="h-4 w-4" />
       </div>
       <div>
@@ -119,7 +124,7 @@ function Donut({ label, value, target }: { label: string; value: number; target:
         <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90">
           <circle cx="50" cy="50" r={r} fill="none" stroke="hsl(var(--muted))" strokeWidth="10" />
           <circle cx="50" cy="50" r={r} fill="none"
-            stroke={onTarget ? "hsl(var(--success))" : "hsl(var(--gold))"}
+            stroke="hsl(var(--primary))"
             strokeWidth="10" strokeLinecap="round"
             strokeDasharray={`${dash} ${c}`} />
         </svg>

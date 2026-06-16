@@ -113,7 +113,7 @@ export function TeamAlertPanel({ leaderName, leads, activities }: Props) {
           <div className="flex items-center gap-2 flex-wrap">
             <h3 className="font-bold text-navy">Alert Tim</h3>
             <StatusBadge tone="red">{kritisCount} Kritis</StatusBadge>
-            <StatusBadge tone="orange">{peringatanCount} Peringatan</StatusBadge>
+            <StatusBadge tone="blue">{peringatanCount} Peringatan</StatusBadge>
           </div>
           <p className="text-xs text-muted-foreground">Peringatan supervisi untuk timmu — RM yang stagnan, FU overdue, dan aktivitas tertinggal.</p>
         </div>
@@ -122,7 +122,7 @@ export function TeamAlertPanel({ leaderName, leads, activities }: Props) {
       <div className="mt-4 space-y-2">
         {alerts.length === 0 && (
           <div className="rounded-lg border border-dashed border-border bg-card/40 p-4 text-sm text-muted-foreground text-center">
-            <CheckCircle2 className="h-4 w-4 inline mr-1 text-success" /> Semua alert sudah ditindaklanjuti.
+            <CheckCircle2 className="h-4 w-4 inline mr-1 text-primary" /> Semua alert sudah ditindaklanjuti.
           </div>
         )}
         {alerts.map((a) => {
@@ -130,14 +130,14 @@ export function TeamAlertPanel({ leaderName, leads, activities }: Props) {
           return (
             <div
               key={a.id}
-              className={`rounded-lg border p-3 flex items-start gap-3 ${isKritis ? "border-l-4 border-l-danger bg-danger-light/30" : "border-l-4 border-l-accent bg-accent-light/30"}`}
+              className={`rounded-lg border p-3 flex items-start gap-3 ${isKritis ? "border-l-4 border-l-[hsl(var(--danger))] bg-[hsl(var(--danger-light))]/30" : "border-l-4 border-l-primary bg-primary-light/30"}`}
             >
-              <div className={`mt-0.5 flex h-7 w-7 items-center justify-center rounded-md shrink-0 ${isKritis ? "bg-danger text-white" : "bg-accent text-accent-foreground"}`}>
+              <div className={`mt-0.5 flex h-7 w-7 items-center justify-center rounded-md shrink-0 ${isKritis ? "bg-[hsl(var(--danger))] text-white" : "bg-primary text-white"}`}>
                 {isKritis ? <AlertOctagon className="h-3.5 w-3.5" /> : <AlertTriangle className="h-3.5 w-3.5" />}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <StatusBadge tone={isKritis ? "red" : "orange"}>{a.level}</StatusBadge>
+                  <StatusBadge tone={isKritis ? "red" : "blue"}>{a.level}</StatusBadge>
                   <span className="text-sm font-semibold text-navy">{a.title}</span>
                 </div>
                 <div className="text-xs text-muted-foreground mt-1">

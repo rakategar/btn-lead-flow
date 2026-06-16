@@ -28,7 +28,7 @@ export function SectionHead({ title, caption, action }: { title: string; caption
 export function PanelHeader({ title, caption, icon: Icon }: { title: string; caption?: string; icon: React.ComponentType<{ className?: string }> }) {
   return (
     <div className="flex items-start gap-3">
-      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-navy text-gold shrink-0">
+      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-navy text-white shrink-0">
         <Icon className="h-4 w-4" />
       </div>
       <div>
@@ -39,13 +39,8 @@ export function PanelHeader({ title, caption, icon: Icon }: { title: string; cap
   );
 }
 
-export function ProgressBar({ pct, tone }: { pct: number; tone?: "primary" | "success" | "danger" | "gold" | "accent" }) {
-  const fill =
-    tone === "success" ? "bg-success" :
-    tone === "danger" ? "bg-danger" :
-    tone === "gold" ? "bg-[hsl(var(--gold))]" :
-    tone === "accent" ? "bg-accent" :
-    "bg-primary";
+export function ProgressBar({ pct, tone }: { pct: number; tone?: "primary" | "danger" }) {
+  const fill = tone === "danger" ? "bg-[hsl(var(--danger))]" : "bg-primary";
   return (
     <div className="h-2 rounded-full bg-muted overflow-hidden">
       <div className={cn("h-full rounded-full transition-all", fill)} style={{ width: `${Math.max(0, Math.min(100, pct))}%` }} />

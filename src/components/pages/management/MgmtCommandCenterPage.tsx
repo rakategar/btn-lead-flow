@@ -60,11 +60,11 @@ export function MgmtCommandCenterPage({ leads }: Props) {
               <div key={s} className="rounded-xl border border-border bg-muted/40 p-3">
                 <div className="flex items-center justify-between mb-2">
                   <div className="text-sm font-bold text-navy">{s}</div>
-                  <StatusBadge tone="gold">{v.count} lead</StatusBadge>
+                  <StatusBadge tone="blue">{v.count} lead</StatusBadge>
                 </div>
                 <div className="text-2xl font-extrabold text-navy">{fmtRp(v.value)}</div>
                 <div className="text-[11px] text-muted-foreground mt-0.5">Total value</div>
-                <div className={cn("mt-3 h-1.5 rounded-full", i === 3 ? "bg-success" : i >= 2 ? "bg-[hsl(var(--gold))]" : "bg-primary")} style={{ width: `${100 - i * 18}%` }} />
+                <div className="mt-3 h-1.5 rounded-full bg-primary" style={{ width: `${100 - i * 18}%` }} />
               </div>
             );
           })}
@@ -82,10 +82,10 @@ export function MgmtCommandCenterPage({ leads }: Props) {
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="text-sm font-semibold text-navy">{f.stage}</div>
                   <div className="text-xs text-muted-foreground">
-                    <span className={cn("font-bold", onTrack ? "text-success" : "text-danger")}>{f.pct}%</span> · benchmark {f.benchmark}%
+                    <span className={cn("font-bold", onTrack ? "text-primary" : "text-[hsl(var(--danger))]")}>{f.pct}%</span> · benchmark {f.benchmark}%
                   </div>
                 </div>
-                <ProgressBar pct={f.pct} tone={onTrack ? "success" : "danger"} />
+                <ProgressBar pct={f.pct} tone={onTrack ? "primary" : "danger"} />
               </div>
             );
           })}
@@ -95,7 +95,7 @@ export function MgmtCommandCenterPage({ leads }: Props) {
       {/* Remedial table */}
       <section className="panel overflow-hidden">
         <div className="px-5 py-4 border-b border-border flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-navy text-gold"><ListChecks className="h-4 w-4" /></div>
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-navy text-white"><ListChecks className="h-4 w-4" /></div>
           <div>
             <h3 className="font-bold text-navy">Remedial Dashboard</h3>
             <p className="text-xs text-muted-foreground">Cabang dengan gap target dan rencana tindak lanjutnya.</p>

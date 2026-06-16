@@ -1,4 +1,4 @@
-import { Users, Activity, Bell, TrendingUp, Star, Target, ArrowRight, CheckCircle2, AlertTriangle, Trophy, AlertCircle } from "lucide-react";
+import { Users, Activity, Bell, TrendingUp, Star, Target, ArrowRight, CheckCircle2, AlertTriangle, Trophy, AlertCircle, ChevronRight, Clock } from "lucide-react";
 import { KpiCard } from "@/components/KpiCard";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -76,11 +76,11 @@ export function OverviewPage({ onNavigate, user, leads, activities = [] }: Props
       </div>
 
       {/* Hero */}
-      <div className="panel p-5 sm:p-6 bg-gradient-to-br from-card via-card to-primary-light/40 border-l-4 border-l-[hsl(var(--gold))]">
+      <div className="panel p-5 sm:p-6 bg-gradient-to-br from-card via-card to-primary-light/40 border-l-4 border-l-primary">
         <div className="flex flex-col md:flex-row md:items-center gap-4">
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <StatusBadge tone="gold">Prototype visual — data dummy</StatusBadge>
+              <StatusBadge tone="blue">Prototype visual — data dummy</StatusBadge>
               <StatusBadge tone="navy">Konsep A.C.T</StatusBadge>
             </div>
             <h2 className="mt-2 text-xl sm:text-2xl font-bold text-navy">A.C.T untuk Visibilitas Aktivitas, Pipeline, dan Result</h2>
@@ -88,7 +88,10 @@ export function OverviewPage({ onNavigate, user, leads, activities = [] }: Props
               Dashboard konsep untuk memantau aktivitas harian, progres pipeline, follow-up, dan indikator performa sales dalam satu tampilan sederhana.
             </p>
           </div>
-          <Button onClick={() => onNavigate("command")} className="bg-navy hover:bg-navy/90 text-navy-foreground">
+          <Button
+            onClick={() => onNavigate("command")}
+            className="bg-[#005bfd] hover:bg-[#0048d4] text-white font-semibold transition-all hover:shadow-[0_4px_12px_rgba(0,91,253,0.25)]"
+          >
             Buka Command Center <ArrowRight className="h-4 w-4 ml-1.5" />
           </Button>
         </div>
@@ -98,10 +101,10 @@ export function OverviewPage({ onNavigate, user, leads, activities = [] }: Props
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <KpiCard title={isLeader ? "Total Leads Tim" : "Leads Saya"} value={totalLeads} hint={isLeader ? "Akumulasi seluruh RM tim" : "Lead yang menjadi tanggung jawab Anda"} icon={Users} tone="blue" />
         <KpiCard title={isLeader ? "Aktivitas Tim Hari Ini" : "Aktivitas Saya Hari Ini"} value={totalActs} hint="Prospecting, FU, meeting, closing" icon={Activity} tone="navy" />
-        <KpiCard title="Follow-Up Due" value={followUpDue} hint="Perlu tindak lanjut segera" icon={Bell} tone="orange" />
-        <KpiCard title="Conversion Rate" value={`${conv}%`} hint="Dari lead ke close" icon={TrendingUp} tone="green" />
-        <KpiCard title={isLeader ? "Lead Prioritas High" : "Prioritas High Saya"} value={leads.filter((l) => l.priority === "High").length} hint="Probabilitas 70%–90%" icon={Star} tone="orange" />
-        <KpiCard title="Gap to Target" value={isLeader ? "-12%" : "-8%"} hint="Perlu remedial action" icon={Target} tone="navy" delta={{ value: isLeader ? "-3pt" : "-1pt", up: false }} />
+        <KpiCard title="Follow-Up Due" value={followUpDue} hint="Perlu tindak lanjut segera" icon={Bell} tone="blue" />
+        <KpiCard title="Conversion Rate" value={`${conv}%`} hint="Dari lead ke close" icon={TrendingUp} tone="blue" />
+        <KpiCard title={isLeader ? "Lead Prioritas High" : "Prioritas High Saya"} value={leads.filter((l) => l.priority === "High").length} hint="Probabilitas 70%–90%" icon={Star} tone={leads.filter((l) => l.priority === "High").length > 0 ? "blue" : "muted"} />
+        <GapToTargetCard isLeader={isLeader} />
       </div>
 
       {/* Insight tim — leader only */}
@@ -109,14 +112,14 @@ export function OverviewPage({ onNavigate, user, leads, activities = [] }: Props
         <section>
           <SectionHead title="Insight Tim" caption="Highlight performa anggota tim Anda." />
           <div className="grid gap-3 md:grid-cols-2">
-            <div className="panel p-4 border-l-4 border-l-success flex items-start gap-3">
-              <div className="h-9 w-9 rounded-lg bg-success-light text-success flex items-center justify-center shrink-0"><Trophy className="h-4.5 w-4.5" /></div>
+            <div className="panel p-4 border-l-4 border-l-primary flex items-start gap-3">
+              <div className="h-9 w-9 rounded-lg bg-primary-light text-primary flex items-center justify-center shrink-0"><Trophy className="h-4.5 w-4.5" /></div>
               <div className="flex-1">
                 <div className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Top performer</div>
                 <div className="text-base font-bold text-navy">{topPerformer.pic}</div>
                 <div className="text-xs text-muted-foreground mt-0.5">Prospecting {topPerformer.prospecting} · FU {topPerformer.followUp} · Meeting {topPerformer.meeting} · Closing {topPerformer.closing}</div>
               </div>
-              <StatusBadge tone="green">{topPerformer.disiplin}</StatusBadge>
+              <StatusBadge tone="blue">{topPerformer.disiplin}</StatusBadge>
             </div>
             <div className="panel p-4 border-l-4 border-l-danger flex items-start gap-3">
               <div className="h-9 w-9 rounded-lg bg-danger-light text-danger flex items-center justify-center shrink-0"><AlertCircle className="h-4.5 w-4.5" /></div>
@@ -156,7 +159,7 @@ export function OverviewPage({ onNavigate, user, leads, activities = [] }: Props
                       <td className="px-5 py-3">{a.followUp}</td>
                       <td className="px-5 py-3">{a.meeting}</td>
                       <td className="px-5 py-3">{a.closing}</td>
-                      <td className="px-5 py-3"><StatusBadge tone={a.disiplin === "Sangat Baik" ? "green" : a.disiplin === "Baik" ? "blue" : "orange"}>{a.disiplin}</StatusBadge></td>
+                      <td className="px-5 py-3"><StatusBadge tone={a.disiplin === "Sangat Baik" ? "blue" : a.disiplin === "Baik" ? "blue" : "red"}>{a.disiplin}</StatusBadge></td>
                     </tr>
                   ))}
                 </tbody>
@@ -184,12 +187,10 @@ export function OverviewPage({ onNavigate, user, leads, activities = [] }: Props
         <SectionHead title="Fondasi A.C.T" caption="Tiga pilar yang menggerakkan transformasi sales." />
         <div className="grid gap-4 md:grid-cols-3">
           {actPillars.map((p) => (
-            <div key={p.letter} className="panel p-5 hover:shadow-card transition-shadow">
+            <div key={p.letter} className="rounded-xl border border-dashed border-border bg-[#fafbff] p-5">
               <div className="flex items-center gap-3">
                 <div className={`flex h-12 w-12 items-center justify-center rounded-xl text-lg font-extrabold ${
-                  p.tone === "gold" ? "bg-gold-light text-[hsl(var(--gold))]" :
-                  p.tone === "navy" ? "bg-navy text-gold" :
-                  "bg-primary-light text-primary"
+                  p.tone === "navy" ? "bg-navy text-white" : "bg-primary-light text-primary"
                 }`}>{p.letter}</div>
                 <div>
                   <div className="text-base font-bold text-navy">{p.title}</div>
@@ -208,17 +209,25 @@ export function OverviewPage({ onNavigate, user, leads, activities = [] }: Props
           <Button variant="outline" size="sm" onClick={() => onNavigate("pipeline")}>Lihat detail <ArrowRight className="h-3.5 w-3.5 ml-1" /></Button>
         } />
         <div className="panel p-5">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {pipelineSummary.map((s, i) => (
-              <div key={s.stage} className="relative rounded-xl border border-border p-4 bg-gradient-to-br from-card to-muted/30">
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Stage {i + 1}</div>
-                <div className="mt-1 text-base font-bold text-navy">{s.stage}</div>
-                <div className="mt-2 text-3xl font-extrabold text-navy">{s.count}</div>
-                <div className="text-xs text-muted-foreground mt-0.5">{s.caption}</div>
-                <div className={`mt-3 h-1.5 rounded-full ${i === 3 ? "bg-success" : i >= 2 ? "bg-[hsl(var(--gold))]" : "bg-primary"}`} style={{ width: `${100 - i * 18}%` }} />
+          {(() => {
+            const maxCount = Math.max(...pipelineSummary.map((s) => s.count));
+            return (
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {pipelineSummary.map((s, i) => (
+                  <div key={s.stage} className="relative rounded-xl border border-border p-4 bg-gradient-to-br from-card to-muted/30">
+                    <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Stage {i + 1}</div>
+                    <div className="mt-1 text-base font-bold text-navy">{s.stage}</div>
+                    <div className="mt-2 text-3xl font-extrabold text-navy">{s.count}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">{s.caption}</div>
+                    <div className="mt-3 relative h-[4px] rounded-[2px] bg-[#e2e8f0]">
+                      <div className="absolute left-0 top-0 h-full rounded-[2px] bg-[#005bfd]" style={{ width: `${(s.count / maxCount) * 100}%` }} />
+                      <span className="absolute right-0 -top-4 text-[11px] text-[#64748b]">{s.count}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            );
+          })()}
         </div>
       </section>
 
@@ -226,17 +235,27 @@ export function OverviewPage({ onNavigate, user, leads, activities = [] }: Props
       <section>
         <SectionHead title="Ringkasan Prioritas Hari Ini" caption="Lead perlu tindak lanjut, FU eskalasi, dan gap aktivitas." />
         <div className="grid gap-3 sm:grid-cols-2">
-          {priorityAlerts.map((a, i) => (
-            <div key={a} className="panel p-4 flex items-start gap-3">
-              <div className={`mt-0.5 flex h-8 w-8 items-center justify-center rounded-lg shrink-0 ${i === 2 ? "bg-danger-light text-danger" : i === 0 ? "bg-accent-light text-accent" : "bg-gold-light text-[hsl(var(--gold))]"}`}>
-                {i === 2 ? <AlertTriangle className="h-4 w-4" /> : i === 3 ? <CheckCircle2 className="h-4 w-4" /> : <Bell className="h-4 w-4" />}
+          {priorityAlerts.map((a) => {
+            const v = a.toLowerCase();
+            const isRed = /hot|aksi cepat|kritis|segera/.test(v);
+            const isBlueTarget = /gap|pic|aktivitas|target/.test(v);
+            const bgIcon = isRed ? "rgba(255,0,0,0.1)" : "rgba(0,91,253,0.1)";
+            const iconColor = isRed ? "#ff0000" : "#005bfd";
+            const IconEl = isRed ? AlertTriangle : isBlueTarget ? Target : Clock;
+            return (
+              <div
+                key={a}
+                className="group panel p-4 flex items-center gap-3 cursor-pointer hover:bg-[#f8faff] transition-colors"
+                onClick={() => onNavigate("followup")}
+              >
+                <div className="flex h-8 w-8 items-center justify-center rounded-[8px] shrink-0" style={{ backgroundColor: bgIcon }}>
+                  <IconEl className="h-4 w-4" style={{ color: iconColor }} />
+                </div>
+                <div className="flex-1 text-sm font-medium text-navy">{a}</div>
+                <ChevronRight className="h-4 w-4 text-[#94a3b8] group-hover:text-[#005bfd] transition-colors shrink-0" />
               </div>
-              <div className="flex-1">
-                <div className="text-sm font-medium text-navy">{a}</div>
-              </div>
-              <Button variant="ghost" size="sm" className="text-primary" onClick={() => onNavigate("followup")}>Lihat</Button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
     </div>
@@ -248,6 +267,26 @@ function MiniStat({ label, value }: { label: string; value: number }) {
     <div className="panel p-4">
       <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">{label}</div>
       <div className="mt-1 text-2xl font-extrabold text-navy">{value}</div>
+    </div>
+  );
+}
+
+function GapToTargetCard({ isLeader }: { isLeader: boolean }) {
+  const gapValue = isLeader ? "-12%" : "-8%";
+  const trendValue = isLeader ? "-3pt dari kemarin" : "-1pt dari kemarin";
+  const isNegative = gapValue.startsWith("-");
+  const valueColor = isNegative ? "#ff0000" : "#005bfd";
+  return (
+    <div className="kpi-card">
+      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-navy/10 text-navy">
+        <Target className="h-4.5 w-4.5" />
+      </div>
+      <div className="mt-4">
+        <div className="text-sm" style={{ color: "#64748b" }}>Gap to Target</div>
+        <div className="mt-1 text-[28px] font-bold leading-tight" style={{ color: valueColor }}>{gapValue}</div>
+        <div className="mt-0.5 text-[11px]" style={{ color: valueColor }}>{trendValue}</div>
+        <div className="mt-1 text-xs" style={{ color: "#64748b" }}>Perlu remedial action</div>
+      </div>
     </div>
   );
 }

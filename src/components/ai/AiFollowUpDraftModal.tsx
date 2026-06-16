@@ -62,9 +62,9 @@ export function AiFollowUpDraftModal({ lead, rmName, onClose }: Props) {
         <div className="p-5 border-b border-border flex items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-[hsl(var(--gold))]" />
+              <Sparkles className="h-4 w-4 text-primary" />
               <h3 className="text-base font-bold text-navy">AI Follow-Up Generator</h3>
-              <StatusBadge tone="gold">Saran AI · perlu review</StatusBadge>
+              <StatusBadge tone="blue">Saran AI · perlu review</StatusBadge>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               {lead.nama} · {lead.produk} · {lead.stage} · {lead.fuStage}
@@ -77,7 +77,7 @@ export function AiFollowUpDraftModal({ lead, rmName, onClose }: Props) {
           {!draft && (
             <div className="rounded-lg bg-muted/40 p-4 text-sm text-navy">
               <p>AI akan membaca data lead ini (nama, produk, stage, catatan, tahap FU) lalu menulis draft pesan follow-up.</p>
-              <Button onClick={() => callFn("generate")} disabled={loading} className="mt-3 bg-[hsl(var(--gold))] text-navy hover:bg-[hsl(var(--gold))]/90">
+              <Button onClick={() => callFn("generate")} disabled={loading} className="mt-3 bg-[hsl(var(--primary))] text-white hover:bg-[hsl(var(--primary))]/90">
                 {loading ? <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" />Membuat draft…</> : <><Wand2 className="h-4 w-4 mr-1.5" />Generate Draft dengan AI</>}
               </Button>
             </div>
@@ -112,7 +112,7 @@ export function AiFollowUpDraftModal({ lead, rmName, onClose }: Props) {
                   </div>
                 </div>
               ) : (
-                <div className="rounded-lg border border-success/40 bg-success-light/40 p-3 flex items-center gap-2 text-success text-sm">
+                <div className="rounded-lg border border-primary/40 bg-primary-light/40 p-3 flex items-center gap-2 text-primary text-sm">
                   <CheckCircle2 className="h-4 w-4" /> Tidak ada issue compliance terdeteksi.
                 </div>
               )}

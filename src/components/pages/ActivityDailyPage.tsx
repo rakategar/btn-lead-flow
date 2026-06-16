@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Phone, MessageSquare, Calendar, CheckCircle2, Crown, UserRound, ListChecks, StickyNote, Image as ImageIcon, Flame, Thermometer, Snowflake } from "lucide-react";
+import { Phone, MessageSquare, Calendar, CheckCircle2, Crown, UserRound, ListChecks, StickyNote, Image as ImageIcon, Flame, Thermometer, Snowflake, ClipboardList, Plus } from "lucide-react";
 import { KpiCard } from "@/components/KpiCard";
 import { StatusBadge, statusToTone } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -40,9 +40,11 @@ interface MixedCard {
 export function ActivityDailyPage({
   extraActivities = [],
   leads = [],
+  onAddActivity,
 }: {
   extraActivities?: RmActivity[];
   leads?: Lead[];
+  onAddActivity?: () => void;
 } = {}) {
   const { user } = useAuth();
   const isLeader = user?.role === "leader";
@@ -201,15 +203,15 @@ export function ActivityDailyPage({
     <div className="space-y-5">
       <div className="grid gap-4 sm:grid-cols-3">
         <KpiCard title="Prospecting Hari Ini" value={todayCounters.prospecting} hint="Kontak baru ditambahkan" icon={Phone} tone="blue" />
-        <KpiCard title="Follow-Up Hari Ini" value={todayCounters.followUp} hint="Eksekusi pipeline FU1–FU3" icon={MessageSquare} tone="orange" />
-        <KpiCard title="Appointment Hari Ini" value={todayCounters.appointment} hint="Meeting & kunjungan" icon={Calendar} tone="green" />
+        <KpiCard title="Follow-Up Hari Ini" value={todayCounters.followUp} hint="Eksekusi pipeline FU1–FU3" icon={MessageSquare} tone="blue" />
+        <KpiCard title="Appointment Hari Ini" value={todayCounters.appointment} hint="Meeting & kunjungan" icon={Calendar} tone="navy" />
       </div>
 
       {/* Task Board */}
       <section className="panel p-5">
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div className="flex items-start gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-navy text-gold shrink-0"><ListChecks className="h-4 w-4" /></div>
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-navy text-white shrink-0"><ListChecks className="h-4 w-4" /></div>
             <div>
               <h3 className="font-bold text-navy">Task Board — Activity</h3>
               <p className="text-xs text-muted-foreground">
@@ -219,7 +221,7 @@ export function ActivityDailyPage({
               </p>
             </div>
           </div>
-          <StatusBadge tone={isLeader ? "gold" : "blue"}>{scopeLabel}</StatusBadge>
+          <StatusBadge tone="blue">{scopeLabel}</StatusBadge>
         </div>
 
         {/* Board */}
@@ -230,7 +232,7 @@ export function ActivityDailyPage({
               const { done, total, pct } = progressFor(rm);
               return (
                 <RMColumn key={rm} rmName={rm} progress={pct} doneCount={done} totalCount={total} hasUnread={false} isLeaderView={false} dense>
-                  {cards.length === 0 && <Empty text="Belum ada activity atau lead. Gunakan tombol di header." />}
+                  {cards.length === 0 && <RichEmpty onAddActivity={onAddActivity} />}
                   <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                     {cards.map((c) => (
                       <BoardCard
@@ -284,7 +286,7 @@ export function ActivityDailyPage({
       {isLeader && (
         <section className="panel p-5">
           <div className="flex items-start gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gold-light text-[hsl(var(--gold))] shrink-0"><Crown className="h-4 w-4" /></div>
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-light text-primary shrink-0"><Crown className="h-4 w-4" /></div>
             <div>
               <h3 className="font-bold text-navy">Monitoring Progress Tim</h3>
               <p className="text-xs text-muted-foreground">Progress eksekusi activity harian per RM (centang di kartu activity).</p>
@@ -300,7 +302,7 @@ export function ActivityDailyPage({
                     <span className="text-xs text-muted-foreground">{done}/{total}</span>
                   </div>
                   <div className="mt-2 h-2 rounded-full bg-muted overflow-hidden">
-                    <div className={cn("h-full rounded-full transition-all", pct >= 80 ? "bg-success" : pct >= 50 ? "bg-[hsl(var(--gold))]" : "bg-primary")} style={{ width: `${pct}%` }} />
+                    <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
                   </div>
                   <div className="mt-1 text-[11px] text-muted-foreground">{pct}% selesai</div>
                 </div>
@@ -317,7 +319,7 @@ export function ActivityDailyPage({
             <h3 className="font-bold text-navy">Aktivitas Per RM Hari Ini</h3>
             <p className="text-xs text-muted-foreground">Membantu visibilitas konsistensi aktivitas harian per personel.</p>
           </div>
-          <StatusBadge tone={isRM ? "blue" : "gold"}>{scopeLabel}</StatusBadge>
+          <StatusBadge tone="blue">{scopeLabel}</StatusBadge>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -367,7 +369,7 @@ function RMColumn({
     <div className={cn(
       "rounded-xl border bg-muted/40 p-3 flex flex-col transition-colors",
       dense ? "" : "min-h-[220px]",
-      hasUnread && isLeaderView ? "border-[hsl(var(--gold))] bg-gold-light/40" : "border-border"
+      hasUnread && isLeaderView ? "border-[hsl(var(--primary))] bg-primary-light/40" : "border-border"
     )}>
       <div className="flex items-center gap-2 mb-2">
         <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary-light text-primary">
@@ -379,20 +381,17 @@ function RMColumn({
         </div>
       </div>
       <div className="mb-2 h-1.5 rounded-full bg-card overflow-hidden">
-        <div className={cn("h-full rounded-full transition-all", progress >= 80 ? "bg-success" : progress >= 50 ? "bg-[hsl(var(--gold))]" : "bg-primary")} style={{ width: `${progress}%` }} />
+        <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${progress}%` }} />
       </div>
       <div className="flex flex-col gap-2 flex-1">{children}</div>
     </div>
   );
 }
 
-function hasilTone(h?: string): "blue" | "orange" | "red" | "green" | "navy" {
+function hasilTone(h?: string): "blue" | "red" | "navy" {
   if (!h) return "navy";
   const v = h.toLowerCase();
-  if (v.includes("positif") || v.includes("closing")) return "green";
   if (v.includes("ditolak")) return "red";
-  if (v.includes("tidak")) return "orange";
-  if (v.includes("follow")) return "orange";
   return "blue";
 }
 
@@ -443,10 +442,10 @@ function ActivityCardBody({ a, canCheck, onToggleDone }: { a: RmActivity; canChe
         </div>
         {canCheck ? (
           <button onClick={onToggleDone} aria-label="Tandai selesai" className="shrink-0">
-            <CheckCircle2 className={cn("h-5 w-5", a.done ? "text-success" : "text-muted-foreground hover:text-primary")} />
+            <CheckCircle2 className={cn("h-5 w-5", a.done ? "text-primary" : "text-muted-foreground hover:text-primary")} />
           </button>
         ) : (
-          <CheckCircle2 className={cn("h-5 w-5 shrink-0", a.done ? "text-success" : "text-muted-foreground/40")} />
+          <CheckCircle2 className={cn("h-5 w-5 shrink-0", a.done ? "text-primary" : "text-muted-foreground/40")} />
         )}
       </div>
       {a.leadName && (
@@ -474,7 +473,7 @@ function ActivityCardBody({ a, canCheck, onToggleDone }: { a: RmActivity; canChe
 
 function LeadCardBody({ l }: { l: Lead }) {
   const temp = leadTemp(l);
-  const tempTone: "red" | "orange" | "blue" = temp === "Hot" ? "red" : temp === "Warm" ? "orange" : "blue";
+  const tempTone: "red" | "blue" = temp === "Hot" ? "red" : "blue";
   return (
     <div>
       <div className="flex items-start justify-between gap-2">
@@ -482,7 +481,7 @@ function LeadCardBody({ l }: { l: Lead }) {
           <div className="text-sm font-semibold text-navy">{l.nama}</div>
           <div className="text-[10px] text-muted-foreground">{l.id}</div>
         </div>
-        <StatusBadge tone="gold">Lead</StatusBadge>
+        <StatusBadge tone="navy">Lead</StatusBadge>
       </div>
       <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
         <StatusBadge tone="navy">{l.stage}</StatusBadge>
@@ -507,11 +506,11 @@ function CardNotes({
     <div className="mt-1 rounded-md border border-dashed border-border bg-muted/40 p-2 space-y-1.5">
       {notes.length > 0 && (
         <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider font-semibold text-navy">
-          <StickyNote className="h-3 w-3 text-[hsl(var(--gold))]" /> Note dari Leader
+          <StickyNote className="h-3 w-3 text-primary" /> Note dari Leader
         </div>
       )}
       {notes.map((n) => (
-        <div key={n.id} className={cn("rounded border p-1.5 text-[12px]", !n.readAt && isLeader ? "border-[hsl(var(--gold))] bg-gold-light/60" : "border-border bg-card")}>
+        <div key={n.id} className={cn("rounded border p-1.5 text-[12px]", !n.readAt && isLeader ? "border-[hsl(var(--primary))] bg-primary-light/60" : "border-border bg-card")}>
           <div className="text-navy">{n.message}</div>
           <div className="text-[10px] text-muted-foreground mt-0.5">
             {n.leaderName} · {new Date(n.createdAt).toLocaleString("id-ID", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short" })}
@@ -546,5 +545,26 @@ function CardNotes({
 function Empty({ text }: { text: string }) {
   return (
     <div className="rounded-lg border border-dashed border-border bg-card/40 p-3 text-[11px] text-muted-foreground text-center">{text}</div>
+  );
+}
+
+function RichEmpty({ onAddActivity }: { onAddActivity?: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
+      <div className="flex h-14 w-14 items-center justify-center rounded-[14px]" style={{ backgroundColor: "rgba(0,91,253,0.08)" }}>
+        <ClipboardList className="h-7 w-7" style={{ color: "#005bfd" }} />
+      </div>
+      <div className="mt-4 text-sm font-semibold" style={{ color: "#1a2332" }}>Belum ada aktivitas hari ini</div>
+      <div className="mt-1 text-[13px]" style={{ color: "#64748b" }}>Mulai catat prospecting atau follow-up pertamamu</div>
+      {onAddActivity && (
+        <button
+          onClick={onAddActivity}
+          className="mt-4 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#0048d4]"
+          style={{ backgroundColor: "#005bfd" }}
+        >
+          <Plus className="h-4 w-4" /> Tambah Activity
+        </button>
+      )}
+    </div>
   );
 }
