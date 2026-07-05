@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-// import btnLogo from "@/assets/btn-logo.png"; // TEMPORARY: logo disembunyikan sementara
+import btnLogo from "@/assets/btn-logo.png";
 
 interface Props {
   size?: "sm" | "md" | "lg";
@@ -22,7 +22,7 @@ export function ActLogo({ size = "md", className }: Props) {
       )}
       aria-label="Bank BTN"
     >
-      {/* <img src={btnLogo} alt="Bank BTN" className="h-full w-full object-contain" /> TEMPORARY: logo disembunyikan sementara */}
+      <img src={btnLogo} alt="Bank BTN" className="h-full w-full object-contain" />
     </div>
   );
 }

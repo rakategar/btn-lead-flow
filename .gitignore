@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+supabase/functions/.env
+supabase/.temp/
+supabase/.branches/
+.vercel/
