@@ -1,8 +1,8 @@
-project_id = "btn-lead-flow-dev"
+project_id = "btn-lead-flow"
 
 [api]
 enabled = true
-port = 54341
+port = 54321
 schemas = ["public", "storage", "graphql_public"]
 extra_search_path = ["public", "extensions"]
 max_rows = 1000
@@ -11,8 +11,8 @@ max_rows = 1000
 enabled = false
 
 [db]
-port = 54342
-shadow_port = 54340
+port = 54322
+shadow_port = 54320
 major_version = 15
 
 [db.pooler]
@@ -23,19 +23,26 @@ enabled = true
 ip_version = "IPv4"
 
 [studio]
-enabled = false
+enabled = true
+port = 54323
+api_url = "http://localhost"
+openai_api_key = "env(OPENAI_API_KEY)"
 
 [inbucket]
-enabled = false
+enabled = true
+port = 54324
 
 [storage]
 enabled = true
 file_size_limit = "50MiB"
 
+[storage.image_transformation]
+enabled = true
+
 [auth]
 enabled = true
-site_url = "http://31.97.107.224:8090"
-additional_redirect_urls = ["http://31.97.107.224:8090"]
+site_url = "http://localhost:5173"
+additional_redirect_urls = ["http://localhost:5173", "https://btnact.biz.id"]
 jwt_expiry = 3600
 enable_refresh_token_rotation = true
 refresh_token_reuse_interval = 10
@@ -50,7 +57,14 @@ enable_confirmations = false
 [edge_runtime]
 enabled = true
 policy = "oneshot"
-inspector_port = 8084
+inspector_port = 8083
 
 [analytics]
 enabled = false
+
+[experimental]
+orioledb_version = ""
+s3_host = "env(S3_HOST)"
+s3_region = "env(S3_REGION)"
+s3_access_key = "env(S3_ACCESS_KEY)"
+s3_secret_key = "env(S3_SECRET_KEY)"
